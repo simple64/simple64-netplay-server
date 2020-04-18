@@ -20,7 +20,7 @@ public:
     void readPendingDatagrams();
 private:
     QUdpSocket* udpSocket;
-    QHash<uint64_t, frame_state> frames;
+    QHash<uint8_t, frame_state> frames;
 };
 
 #endif
