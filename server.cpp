@@ -4,7 +4,7 @@
 void Server::initSocket()
 {
     udpSocket = new QUdpSocket(this);
-    udpSocket->bind(QHostAddress::Any, 49999);
+    udpSocket->bind(QHostAddress::Any, 45467);
 
     connect(udpSocket, &QUdpSocket::readyRead,
             this, &Server::readPendingDatagrams);
