@@ -12,12 +12,22 @@ void Server::initSocket()
 
 void Server::readPendingDatagrams()
 {
-    while (udpSocket->hasPendingDatagrams()) {
+    BUTTONS keys;
+    int playerNumber;
+    while (udpSocket->hasPendingDatagrams())
+    {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
-	printf("received at server\n");
-        char hello[] = "Hello from server";
-        int success = udpSocket->writeDatagram(hello, strlen(hello), datagram.senderAddress(), datagram.senderPort());
-        printf("%d\n", success);
-//        processTheDatagram(datagram);
+        QByteArray incomingData = datagram.data();
+        if (incomingData.at(0) == 0) // key info
+        {
+            playerNumber = incomingData.at(1);
+            memcpy(&keys.Value, &incomingData.data()[2], 4);
+            printf("player %u keys %x\n", playerNumber, keys.Value);
+        }
+        else
+        {
+            printf("Unknown packet type %d\n", incomingData.at(0));
+        }
+       // int success = udpSocket->writeDatagram(hello, strlen(hello), datagram.senderAddress(), datagram.senderPort());
     }
 }
