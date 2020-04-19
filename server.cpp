@@ -14,6 +14,10 @@ void Server::readPendingDatagrams()
 {
     while (udpSocket->hasPendingDatagrams()) {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
+	printf("received at server\n");
+        char hello[] = "Hello from server";
+        int success = udpSocket->writeDatagram(hello, strlen(hello), datagram.senderAddress(), datagram.senderPort());
+        printf("%d\n", success);
 //        processTheDatagram(datagram);
     }
 }
