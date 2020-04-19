@@ -5,11 +5,14 @@
 #include <QHash>
 #include "m64p_plugin.h"
 
-struct frame_state {
-    BUTTONS Player1_Buttons;
-    BUTTONS Player2_Buttons;
-    BUTTONS Player3_Buttons;
-    BUTTONS Player4_Buttons;
+struct input_state {
+    BUTTONS Buttons[4];
+};
+
+struct player_info {
+    QHostAddress address;
+    int port;
+    uint8_t count;
 };
 
 class Server : public QObject
@@ -20,7 +23,8 @@ public:
     void readPendingDatagrams();
 private:
     QUdpSocket* udpSocket;
-    QHash<uint8_t, frame_state> frames;
+    QHash<uint8_t, input_state> inputs;
+    struct player_info playerInfo[4];
 };
 
 #endif
