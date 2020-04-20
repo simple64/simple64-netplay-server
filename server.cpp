@@ -68,10 +68,12 @@ void Server::readPendingDatagrams()
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
+            uint8_t count = incomingData.at(2);
+            checkIfExists(incomingData.at(1), count);
             for (i = 0; i < 4; ++i)
             {
-                checkIfExists(i, incomingData.at(1));
-                sendInput(i, incomingData.at(1));
+                if (inputs[i].contains(count))
+                    sendInput(i, count);
             }
         }
         else
