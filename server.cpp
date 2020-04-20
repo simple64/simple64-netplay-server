@@ -52,7 +52,7 @@ void Server::readPendingDatagrams()
         playerInfo[playerNumber].port = datagram.senderPort();
         if (incomingData.at(0) == 0) // key info from client
         {
-            memcpy(&keys, &incomingData.data()[5], 4);
+            memcpy(&keys, &incomingData.data()[6], 4);
             buttons[playerNumber].append(keys);
             sendInput(playerNumber, count + 2);
         }
