@@ -22,7 +22,10 @@ void Server::checkIfExists(int playerNumber, uint8_t count)
     if (!inputs[playerNumber].contains(count)) //They are asking for a value we don't have
     {
         InputState* state = new InputState;
-        state->Buttons = inputs[playerNumber].object(count-1)->Buttons;
+        if (inputs[playerNumber].contains(count-1))
+            state->Buttons = inputs[playerNumber].object(count-1)->Buttons;
+        else
+            state->Buttons.Value = 0;
         inputs[playerNumber].insert(count, state, 1);
         playerInfo[playerNumber].count++;
     }
@@ -47,7 +50,7 @@ void Server::sendInput(int playerNumber, uint8_t count)
 
 void Server::readPendingDatagrams()
 {
-    int playerNumber;
+    int i, playerNumber;
     while (udpSocket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
@@ -65,9 +68,11 @@ void Server::readPendingDatagrams()
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
-            playerNumber = incomingData.at(1);
-            checkIfExists(playerNumber, incomingData.at(2));
-            sendInput(playerNumber, incomingData.at(2));
+            for (i = 0; i < 4; ++i)
+            {
+                checkIfExists(i, incomingData.at(1));
+                sendInput(i, incomingData.at(1));
+            }
         }
         else
         {
