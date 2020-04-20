@@ -3,7 +3,6 @@
 #include <QObject>
 #include <QUdpSocket>
 #include <QHash>
-#include "m64p_plugin.h"
 
 struct player_info {
     QHostAddress address;
@@ -20,8 +19,8 @@ private:
     void sendInput(uint8_t playerNumber, uint32_t count);
     void checkIfExists(uint8_t playerNumber, uint32_t count);
     QUdpSocket* udpSocket;
-    QHash<uint32_t, BUTTONS> inputs[4];
-    QList<BUTTONS> buttons[4];
+    QHash<uint32_t, uint32_t> inputs[4]; //<count, BUTTONS>
+    QList<uint32_t> buttons[4];
     struct player_info playerInfo[4];
 };
 

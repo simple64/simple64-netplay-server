@@ -19,7 +19,7 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
         else if (inputs[playerNumber].contains(count-1))
             inputs[playerNumber][count] = inputs[playerNumber][count-1];
         else
-            inputs[playerNumber][count].Value = 0;
+            inputs[playerNumber][count] = 0;
     }
 }
 
@@ -32,7 +32,7 @@ void Server::sendInput(uint8_t playerNumber, uint32_t count)
     for (int i = 0; i < 4; ++i)
     {
         checkIfExists(i, count);
-        memcpy(&buffer[(i * 4) + 5], &inputs[i][count].Value, 4);
+        memcpy(&buffer[(i * 4) + 5], &inputs[i][count], 4);
     }
 
     udpSocket->writeDatagram(&buffer[0], sizeof(buffer), playerInfo[playerNumber].address, playerInfo[playerNumber].port);
@@ -41,7 +41,7 @@ void Server::sendInput(uint8_t playerNumber, uint32_t count)
 void Server::readPendingDatagrams()
 {
     uint8_t playerNumber;
-    uint32_t count;
+    uint32_t keys, count;
     while (udpSocket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
@@ -52,8 +52,7 @@ void Server::readPendingDatagrams()
         playerInfo[playerNumber].port = datagram.senderPort();
         if (incomingData.at(0) == 0) // key info from client
         {
-            BUTTONS keys;
-            memcpy(&keys.Value, &incomingData.data()[5], 4);
+            memcpy(&keys, &incomingData.data()[5], 4);
             buttons[playerNumber].append(keys);
             sendInput(playerNumber, count + 2);
         }

@@ -20,8 +20,7 @@ SOURCES += \
         server.cpp
 
 HEADERS += \
-        server.h \
-        m64p_plugin.h
+        server.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
