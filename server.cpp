@@ -3,10 +3,6 @@
 
 void Server::initSocket()
 {
-    int i;
-    for (i = 0; i < 4; ++i)
-        playerInfo[i].port = 0;
-
     udpSocket = new QUdpSocket(this);
     udpSocket->bind(QHostAddress::Any, 45467);
 
