@@ -22,12 +22,13 @@ void Server::checkIfExists(int playerNumber, uint8_t count)
     if (!inputs[playerNumber].contains(count)) //They are asking for a value we don't have
     {
         InputState* state = new InputState;
-        if (inputs[playerNumber].contains(count-1))
+        if (!buttons[playerNumber].isEmpty())
+            state->Buttons = buttons[playerNumber].takeFirst();
+        else if (inputs[playerNumber].contains(count-1))
             state->Buttons = inputs[playerNumber].object(count-1)->Buttons;
         else
             state->Buttons.Value = 0;
         inputs[playerNumber].insert(count, state, 1);
-        playerInfo[playerNumber].count++;
     }
 }
 
@@ -56,10 +57,9 @@ void Server::readPendingDatagrams()
         playerInfo[playerNumber].port = datagram.senderPort();
         if (incomingData.at(0) == 0) // key info from client
         {
-            InputState* state = new InputState;
-            memcpy(&state->Buttons.Value, &incomingData.data()[2], 4);
-            inputs[playerNumber].insert(playerInfo[playerNumber].count, state, 1);
-            playerInfo[playerNumber].count++;
+            BUTTONS keys;
+            memcpy(&keys.Value, &incomingData.data()[2], 4);
+            buttons[playerNumber].append(keys);
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {

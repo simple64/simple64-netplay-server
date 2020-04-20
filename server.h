@@ -15,7 +15,6 @@ public:
 struct player_info {
     QHostAddress address;
     int port;
-    uint8_t count;
 };
 
 class Server : public QObject
@@ -29,6 +28,7 @@ private:
     void checkIfExists(int playerNumber, uint8_t count);
     QUdpSocket* udpSocket;
     QCache<uint8_t, InputState> inputs[4];
+    QList<BUTTONS> buttons[4];
     struct player_info playerInfo[4];
 };
 
