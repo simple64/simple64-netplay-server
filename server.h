@@ -2,15 +2,8 @@
 #define SERVER_H
 #include <QObject>
 #include <QUdpSocket>
-#include <QCache>
+#include <QHash>
 #include "m64p_plugin.h"
-
-class InputState : public QObject
-{
-    Q_OBJECT
-public:
-    BUTTONS Buttons;
-};
 
 struct player_info {
     QHostAddress address;
@@ -24,10 +17,10 @@ public:
     void initSocket();
     void readPendingDatagrams();
 private:
-    void sendInput(int playerNumber, uint8_t count);
-    void checkIfExists(int playerNumber, uint8_t count);
+    void sendInput(uint8_t playerNumber, uint32_t count);
+    void checkIfExists(uint8_t playerNumber, uint32_t count);
     QUdpSocket* udpSocket;
-    QCache<uint8_t, InputState> inputs[4];
+    QHash<uint32_t, BUTTONS> inputs[4];
     QList<BUTTONS> buttons[4];
     struct player_info playerInfo[4];
 };
