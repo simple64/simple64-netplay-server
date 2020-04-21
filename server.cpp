@@ -25,17 +25,24 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
 
 void Server::sendInput(uint32_t count, QHostAddress address, int port)
 {
-    char buffer[21];
+    uint32_t i, j;
+    uint8_t count_number = 3;
+    char buffer[512];
     buffer[0] = 1; // Key info from server
-    memcpy(&buffer[1], &count, 4);
+    memcpy(&buffer[1], &count_number, 1);
 
-    for (int i = 0; i < 4; ++i)
+    for (i = 0; i < count_number; ++i)
     {
-        checkIfExists(i, count);
-        memcpy(&buffer[(i * 4) + 5], &inputs[i][count], 4);
+        memcpy(&buffer[2 + (i * 20)], &count, 4);
+        for (j = 0; j < 4; ++j)
+        {
+            checkIfExists(j, count);
+            memcpy(&buffer[(j * 4) + (6 + (i * 20))], &inputs[j][count], 4);
+        }
+        ++count;
     }
 
-    udpSocket->writeDatagram(&buffer[0], sizeof(buffer), address, port);
+    udpSocket->writeDatagram(&buffer[0], 2 + (20 * count_number), address, port);
 }
 
 void Server::readPendingDatagrams()
@@ -53,8 +60,7 @@ void Server::readPendingDatagrams()
         {
             memcpy(&keys, &incomingData.data()[6], 4);
             buttons[playerNumber].append(keys);
-            sendInput(count + 2, datagram.senderAddress(), datagram.senderPort());
-            sendInput(count + 3, datagram.senderAddress(), datagram.senderPort());
+            sendInput(count, datagram.senderAddress(), datagram.senderPort());
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
