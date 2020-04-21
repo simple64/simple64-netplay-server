@@ -23,7 +23,7 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
     }
 }
 
-void Server::sendInput(uint8_t playerNumber, uint32_t count)
+void Server::sendInput(uint32_t count, QHostAddress address, int port)
 {
     char buffer[21];
     buffer[0] = 1; // Key info from server
@@ -35,7 +35,7 @@ void Server::sendInput(uint8_t playerNumber, uint32_t count)
         memcpy(&buffer[(i * 4) + 5], &inputs[i][count], 4);
     }
 
-    udpSocket->writeDatagram(&buffer[0], sizeof(buffer), playerInfo[playerNumber].address, playerInfo[playerNumber].port);
+    udpSocket->writeDatagram(&buffer[0], sizeof(buffer), address, port);
 }
 
 void Server::readPendingDatagrams()
@@ -48,18 +48,17 @@ void Server::readPendingDatagrams()
         QByteArray incomingData = datagram.data();
         playerNumber = incomingData.at(1);
         memcpy(&count, &incomingData.data()[2], 4);
-        playerInfo[playerNumber].address = datagram.senderAddress();
-        playerInfo[playerNumber].port = datagram.senderPort();
+
         if (incomingData.at(0) == 0) // key info from client
         {
             memcpy(&keys, &incomingData.data()[6], 4);
             buttons[playerNumber].append(keys);
-            sendInput(playerNumber, count + 2);
-            sendInput(playerNumber, count + 3);
+            sendInput(count + 2, datagram.senderAddress(), datagram.senderPort());
+            sendInput(count + 3, datagram.senderAddress(), datagram.senderPort());
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
-            sendInput(playerNumber, count);
+            sendInput(count, datagram.senderAddress(), datagram.senderPort());
         }
         else
         {
