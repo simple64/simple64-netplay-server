@@ -23,26 +23,42 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
     }
 }
 
-void Server::sendInput(uint32_t count, QHostAddress address, int port)
+int Server::hasData(uint32_t count)
+{
+    for (int i = 0; i < 4; ++i)
+    {
+        if (!inputs[i].contains(count))
+            return 0;
+    }
+    return 1;
+}
+
+void Server::sendInput(uint32_t count, QHostAddress address, int port, int spectator)
 {
     uint32_t i, j;
-    uint8_t count_number = 3;
+    uint8_t count_number = 4;
+    uint32_t sent = 0;
     char buffer[512];
     buffer[0] = 1; // Key info from server
     memcpy(&buffer[1], &count_number, 1);
 
     for (i = 0; i < count_number; ++i)
     {
-        memcpy(&buffer[2 + (i * 20)], &count, 4);
-        for (j = 0; j < 4; ++j)
+        if (spectator == 0 || hasData(count))
         {
-            checkIfExists(j, count);
-            memcpy(&buffer[(j * 4) + (6 + (i * 20))], &inputs[j][count], 4);
+            memcpy(&buffer[2 + (sent * 20)], &count, 4);
+            for (j = 0; j < 4; ++j)
+            {
+                checkIfExists(j, count);
+                memcpy(&buffer[(j * 4) + (6 + (sent * 20))], &inputs[j][count], 4);
+            }
+            ++sent;
         }
         ++count;
     }
 
-    udpSocket->writeDatagram(&buffer[0], 2 + (20 * count_number), address, port);
+    if (sent > 0)
+        udpSocket->writeDatagram(&buffer[0], 2 + (20 * sent), address, port);
 }
 
 void Server::readPendingDatagrams()
@@ -60,11 +76,11 @@ void Server::readPendingDatagrams()
         {
             memcpy(&keys, &incomingData.data()[6], 4);
             buttons[playerNumber].append(keys);
-            sendInput(count, datagram.senderAddress(), datagram.senderPort());
+            sendInput(count, datagram.senderAddress(), datagram.senderPort(), 0);
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
-            sendInput(count, datagram.senderAddress(), datagram.senderPort());
+            sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNumber < 4 ? 0 : 1);
         }
         else
         {

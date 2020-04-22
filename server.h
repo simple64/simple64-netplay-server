@@ -11,7 +11,8 @@ public:
     void initSocket();
     void readPendingDatagrams();
 private:
-    void sendInput(uint32_t count, QHostAddress address, int port);
+    int hasData(uint32_t count);
+    void sendInput(uint32_t count, QHostAddress address, int port, int spectator);
     void checkIfExists(uint8_t playerNumber, uint32_t count);
     QUdpSocket* udpSocket;
     QHash<uint32_t, uint32_t> inputs[4]; //<count, BUTTONS>
