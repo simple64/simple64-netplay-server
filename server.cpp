@@ -76,7 +76,6 @@ void Server::readPendingDatagrams()
         {
             memcpy(&keys, &incomingData.data()[6], 4);
             buttons[playerNumber].append(keys);
-            sendInput(count, datagram.senderAddress(), datagram.senderPort(), 0);
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
