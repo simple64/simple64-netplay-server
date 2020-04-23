@@ -19,7 +19,7 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
         else if (inputs[playerNumber].contains(count-1))
             inputs[playerNumber][count] = inputs[playerNumber][count-1];
         else
-            inputs[playerNumber][count] = 0;
+            inputs[playerNumber][count] = qMakePair(0, 1/*PLUGIN_NONE*/);
     }
 }
 
@@ -46,11 +46,12 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, int spect
     {
         if (spectator == 0 || hasData(count))
         {
-            memcpy(&buffer[2 + (sent * 20)], &count, 4);
+            memcpy(&buffer[2 + (sent * 24)], &count, 4);
             for (j = 0; j < 4; ++j)
             {
                 checkIfExists(j, count);
-                memcpy(&buffer[(j * 4) + (6 + (sent * 20))], &inputs[j][count], 4);
+                memcpy(&buffer[(j * 4) + (6 + (sent * 24))], &inputs[j][count].first, 4);
+                memcpy(&buffer[(j * 4) + (10 + (sent * 24))], &inputs[j][count].second, 1);
             }
             ++sent;
         }
@@ -58,7 +59,7 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, int spect
     }
 
     if (sent > 0)
-        udpSocket->writeDatagram(&buffer[0], 2 + (20 * sent), address, port);
+        udpSocket->writeDatagram(&buffer[0], 2 + (24 * sent), address, port);
 }
 
 void Server::readPendingDatagrams()
@@ -75,7 +76,7 @@ void Server::readPendingDatagrams()
         if (incomingData.at(0) == 0) // key info from client
         {
             memcpy(&keys, &incomingData.data()[6], 4);
-            buttons[playerNumber].append(keys);
+            buttons[playerNumber].append(qMakePair(keys, incomingData.at(10)));
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
