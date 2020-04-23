@@ -35,31 +35,31 @@ int Server::hasData(uint32_t count)
 
 void Server::sendInput(uint32_t count, QHostAddress address, int port, int spectator)
 {
-    uint32_t i, j;
-    uint8_t count_number = 4;
-    uint32_t sent = 0;
+    uint8_t i, j;
     char buffer[512];
     buffer[0] = 1; // Key info from server
-    memcpy(&buffer[1], &count_number, 1);
-
-    for (i = 0; i < count_number; ++i)
+    buffer[1] = 4; //count number
+    uint32_t curr = 2;
+    for (i = 0; i < buffer[1]; ++i)
     {
         if (spectator == 0 || hasData(count))
         {
-            memcpy(&buffer[2 + (sent * 24)], &count, 4);
+            memcpy(&buffer[curr], &count, 4);
+            curr += 4;
             for (j = 0; j < 4; ++j)
             {
                 checkIfExists(j, count);
-                memcpy(&buffer[(j * 4) + (6 + (sent * 24))], &inputs[j][count].first, 4);
-                memcpy(&buffer[(j * 4) + (10 + (sent * 24))], &inputs[j][count].second, 1);
+                memcpy(&buffer[curr], &inputs[j][count].first, 4);
+                curr += 4;
+                memcpy(&buffer[curr], &inputs[j][count].second, 1);
+                curr += 1;
             }
-            ++sent;
         }
         ++count;
     }
 
-    if (sent > 0)
-        udpSocket->writeDatagram(&buffer[0], 2 + (24 * sent), address, port);
+    if (curr > 2)
+        udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
 void Server::readPendingDatagrams()
