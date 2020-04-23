@@ -23,65 +23,49 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
     }
 }
 
-int Server::hasData(uint32_t count)
+void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator)
 {
-    for (int i = 0; i < 4; ++i)
-    {
-        if (!inputs[i].contains(count))
-            return 0;
-    }
-    return 1;
-}
-
-void Server::sendInput(uint32_t count, QHostAddress address, int port, int spectator)
-{
-    uint8_t i, j;
     char buffer[512];
     buffer[0] = 1; // Key info from server
-    buffer[1] = 4; //count number
-    uint32_t curr = 2;
-    for (i = 0; i < buffer[1]; ++i)
+    buffer[1] = playerNum;
+    buffer[2] = 4; //count number
+    uint32_t curr = 3;
+    for (uint8_t i = 0; i < buffer[2]; ++i)
     {
-        if (spectator == 0 || hasData(count))
+        if (spectator == 0 || inputs[playerNum].contains(count))
         {
             memcpy(&buffer[curr], &count, 4);
             curr += 4;
-            for (j = 0; j < 4; ++j)
-            {
-                checkIfExists(j, count);
-                memcpy(&buffer[curr], &inputs[j][count].first, 4);
-                curr += 4;
-                memcpy(&buffer[curr], &inputs[j][count].second, 1);
-                curr += 1;
-            }
+            checkIfExists(playerNum, count);
+            memcpy(&buffer[curr], &inputs[playerNum][count].first, 4);
+            curr += 4;
+            memcpy(&buffer[curr], &inputs[playerNum][count].second, 1);
+            curr += 1;
         }
         ++count;
     }
 
-    if (curr > 2)
+    if (curr > 3)
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
 void Server::readPendingDatagrams()
 {
-    uint8_t playerNumber;
     uint32_t keys, count;
     while (udpSocket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
         QByteArray incomingData = datagram.data();
-        playerNumber = incomingData.at(1);
         memcpy(&count, &incomingData.data()[2], 4);
 
         if (incomingData.at(0) == 0) // key info from client
         {
             memcpy(&keys, &incomingData.data()[6], 4);
-            buttons[playerNumber].append(qMakePair(keys, incomingData.at(10)));
-            sendInput(count, datagram.senderAddress(), datagram.senderPort(), 0);
+            buttons[(uint8_t)incomingData.at(1)].append(qMakePair(keys, incomingData.at(10)));
         }
         else if (incomingData.at(0) == 2) // request for player input data
         {
-            sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNumber < 4 ? 0 : 1);
+            sendInput(count, datagram.senderAddress(), datagram.senderPort(), incomingData.at(1), incomingData.at(6));
         }
         else
         {
