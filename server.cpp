@@ -19,7 +19,7 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
         else if (inputs[playerNumber].contains(count-1))
             inputs[playerNumber][count] = inputs[playerNumber][count-1];
         else
-            inputs[playerNumber][count] = qMakePair(0, 1/*PLUGIN_NONE*/);
+            inputs[playerNumber][count] = qMakePair(0, 1/*Controller not present*/);
     }
 }
 
@@ -52,24 +52,26 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
 void Server::readPendingDatagrams()
 {
     uint32_t keys, count;
+    uint8_t playerNum;
     while (udpSocket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
         QByteArray incomingData = datagram.data();
-        memcpy(&count, &incomingData.data()[2], 4);
-
-        if (incomingData.at(0) == 0) // key info from client
+        playerNum = incomingData.at(1);
+        switch (incomingData.at(0))
         {
-            memcpy(&keys, &incomingData.data()[6], 4);
-            buttons[(uint8_t)incomingData.at(1)].append(qMakePair(keys, incomingData.at(10)));
-        }
-        else if (incomingData.at(0) == 2) // request for player input data
-        {
-            sendInput(count, datagram.senderAddress(), datagram.senderPort(), incomingData.at(1), incomingData.at(6));
-        }
-        else
-        {
-            printf("Unknown packet type %d\n", incomingData.at(0));
+            case 0: // key info from client
+                memcpy(&count, &incomingData.data()[2], 4);
+                memcpy(&keys, &incomingData.data()[6], 4);
+                buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
+                break;
+            case 2: // request for player input data
+                memcpy(&count, &incomingData.data()[2], 4);
+                sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, incomingData.at(6));
+                break;
+            default:
+                printf("Unknown packet type %d\n", incomingData.at(0));
+                break;
         }
     }
 }
