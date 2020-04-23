@@ -19,7 +19,7 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
         else if (inputs[playerNumber].contains(count-1))
             inputs[playerNumber][count] = inputs[playerNumber][count-1];
         else
-            inputs[playerNumber][count] = qMakePair(0, 0/*Indicates no input*/);
+            inputs[playerNumber][count] = qMakePair(0, 1/*PLUGIN_NONE*/);
     }
 }
 
