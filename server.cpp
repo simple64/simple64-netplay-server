@@ -59,6 +59,7 @@ void Server::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress
     if (!reg.contains(playerNumber))
     {
         reg[playerNumber] = reg_id;
+        inputs[playerNumber][0] = qMakePair(0, 1/*PLUGIN_NONE*/);
         buffer[2] = 1;
     }
     else
