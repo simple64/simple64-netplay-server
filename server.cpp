@@ -50,9 +50,31 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
+void Server::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress address, int port)
+{
+    char buffer[3];
+    buffer[0] = 3;
+    buffer[1] = playerNumber;
+
+    if (!reg.contains(playerNumber))
+    {
+        reg[playerNumber] = reg_id;
+        buffer[2] = 1;
+    }
+    else
+    {
+        if (reg[playerNumber] == reg_id)
+            buffer[2] = 1;
+        else
+            buffer[2] = 0;
+    }
+
+    udpSocket->writeDatagram(&buffer[0], 3, address, port);
+}
+
 void Server::readPendingDatagrams()
 {
-    uint32_t keys, count;
+    uint32_t keys, count, reg_id;
     uint8_t playerNum;
     while (udpSocket->hasPendingDatagrams())
     {
@@ -69,6 +91,10 @@ void Server::readPendingDatagrams()
             case 2: // request for player input data
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, incomingData.at(6));
+                break;
+            case 4: // registration request
+                reg_id = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
+                sendRegResponse(playerNum, reg_id, datagram.senderAddress(), datagram.senderPort());
                 break;
             default:
                 printf("Unknown packet type %d\n", incomingData.at(0));
