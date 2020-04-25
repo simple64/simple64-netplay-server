@@ -18,6 +18,7 @@ private:
     QHash<uint32_t, QPair<uint32_t, uint8_t>> inputs[4]; //<count, <BUTTONS, Plugin>>
     QHash<uint8_t, uint32_t> reg; //player number, reg_id
     QList<QPair<uint32_t, uint8_t>> buttons[4];
+    uint32_t lead_count;
 };
 
 #endif

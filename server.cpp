@@ -9,6 +9,8 @@ void Server::initSocket()
 
     connect(udpSocket, &QUdpSocket::readyRead,
             this, &Server::readPendingDatagrams);
+
+    lead_count = 0;
 }
 
 void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
@@ -27,7 +29,7 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
 void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator)
 {
     char buffer[512];
-    uint32_t count_lag = 0;
+    uint32_t count_lag = lead_count - count;
     buffer[0] = 1; // Key info from server
     buffer[1] = playerNum;
     qToBigEndian(count_lag, &buffer[2]);
@@ -93,6 +95,8 @@ void Server::readPendingDatagrams()
                 break;
             case 2: // request for player input data
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
+                if (count > lead_count)
+                    lead_count = count;
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, incomingData.at(6));
                 break;
             case 4: // registration request
