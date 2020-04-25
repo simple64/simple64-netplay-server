@@ -50,7 +50,7 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
         ++count;
     }
 
-    if (curr > 3)
+    if (curr > 7)
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
