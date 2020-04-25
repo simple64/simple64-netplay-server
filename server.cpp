@@ -1,5 +1,6 @@
 #include "server.h"
 #include <QNetworkDatagram>
+#include <QtEndian>
 
 void Server::initSocket()
 {
@@ -34,12 +35,12 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
     {
         if (spectator == 0 || inputs[playerNum].contains(count))
         {
-            memcpy(&buffer[curr], &count, 4);
+            qToBigEndian(count, &buffer[curr]);
             curr += 4;
             checkIfExists(playerNum, count);
-            memcpy(&buffer[curr], &inputs[playerNum][count].first, 4);
+            qToBigEndian(inputs[playerNum][count].first, &buffer[curr]);
             curr += 4;
-            memcpy(&buffer[curr], &inputs[playerNum][count].second, 1);
+            buffer[curr] = inputs[playerNum][count].second;
             curr += 1;
         }
         ++count;
@@ -61,12 +62,12 @@ void Server::readPendingDatagrams()
         switch (incomingData.at(0))
         {
             case 0: // key info from client
-                memcpy(&count, &incomingData.data()[2], 4);
-                memcpy(&keys, &incomingData.data()[6], 4);
+                count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
+                keys = qFromBigEndian<uint32_t>(&incomingData.data()[6]);
                 buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
             case 2: // request for player input data
-                memcpy(&count, &incomingData.data()[2], 4);
+                count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, incomingData.at(6));
                 break;
             default:
