@@ -27,11 +27,13 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
 void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator)
 {
     char buffer[512];
+    uint32_t count_lag = 0;
     buffer[0] = 1; // Key info from server
     buffer[1] = playerNum;
-    buffer[2] = 4; //count number
-    uint32_t curr = 3;
-    for (uint8_t i = 0; i < buffer[2]; ++i)
+    qToBigEndian(count_lag, &buffer[2]);
+    buffer[6] = 4; //count number
+    uint32_t curr = 7;
+    for (uint8_t i = 0; i < buffer[6]; ++i)
     {
         if (spectator == 0 || inputs[playerNum].contains(count))
         {
