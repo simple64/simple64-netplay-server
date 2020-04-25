@@ -95,7 +95,8 @@ void Server::readPendingDatagrams()
                 break;
             case 4: // registration request
                 reg_id = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
-                sendRegResponse(playerNum, reg_id, datagram.senderAddress(), datagram.senderPort());
+                if (playerNum < 4)
+                    sendRegResponse(playerNum, reg_id, datagram.senderAddress(), datagram.senderPort());
                 break;
             default:
                 printf("Unknown packet type %d\n", incomingData.at(0));
