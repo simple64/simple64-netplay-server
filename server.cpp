@@ -10,7 +10,7 @@ void Server::initSocket()
     connect(udpSocket, &QUdpSocket::readyRead,
             this, &Server::readPendingDatagrams);
 
-    lead_count[4] = { 0 };
+    memset(lead_count, 0, sizeof(lead_count));
 }
 
 void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
