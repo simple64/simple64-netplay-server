@@ -14,18 +14,22 @@ void Server::initSocket()
     buffer_size = 4;
     buffer_health = -1;
     timerId = startTimer(500);
+    for (int i = 0; i < 4; ++i)
+        inputs[i].setMaxCost(5000);
 }
 
 void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
 {
     if (!inputs[playerNumber].contains(count)) //They are asking for a value we don't have
     {
+        InputState* state = new InputState;
         if (!buttons[playerNumber].isEmpty())
-            inputs[playerNumber][count] = buttons[playerNumber].takeFirst();
+            state->data = buttons[playerNumber].takeFirst();
         else if (inputs[playerNumber].contains(count-1))
-            inputs[playerNumber][count] = inputs[playerNumber][count-1];
+            state->data = inputs[playerNumber].object(count-1)->data;
         else
-            inputs[playerNumber][count] = qMakePair(0, 0/*Controller not present*/);
+            state->data = qMakePair(0, 0/*Controller not present*/);
+        inputs[playerNumber].insert(count, state, 1);
     }
 }
 
@@ -45,9 +49,9 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
             qToBigEndian(count, &buffer[curr]);
             curr += 4;
             checkIfExists(playerNum, count);
-            qToBigEndian(inputs[playerNum][count].first, &buffer[curr]);
+            qToBigEndian(inputs[playerNum].object(count)->data.first, &buffer[curr]);
             curr += 4;
-            buffer[curr] = inputs[playerNum][count].second;
+            buffer[curr] = inputs[playerNum].object(count)->data.second;
             curr += 1;
         }
         ++count;
@@ -66,7 +70,9 @@ void Server::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress
     if (!reg.contains(playerNumber))
     {
         reg[playerNumber] = reg_id;
-        inputs[playerNumber][0] = qMakePair(0, 1/*PLUGIN_NONE*/);
+        InputState* state = new InputState;
+        state->data = qMakePair(0, 1/*PLUGIN_NONE*/);
+        inputs[playerNumber].insert(0, state, 1);;
         buffer[2] = 1;
     }
     else

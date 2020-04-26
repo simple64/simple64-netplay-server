@@ -2,7 +2,14 @@
 #define SERVER_H
 #include <QObject>
 #include <QUdpSocket>
-#include <QHash>
+#include <QCache>
+
+class InputState : public QObject
+{
+    Q_OBJECT
+public:
+    QPair<uint32_t, uint8_t> data; //<BUTTONS, Plugin>
+};
 
 class Server : public QObject
 {
@@ -17,7 +24,7 @@ private:
     void checkIfExists(uint8_t playerNumber, uint32_t count);
     void sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress address, int port);
     QUdpSocket* udpSocket;
-    QHash<uint32_t, QPair<uint32_t, uint8_t>> inputs[4]; //<count, <BUTTONS, Plugin>>
+    QCache<uint32_t, InputState> inputs[4]; //<count, <BUTTONS, Plugin>>
     QHash<uint8_t, uint32_t> reg; //player number, reg_id
     QList<QPair<uint32_t, uint8_t>> buttons[4];
     uint32_t lead_count[4];
