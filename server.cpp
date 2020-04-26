@@ -72,7 +72,7 @@ void Server::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress
         reg[playerNumber] = reg_id;
         InputState* state = new InputState;
         state->data = qMakePair(0, 1/*PLUGIN_NONE*/);
-        inputs[playerNumber].insert(0, state, 1);;
+        inputs[playerNumber].insert(0, state, 1);
         buffer[2] = 1;
     }
     else
