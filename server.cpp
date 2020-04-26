@@ -11,6 +11,9 @@ void Server::initSocket()
             this, &Server::readPendingDatagrams);
 
     memset(lead_count, 0, sizeof(lead_count));
+    buffer_size = 4;
+    buffer_health = -1;
+    timerId = startTimer(500);
 }
 
 void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
@@ -33,7 +36,7 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
     buffer[0] = 1; // Key info from server
     buffer[1] = playerNum;
     qToBigEndian(count_lag, &buffer[2]);
-    buffer[6] = 4; //count number
+    buffer[6] = buffer_size; //count number
     uint32_t curr = 7;
     for (uint8_t i = 0; i < buffer[6]; ++i)
     {
@@ -91,12 +94,16 @@ void Server::readPendingDatagrams()
             case 0: // key info from client
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
                 keys = qFromBigEndian<uint32_t>(&incomingData.data()[6]);
-                buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
+                if (buttons[playerNum].size() < 2)
+                    buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
             case 2: // request for player input data
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
-                if (count > lead_count[playerNum])
+                if (count >= lead_count[playerNum])
+                {
+                    buffer_health = incomingData.data()[7];
                     lead_count[playerNum] = count;
+                }
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, incomingData.at(6));
                 break;
             case 4: // registration request
@@ -108,5 +115,16 @@ void Server::readPendingDatagrams()
                 printf("Unknown packet type %d\n", incomingData.at(0));
                 break;
         }
+    }
+}
+
+void Server::timerEvent(QTimerEvent *)
+{
+    if (buffer_health != -1)
+    {
+        if (buffer_health > 3 && buffer_size > 3)
+            --buffer_size;
+        else if (buffer_health < 3)
+            ++buffer_size;
     }
 }
