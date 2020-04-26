@@ -10,12 +10,14 @@ void Server::initSocket()
     connect(udpSocket, &QUdpSocket::readyRead,
             this, &Server::readPendingDatagrams);
 
-    memset(lead_count, 0, sizeof(lead_count));
     buffer_size = 4;
     buffer_health = -1;
     timerId = startTimer(500);
     for (int i = 0; i < 4; ++i)
+    {
+        lead_count[i] = 0;
         inputs[i].setMaxCost(5000);
+    }
 }
 
 void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
