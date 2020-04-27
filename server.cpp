@@ -91,7 +91,7 @@ void Server::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress
 void Server::readPendingDatagrams()
 {
     uint32_t keys, count, reg_id;
-    uint8_t playerNum;
+    uint8_t playerNum, spectator;
     while (udpSocket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
@@ -107,12 +107,13 @@ void Server::readPendingDatagrams()
                 break;
             case 2: // request for player input data
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
-                if (count >= lead_count[playerNum])
+                spectator = incomingData.at(6);
+                if (count >= lead_count[playerNum] && spectator == 0)
                 {
                     buffer_health = incomingData.data()[7];
                     lead_count[playerNum] = count;
                 }
-                sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, incomingData.at(6));
+                sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, spectator);
                 break;
             case 4: // registration request
                 reg_id = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
