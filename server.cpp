@@ -44,7 +44,7 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
     uint32_t curr = 3;
     uint32_t start = count;
     uint32_t end = start + buffer_size;
-    while ((spectator == 0 && count_lag == 0 && count < end) || (inputs[playerNum].contains(count)))
+    while ( (curr < 500) && ( (spectator == 0 && count_lag == 0 && (count < end)) || (inputs[playerNum].contains(count)) ) )
     {
         qToBigEndian(count, &buffer[curr]);
         curr += 4;
@@ -55,6 +55,7 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
         curr += 1;
         ++count;
     }
+
     buffer[2] = count - start; //number of counts in packet
 
     if (curr > 3)
