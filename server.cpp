@@ -41,25 +41,23 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
     uint32_t count_lag = lead_count[playerNum] - count;
     buffer[0] = 1; // Key info from server
     buffer[1] = playerNum;
-    qToBigEndian(count_lag, &buffer[2]);
-    buffer[6] = buffer_size; //count number
-    uint32_t curr = 7;
-    for (uint8_t i = 0; i < buffer[6]; ++i)
+    uint32_t curr = 3;
+    uint32_t start = count;
+    uint32_t end = start + buffer_size;
+    while ((spectator == 0 && count_lag == 0 && count < end) || (inputs[playerNum].contains(count)))
     {
-        if (spectator == 0 || inputs[playerNum].contains(count))
-        {
-            qToBigEndian(count, &buffer[curr]);
-            curr += 4;
-            checkIfExists(playerNum, count);
-            qToBigEndian(inputs[playerNum].object(count)->data.first, &buffer[curr]);
-            curr += 4;
-            buffer[curr] = inputs[playerNum].object(count)->data.second;
-            curr += 1;
-        }
+        qToBigEndian(count, &buffer[curr]);
+        curr += 4;
+        checkIfExists(playerNum, count);
+        qToBigEndian(inputs[playerNum].object(count)->data.first, &buffer[curr]);
+        curr += 4;
+        buffer[curr] = inputs[playerNum].object(count)->data.second;
+        curr += 1;
         ++count;
     }
+    buffer[2] = count - start; //number of counts in packet
 
-    if (curr > 7)
+    if (curr > 3)
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
