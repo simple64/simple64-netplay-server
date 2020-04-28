@@ -10,12 +10,12 @@ void Server::initSocket()
     connect(udpSocket, &QUdpSocket::readyRead,
             this, &Server::readPendingDatagrams);
 
-    buffer_size = 4;
-    buffer_health = -1;
     timerId = startTimer(500);
     for (int i = 0; i < 4; ++i)
     {
         lead_count[i] = 0;
+        buffer_size[i] = 4;
+        buffer_health[i] = -1;
         inputs[i].setMaxCost(5000);
     }
 }
@@ -43,7 +43,7 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
     buffer[1] = playerNum;
     uint32_t curr = 3;
     uint32_t start = count;
-    uint32_t end = start + buffer_size;
+    uint32_t end = start + buffer_size[playerNum];
     while ( (curr < 500) && ( (spectator == 0 && count_lag == 0 && (count < end)) || (inputs[playerNum].contains(count)) ) )
     {
         qToBigEndian(count, &buffer[curr]);
@@ -109,7 +109,7 @@ void Server::readPendingDatagrams()
                 spectator = incomingData.at(6);
                 if (count >= lead_count[playerNum] && spectator == 0)
                 {
-                    buffer_health = incomingData.data()[7];
+                    buffer_health[playerNum] = incomingData.data()[7];
                     lead_count[playerNum] = count;
                 }
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, spectator);
@@ -128,11 +128,14 @@ void Server::readPendingDatagrams()
 
 void Server::timerEvent(QTimerEvent *)
 {
-    if (buffer_health != -1)
+    for (int i = 0; i < 4; ++i)
     {
-        if (buffer_health > 3 && buffer_size > 3)
-            --buffer_size;
-        else if (buffer_health < 3)
-            ++buffer_size;
+        if (buffer_health[i] != -1)
+        {
+            if (buffer_health[i] > 3 && buffer_size[i] > 3)
+                --buffer_size[i];
+           else if (buffer_health[i] < 3)
+                 ++buffer_size[i];
+        }
     }
 }

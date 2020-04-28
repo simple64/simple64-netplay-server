@@ -28,8 +28,8 @@ private:
     QHash<uint8_t, uint32_t> reg; //player number, reg_id
     QList<QPair<uint32_t, uint8_t>> buttons[4];
     uint32_t lead_count[4];
-    uint8_t buffer_size;
-    int buffer_health;
+    uint8_t buffer_size[4];
+    int buffer_health[4];
     int timerId;
 };
 
