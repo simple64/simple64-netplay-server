@@ -134,8 +134,8 @@ void Server::timerEvent(QTimerEvent *)
         {
             if (buffer_health[i] > 3 && buffer_size[i] > 3)
                 --buffer_size[i];
-           else if (buffer_health[i] < 3)
-                 ++buffer_size[i];
+            else if (buffer_health[i] < 3)
+                ++buffer_size[i];
         }
     }
 }
