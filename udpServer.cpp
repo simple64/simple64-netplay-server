@@ -1,14 +1,14 @@
-#include "server.h"
+#include "udpServer.h"
 #include <QNetworkDatagram>
 #include <QtEndian>
 
-void Server::initSocket()
+void UdpServer::initSocket()
 {
     udpSocket = new QUdpSocket(this);
     udpSocket->bind(QHostAddress::Any, 45467);
 
     connect(udpSocket, &QUdpSocket::readyRead,
-            this, &Server::readPendingDatagrams);
+            this, &UdpServer::readPendingDatagrams);
 
     timerId = startTimer(500);
     for (int i = 0; i < 4; ++i)
@@ -20,7 +20,7 @@ void Server::initSocket()
     }
 }
 
-void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
+void UdpServer::checkIfExists(uint8_t playerNumber, uint32_t count)
 {
     if (!inputs[playerNumber].contains(count)) //They are asking for a value we don't have
     {
@@ -35,7 +35,7 @@ void Server::checkIfExists(uint8_t playerNumber, uint32_t count)
     }
 }
 
-void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator)
+void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator)
 {
     char buffer[512];
     uint32_t count_lag = lead_count[playerNum] - count;
@@ -62,7 +62,7 @@ void Server::sendInput(uint32_t count, QHostAddress address, int port, uint8_t p
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
-void Server::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress address, int port)
+void UdpServer::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress address, int port)
 {
     char buffer[3];
     buffer[0] = 3;
@@ -87,7 +87,7 @@ void Server::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress
     udpSocket->writeDatagram(&buffer[0], 3, address, port);
 }
 
-void Server::readPendingDatagrams()
+void UdpServer::readPendingDatagrams()
 {
     uint32_t keys, count, reg_id;
     uint8_t playerNum, spectator;
@@ -126,7 +126,7 @@ void Server::readPendingDatagrams()
     }
 }
 
-void Server::timerEvent(QTimerEvent *)
+void UdpServer::timerEvent(QTimerEvent *)
 {
     for (int i = 0; i < 4; ++i)
     {

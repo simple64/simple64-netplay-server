@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef UDPSERVER_H
+#define UDPSERVER_H
 #include <QObject>
 #include <QUdpSocket>
 #include <QCache>
@@ -11,7 +11,7 @@ public:
     QPair<uint32_t, uint8_t> data; //<BUTTONS, Plugin>
 };
 
-class Server : public QObject
+class UdpServer : public QObject
 {
     Q_OBJECT
 public:

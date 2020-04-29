@@ -1,11 +1,11 @@
 #include <QCoreApplication>
-#include "server.h"
+#include "udpServer.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    Server* myServer = new Server();
+    UdpServer* myServer = new UdpServer();
     myServer->initSocket();
 
     return a.exec();
