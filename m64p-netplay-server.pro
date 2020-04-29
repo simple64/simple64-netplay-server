@@ -1,5 +1,5 @@
 QT -= gui
-QT += network
+QT += network websockets
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -18,11 +18,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         udpServer.cpp \
-        tcpServer.cpp
+        socketServer.cpp
 
 HEADERS += \
         udpServer.h \
-        tcpServer.h
+        socketServer.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

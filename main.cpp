@@ -1,12 +1,11 @@
 #include <QCoreApplication>
-#include "tcpServer.h"
+#include "socketServer.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    TcpServer server;
-    server.listen(QHostAddress::Any, 45000);
+    SocketServer server;
 
     return a.exec();
 }
