@@ -1,12 +1,12 @@
 #include <QCoreApplication>
-#include "udpServer.h"
+#include "tcpServer.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    UdpServer* myServer = new UdpServer();
-    myServer->initSocket();
+    TcpServer server;
+    server.listen(QHostAddress::Any, 45000);
 
     return a.exec();
 }

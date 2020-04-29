@@ -17,10 +17,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        udpServer.cpp
+        udpServer.cpp \
+        tcpServer.cpp
 
 HEADERS += \
-        udpServer.h
+        udpServer.h \
+        tcpServer.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
