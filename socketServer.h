@@ -4,6 +4,7 @@
 #include "udpServer.h"
 #include <QWebSocketServer>
 #include <QWebSocket>
+#include <QJsonObject>
 
 class SocketServer : public QObject
 {
@@ -25,6 +26,7 @@ private:
     QWebSocketServer *webSocketServer;
     QList<QWebSocket *> clients;
     QList<UdpServer *> servers;
+    QList<QJsonObject> rooms;
 };
 
 #endif

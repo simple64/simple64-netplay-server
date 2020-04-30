@@ -1,5 +1,4 @@
 #include "socketServer.h"
-#include <QJsonObject>
 #include <QJsonDocument>
 
 SocketServer::SocketServer(QObject *parent)
@@ -50,7 +49,15 @@ void SocketServer::processBinaryMessage(QByteArray message)
             UdpServer *server = new UdpServer(port);
             connect(server, &UdpServer::killMe, this, &SocketServer::closeUdpServer);
             servers << server;
+            QJsonObject room = json;
+            room.remove("type");
+            room.remove("player_name");
+            room.insert("port", port);
+            rooms << room;
         }
+    }
+    else if (json.value("type").toString() == "get_rooms")
+    {
     }
 //    QWebSocket *client = qobject_cast<QWebSocket *>(sender());
 //    if (client)
@@ -61,7 +68,9 @@ void SocketServer::processBinaryMessage(QByteArray message)
 
 void SocketServer::closeUdpServer(int port)
 {
-    for (int i = 0; i < servers.size(); ++i)
+    int i;
+
+    for (i = 0; i < servers.size(); ++i)
     {
         if (servers.at(i)->getPort() == port)
         {
@@ -70,6 +79,13 @@ void SocketServer::closeUdpServer(int port)
         }
     }
 
+    for (i = 0; i < rooms.size(); ++i)
+    {
+        if (rooms.at(i).value("port").toInt() == port)
+        {
+            rooms.removeAt(i);
+        }
+    }
 }
 
 void SocketServer::socketDisconnected()
