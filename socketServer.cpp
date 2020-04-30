@@ -31,6 +31,7 @@ void SocketServer::onNewConnection()
 
 void SocketServer::processBinaryMessage(QByteArray message)
 {
+    QWebSocket *client = qobject_cast<QWebSocket *>(sender());
     QJsonDocument json_doc = QJsonDocument::fromBinaryData(message);
     QJsonObject json = json_doc.object();
     if (json.value("type").toString() == "create_room")
@@ -54,16 +55,14 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.remove("player_name");
             room.insert("port", port);
             rooms << room;
+
+            json_doc = QJsonDocument(room);
+            client->sendBinaryMessage(json_doc.toBinaryData());
         }
     }
     else if (json.value("type").toString() == "get_rooms")
     {
     }
-//    QWebSocket *client = qobject_cast<QWebSocket *>(sender());
-//    if (client)
-//    {
-//        client->sendBinaryMessage(message);
-//    }
 }
 
 void SocketServer::closeUdpServer(int port)
