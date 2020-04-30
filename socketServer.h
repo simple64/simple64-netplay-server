@@ -1,6 +1,7 @@
 #ifndef SOCKETSERVER_H
 #define SOCKETSERVER_H
 
+#include "udpServer.h"
 #include <QWebSocketServer>
 #include <QWebSocket>
 
@@ -17,12 +18,13 @@ signals:
 
 private slots:
     void onNewConnection();
-    void processTextMessage(QString message);
     void processBinaryMessage(QByteArray message);
     void socketDisconnected();
+    void closeUdpServer(int port);
 private:
     QWebSocketServer *webSocketServer;
     QList<QWebSocket *> clients;
+    QList<UdpServer *> servers;
 };
 
 #endif

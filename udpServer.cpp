@@ -2,15 +2,15 @@
 #include <QNetworkDatagram>
 #include <QtEndian>
 
-void UdpServer::initSocket()
+UdpServer::UdpServer(int _port)
 {
     udpSocket = new QUdpSocket(this);
-    udpSocket->bind(QHostAddress::Any, 45467);
+    udpSocket->bind(QHostAddress::Any, _port);
 
     connect(udpSocket, &QUdpSocket::readyRead,
             this, &UdpServer::readPendingDatagrams);
 
-    timerId = startTimer(500);
+    timerId = 0;
     for (int i = 0; i < 4; ++i)
     {
         lead_count[i] = 0;
@@ -18,6 +18,18 @@ void UdpServer::initSocket()
         buffer_health[i] = -1;
         inputs[i].setMaxCost(5000);
     }
+    port = _port;
+    keepalive = 0;
+}
+
+UdpServer::~UdpServer()
+{
+    udpSocket->close();
+}
+
+int UdpServer::getPort()
+{
+    return port;
 }
 
 void UdpServer::checkIfExists(uint8_t playerNumber, uint32_t count)
@@ -93,6 +105,7 @@ void UdpServer::readPendingDatagrams()
     uint8_t playerNum, spectator;
     while (udpSocket->hasPendingDatagrams())
     {
+        keepalive = 0;
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
         QByteArray incomingData = datagram.data();
         playerNum = incomingData.at(1);
@@ -105,6 +118,9 @@ void UdpServer::readPendingDatagrams()
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
             case 2: // request for player input data
+                if (timerId == 0)
+                    timerId = startTimer(500);
+
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
                 spectator = incomingData.at(6);
                 if (count >= lead_count[playerNum] && spectator == 0)
@@ -138,4 +154,7 @@ void UdpServer::timerEvent(QTimerEvent *)
                 ++buffer_size[i];
         }
     }
+   ++keepalive;
+   if (keepalive > 20)
+       emit killMe(port);
 }

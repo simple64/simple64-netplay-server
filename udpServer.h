@@ -15,10 +15,14 @@ class UdpServer : public QObject
 {
     Q_OBJECT
 public:
-    void initSocket();
+    UdpServer(int _port);
+    ~UdpServer();
     void readPendingDatagrams();
+    int getPort();
 protected:
     void timerEvent(QTimerEvent *te) Q_DECL_OVERRIDE;
+signals:
+    void killMe(int port);
 private:
     void sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator);
     void checkIfExists(uint8_t playerNumber, uint32_t count);
@@ -31,6 +35,8 @@ private:
     uint8_t buffer_size[4];
     int buffer_health[4];
     int timerId;
+    int port;
+    uint32_t keepalive;
 };
 
 #endif
