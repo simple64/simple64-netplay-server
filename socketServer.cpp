@@ -67,6 +67,10 @@ void SocketServer::processBinaryMessage(QByteArray message)
         for (i = 0; i < rooms.size(); ++i)
         {
             room = rooms.at(i);
+            if (room.value("password").toString().isEmpty())
+                room.insert("protected", "No");
+            else
+                room.insert("protected", "Yes");
             room.remove("password");
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toBinaryData());
