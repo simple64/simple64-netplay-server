@@ -57,6 +57,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.remove("player_name");
             room.insert("port", port);
             rooms << room;
+            room.insert("type", "send_room");
         }
         else
         {
@@ -79,6 +80,30 @@ void SocketServer::processBinaryMessage(QByteArray message)
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toBinaryData());
         }
+    }
+    else if (json.value("type").toString() == "join_room")
+    {
+        int accepted = 0;
+        for (i = 0; i < rooms.size(); ++i)
+        {
+            if (json.value("port").toInt() == rooms[i].value("port").toInt())
+            {
+                if (!rooms[i].value("password").toString().isEmpty() &&
+                   (rooms[i].value("password").toString() != json.value("password").toString()))
+                {
+                    accepted = -1; //bad password
+                }
+                else //no password
+                {
+                    room = rooms[i];
+                    accepted = 1;
+                }
+            }
+        }
+        room.insert("type", "accept_join");
+        room.insert("accept", accepted);
+        json_doc = QJsonDocument(room);
+        client->sendBinaryMessage(json_doc.toBinaryData());
     }
 }
 
