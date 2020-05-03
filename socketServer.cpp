@@ -57,10 +57,14 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.remove("player_name");
             room.insert("port", port);
             rooms << room;
-
-            json_doc = QJsonDocument(room);
-            client->sendBinaryMessage(json_doc.toBinaryData());
         }
+        else
+        {
+            room.insert("type", "message");
+            room.insert("message", "Failed to create room");
+        }
+        json_doc = QJsonDocument(room);
+        client->sendBinaryMessage(json_doc.toBinaryData());
     }
     else if (json.value("type").toString() == "get_rooms")
     {
