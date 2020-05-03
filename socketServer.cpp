@@ -57,7 +57,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.remove("player_name");
             room.insert("port", port);
             rooms << room;
-            room.insert("type", "send_room");
+            room.insert("type", "send_room_create");
         }
         else
         {
@@ -77,6 +77,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             else
                 room.insert("protected", "Yes");
             room.remove("password");
+            room.insert("type", "send_room");
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toBinaryData());
         }
