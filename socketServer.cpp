@@ -28,49 +28,45 @@ void SocketServer::onNewConnection()
 
 void SocketServer::processBinaryMessage(QByteArray message)
 {
-    int i, j;
     QWebSocket *client = qobject_cast<QWebSocket *>(sender());
     QJsonDocument json_doc = QJsonDocument::fromBinaryData(message);
     QJsonObject json = json_doc.object();
     QJsonObject room;
     if (json.value("type").toString() == "create_room")
     {
-        int port = 45001;
-        for (i = 0; i < servers.size(); ++i)
+        int port;
+        for (port = 45001; port < 45011; ++port)
         {
-            if (servers.at(i)->getPort() == port)
+            if (!rooms.contains(port))
             {
-                ++port;
-                i = -1;
+                UdpServer *server = new UdpServer(port);
+                connect(server, &UdpServer::killMe, this, &SocketServer::closeUdpServer);
+                room = json;
+                room.remove("type");
+                room.remove("player_name");
+                room.insert("port", port);
+                rooms[port] = qMakePair(room, server);
+                room.insert("type", "send_room_create");
+                clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
+                break;
             }
         }
-        if (port < 45011)
-        {
-            UdpServer *server = new UdpServer(port);
-            connect(server, &UdpServer::killMe, this, &SocketServer::closeUdpServer);
-            servers << server;
-            room = json;
-            room.remove("type");
-            room.remove("player_name");
-            room.insert("port", port);
-            rooms[port] = room;
-            room.insert("type", "send_room_create");
-            clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
-        }
-        else
+
+        if (port == 45011)
         {
             room.insert("type", "message");
             room.insert("message", "Failed to create room");
         }
+
         json_doc = QJsonDocument(room);
         client->sendBinaryMessage(json_doc.toBinaryData());
     }
     else if (json.value("type").toString() == "get_rooms")
     {
-        QHash<int, QJsonObject>::iterator iter;
+        QHash<int, QPair<QJsonObject, UdpServer*>>::iterator iter;
         for (iter = rooms.begin(); iter != rooms.end(); ++iter)
         {
-            room = iter.value();
+            room = iter.value().first;
             if (room.value("password").toString().isEmpty())
                 room.insert("protected", "No");
             else
@@ -85,22 +81,22 @@ void SocketServer::processBinaryMessage(QByteArray message)
     {
         int accepted = 0;
         int room_port = json.value("port").toInt();
-        if (!rooms[room_port].value("password").toString().isEmpty() &&
-           (rooms[room_port].value("password").toString() != json.value("password").toString()))
+        room = rooms[room_port].first;
+        if (!room.value("password").toString().isEmpty() &&
+           (room.value("password").toString() != json.value("password").toString()))
         {
             accepted = -1; //bad password
         }
         else //no password
         {
-            room = rooms[room_port];
             accepted = 1;
             int player_num = 1;
-            for (j = 0; j < clients[room_port].size(); ++j)
+            for (int i = 0; i < clients[room_port].size(); ++i)
             {
-                if (clients[room_port][j].second.second == player_num)
+                if (clients[room_port][i].second.second == player_num)
                 {
                     ++player_num;
-                    j = -1;
+                    i = -1;
                 }
             }
             clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
@@ -114,17 +110,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
 
 void SocketServer::closeUdpServer(int port)
 {
-    int i;
-
-    for (i = 0; i < servers.size(); ++i)
-    {
-        if (servers.at(i)->getPort() == port)
-        {
-            delete servers.at(i);
-            servers.removeAt(i);
-        }
-    }
-
+    delete rooms[port].second;
     rooms.remove(port);
     clients.remove(port);
 }
