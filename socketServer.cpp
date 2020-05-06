@@ -87,7 +87,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         {
             accepted = -1; //bad password
         }
-        else //no password
+        else //correct password
         {
             accepted = 1;
             int player_num = 1;
@@ -101,6 +101,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             }
             clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
         }
+        room.remove("password");
         room.insert("type", "accept_join");
         room.insert("accept", accepted);
         json_doc = QJsonDocument(room);
