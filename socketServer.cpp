@@ -16,7 +16,6 @@ SocketServer::SocketServer(QObject *parent)
 SocketServer::~SocketServer()
 {
     webSocketServer->close();
-    qDeleteAll(clients.begin(), clients.end());
 }
 
 void SocketServer::onNewConnection()
@@ -25,8 +24,6 @@ void SocketServer::onNewConnection()
 
     connect(socket, &QWebSocket::binaryMessageReceived, this, &SocketServer::processBinaryMessage);
     connect(socket, &QWebSocket::disconnected, this, &SocketServer::socketDisconnected);
-
-    clients << socket;
 }
 
 void SocketServer::processBinaryMessage(QByteArray message)
@@ -58,6 +55,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.insert("port", port);
             rooms << room;
             room.insert("type", "send_room_create");
+            clients[port].append(client);
         }
         else
         {
@@ -98,6 +96,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 {
                     room = rooms[i];
                     accepted = 1;
+                    clients[room.value("port").toInt()].append(client);
                 }
             }
         }
@@ -128,14 +127,22 @@ void SocketServer::closeUdpServer(int port)
             rooms.removeAt(i);
         }
     }
+
+    clients.remove(port);
 }
 
 void SocketServer::socketDisconnected()
 {
+    int i, j;
     QWebSocket *client = qobject_cast<QWebSocket *>(sender());
-    if (client)
+    for (i = 0; i < clients.size(); ++i)
     {
-        clients.removeAll(client);
-        client->deleteLater();
+        for (j = 0; j < clients[i].size(); ++j)
+        {
+            if (clients[i][j] == client)
+                clients[i].removeAt(j);
+        }
     }
+    if (client)
+        client->deleteLater();
 }

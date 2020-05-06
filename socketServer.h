@@ -5,6 +5,7 @@
 #include <QWebSocketServer>
 #include <QWebSocket>
 #include <QJsonObject>
+#include <QHash>
 
 class SocketServer : public QObject
 {
@@ -24,9 +25,9 @@ private slots:
     void closeUdpServer(int port);
 private:
     QWebSocketServer *webSocketServer;
-    QList<QWebSocket *> clients;
     QList<UdpServer *> servers;
     QList<QJsonObject> rooms;
+    QHash<int, QList<QWebSocket*>> clients;
 };
 
 #endif
