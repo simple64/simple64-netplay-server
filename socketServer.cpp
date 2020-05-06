@@ -55,7 +55,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.insert("port", port);
             rooms << room;
             room.insert("type", "send_room_create");
-            clients[port].append(client);
+            clients[port].append(qMakePair(client, json.value("player_name").toString()));
         }
         else
         {
@@ -96,7 +96,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 {
                     room = rooms[i];
                     accepted = 1;
-                    clients[room.value("port").toInt()].append(client);
+                    clients[room.value("port").toInt()].append(qMakePair(client, json.value("player_name").toString()));
                 }
             }
         }
@@ -139,7 +139,7 @@ void SocketServer::socketDisconnected()
     {
         for (j = 0; j < clients[i].size(); ++j)
         {
-            if (clients[i][j] == client)
+            if (clients[i][j].first == client)
                 clients[i].removeAt(j);
         }
     }

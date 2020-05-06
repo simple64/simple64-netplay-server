@@ -27,7 +27,7 @@ private:
     QWebSocketServer *webSocketServer;
     QList<UdpServer *> servers;
     QList<QJsonObject> rooms;
-    QHash<int, QList<QWebSocket*>> clients;
+    QHash<int, QList<QPair<QWebSocket*, QString>>> clients;
 };
 
 #endif
