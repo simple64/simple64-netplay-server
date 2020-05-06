@@ -28,7 +28,7 @@ void SocketServer::onNewConnection()
 
 void SocketServer::processBinaryMessage(QByteArray message)
 {
-    int i;
+    int i, j;
     QWebSocket *client = qobject_cast<QWebSocket *>(sender());
     QJsonDocument json_doc = QJsonDocument::fromBinaryData(message);
     QJsonObject json = json_doc.object();
@@ -55,7 +55,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.insert("port", port);
             rooms << room;
             room.insert("type", "send_room_create");
-            clients[port].append(qMakePair(client, json.value("player_name").toString()));
+            clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
         }
         else
         {
@@ -96,7 +96,17 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 {
                     room = rooms[i];
                     accepted = 1;
-                    clients[room.value("port").toInt()].append(qMakePair(client, json.value("player_name").toString()));
+                    int room_port = room.value("port").toInt();
+                    int player_num = 1;
+                    for (j = 0; j < clients[room_port].size(); ++j)
+                    {
+                        if (clients[room_port][j].second.second == player_num)
+                        {
+                            ++player_num;
+                            j = -1;
+                        }
+                    }
+                    clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
                 }
             }
         }
