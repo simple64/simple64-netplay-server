@@ -53,7 +53,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.remove("type");
             room.remove("player_name");
             room.insert("port", port);
-            rooms << room;
+            rooms[port] = room;
             room.insert("type", "send_room_create");
             clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
         }
@@ -67,9 +67,10 @@ void SocketServer::processBinaryMessage(QByteArray message)
     }
     else if (json.value("type").toString() == "get_rooms")
     {
-        for (i = 0; i < rooms.size(); ++i)
+        QHash<int, QJsonObject>::iterator iter;
+        for (iter = rooms.begin(); iter != rooms.end(); ++iter)
         {
-            room = rooms.at(i);
+            room = iter.value();
             if (room.value("password").toString().isEmpty())
                 room.insert("protected", "No");
             else
@@ -83,32 +84,26 @@ void SocketServer::processBinaryMessage(QByteArray message)
     else if (json.value("type").toString() == "join_room")
     {
         int accepted = 0;
-        for (i = 0; i < rooms.size(); ++i)
+        int room_port = json.value("port").toInt();
+        if (!rooms[room_port].value("password").toString().isEmpty() &&
+           (rooms[room_port].value("password").toString() != json.value("password").toString()))
         {
-            if (json.value("port").toInt() == rooms[i].value("port").toInt())
+            accepted = -1; //bad password
+        }
+        else //no password
+        {
+            room = rooms[room_port];
+            accepted = 1;
+            int player_num = 1;
+            for (j = 0; j < clients[room_port].size(); ++j)
             {
-                if (!rooms[i].value("password").toString().isEmpty() &&
-                   (rooms[i].value("password").toString() != json.value("password").toString()))
+                if (clients[room_port][j].second.second == player_num)
                 {
-                    accepted = -1; //bad password
-                }
-                else //no password
-                {
-                    room = rooms[i];
-                    accepted = 1;
-                    int room_port = room.value("port").toInt();
-                    int player_num = 1;
-                    for (j = 0; j < clients[room_port].size(); ++j)
-                    {
-                        if (clients[room_port][j].second.second == player_num)
-                        {
-                            ++player_num;
-                            j = -1;
-                        }
-                    }
-                    clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
+                    ++player_num;
+                    j = -1;
                 }
             }
+            clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
         }
         room.insert("type", "accept_join");
         room.insert("accept", accepted);
@@ -130,29 +125,33 @@ void SocketServer::closeUdpServer(int port)
         }
     }
 
-    for (i = 0; i < rooms.size(); ++i)
-    {
-        if (rooms.at(i).value("port").toInt() == port)
-        {
-            rooms.removeAt(i);
-        }
-    }
-
+    rooms.remove(port);
     clients.remove(port);
 }
 
 void SocketServer::socketDisconnected()
 {
-    int i, j;
+    int j;
+    int should_delete = 0;
     QWebSocket *client = qobject_cast<QWebSocket *>(sender());
-    for (i = 0; i < clients.size(); ++i)
+    QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> ::iterator iter;
+    for (iter = clients.begin(); iter != clients.end(); ++iter)
     {
-        for (j = 0; j < clients[i].size(); ++j)
+        for (j = 0; j < iter.value().size(); ++j)
         {
-            if (clients[i][j].first == client)
-                clients[i].removeAt(j);
+            if (iter.value()[j].first == client)
+                iter.value().removeAt(j);
+
+            if (iter.value().isEmpty()) //no more clients connected to room
+            {
+                should_delete = iter.key();
+            }
         }
     }
+
+    if (should_delete)
+        closeUdpServer(should_delete);
+
     if (client)
         client->deleteLater();
 }
