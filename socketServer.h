@@ -24,6 +24,7 @@ private slots:
     void socketDisconnected();
     void closeUdpServer(int port);
 private:
+    void sendPlayers(int room_port);
     QWebSocketServer *webSocketServer;
     QHash<int, QPair<QJsonObject, UdpServer*>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>

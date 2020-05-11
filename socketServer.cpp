@@ -111,14 +111,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     }
     else if (json.value("type").toString() == "request_players")
     {
-        room.insert("type", "room_players");
-        int room_port = json.value("port").toInt();
-        for (int i = 0; i < clients[room_port].size(); ++i)
-        {
-            room.insert(QString::number(i), clients[room_port][i].second.first);
-        }
-        json_doc = QJsonDocument(room);
-        client->sendBinaryMessage(json_doc.toBinaryData());
+        sendPlayers(json.value("port").toInt());
     }
     else if (json.value("type").toString() == "chat_message")
     {
@@ -132,6 +125,24 @@ void SocketServer::processBinaryMessage(QByteArray message)
             clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
         }
     }
+}
+
+void SocketServer::sendPlayers(int room_port)
+{
+    QJsonObject room;
+    QJsonDocument json_doc;
+    int i;
+    room.insert("type", "room_players");
+    for (i = 0; i < clients[room_port].size(); ++i)
+    {
+        room.insert(QString::number(clients[room_port][i].second.second - 1), clients[room_port][i].second.first);
+    }
+    json_doc = QJsonDocument(room);
+    for (i = 0; i < clients[room_port].size(); ++i)
+    {
+        clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
+    }
+
 }
 
 void SocketServer::closeUdpServer(int port)
@@ -152,7 +163,10 @@ void SocketServer::socketDisconnected()
         for (j = 0; j < iter.value().size(); ++j)
         {
             if (iter.value()[j].first == client)
+            {
                 iter.value().removeAt(j);
+                sendPlayers(iter.key());
+            }
 
             if (iter.value().isEmpty()) //no more clients connected to room
             {
