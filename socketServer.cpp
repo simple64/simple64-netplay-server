@@ -28,6 +28,7 @@ void SocketServer::onNewConnection()
 
 void SocketServer::processBinaryMessage(QByteArray message)
 {
+    int i, room_port;
     QWebSocket *client = qobject_cast<QWebSocket *>(sender());
     QJsonDocument json_doc = QJsonDocument::fromBinaryData(message);
     QJsonObject json = json_doc.object();
@@ -81,7 +82,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     else if (json.value("type").toString() == "join_room")
     {
         int accepted = 0;
-        int room_port = json.value("port").toInt();
+        room_port = json.value("port").toInt();
         room = rooms[room_port].first;
         if (!room.value("password").toString().isEmpty() &&
            (room.value("password").toString() != json.value("password").toString()))
@@ -92,7 +93,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         {
             accepted = 1;
             int player_num = 1;
-            for (int i = 0; i < clients[room_port].size(); ++i)
+            for (i = 0; i < clients[room_port].size(); ++i)
             {
                 if (clients[room_port][i].second.second == player_num)
                 {
@@ -116,14 +117,20 @@ void SocketServer::processBinaryMessage(QByteArray message)
     else if (json.value("type").toString() == "chat_message")
     {
         room.insert("type", "chat_update");
-        int room_port = json.value("port").toInt();
+        room_port = json.value("port").toInt();
         QString message = json.value("player_name").toString() + ": " + json.value("message").toString();
         room.insert("message", message);
         json_doc = QJsonDocument(room);
-        for (int i = 0; i < clients[room_port].size(); ++i)
-        {
+        for (i = 0; i < clients[room_port].size(); ++i)
             clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
-        }
+    }
+    else if (json.value("type").toString() == "start_game")
+    {
+        room.insert("type", "begin_game");
+        room_port = json.value("port").toInt();
+        json_doc = QJsonDocument(room);
+        for (i = 0; i < clients[room_port].size(); ++i)
+            clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
     }
 }
 
