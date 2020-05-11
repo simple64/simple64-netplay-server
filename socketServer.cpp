@@ -128,6 +128,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     {
         room.insert("type", "begin_game");
         room_port = json.value("port").toInt();
+        rooms[room_port].first.insert("running", "true");
         json_doc = QJsonDocument(room);
         for (i = 0; i < clients[room_port].size(); ++i)
             clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
@@ -175,7 +176,7 @@ void SocketServer::socketDisconnected()
                 sendPlayers(iter.key());
             }
 
-            if (iter.value().isEmpty()) //no more clients connected to room
+            if (iter.value().isEmpty() && !rooms[iter.key()].first.contains("running")) //no more clients connected to room
             {
                 should_delete = iter.key();
             }
