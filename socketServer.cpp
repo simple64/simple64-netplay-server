@@ -47,6 +47,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 room.insert("port", port);
                 rooms[port] = qMakePair(room, server);
                 room.insert("type", "send_room_create");
+                room.insert("player_name", json.value("player_name").toString());
                 clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
                 break;
             }
@@ -102,10 +103,34 @@ void SocketServer::processBinaryMessage(QByteArray message)
             clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
         }
         room.remove("password");
+        room.insert("player_name", json.value("player_name").toString());
         room.insert("type", "accept_join");
         room.insert("accept", accepted);
         json_doc = QJsonDocument(room);
         client->sendBinaryMessage(json_doc.toBinaryData());
+    }
+    else if (json.value("type").toString() == "request_players")
+    {
+        room.insert("type", "room_players");
+        int room_port = json.value("port").toInt();
+        for (int i = 0; i < clients[room_port].size(); ++i)
+        {
+            room.insert(QString::number(i), clients[room_port][i].second.first);
+        }
+        json_doc = QJsonDocument(room);
+        client->sendBinaryMessage(json_doc.toBinaryData());
+    }
+    else if (json.value("type").toString() == "chat_message")
+    {
+        room.insert("type", "chat_update");
+        int room_port = json.value("port").toInt();
+        QString message = json.value("player_name").toString() + ": " + json.value("message").toString();
+        room.insert("message", message);
+        json_doc = QJsonDocument(room);
+        for (int i = 0; i < clients[room_port].size(); ++i)
+        {
+            clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
+        }
     }
 }
 
