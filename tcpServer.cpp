@@ -72,7 +72,7 @@ void ClientHandler::readData()
         {
             if (data.size() >= filesize)
             {
-                server->files[filename] = qMakePair(filesize, data.mid(0, filesize));
+                server->files[filename] = data.mid(0, filesize);
                 data = data.mid(filesize);
                 filename.clear();
                 filesize = 0;
@@ -97,7 +97,7 @@ void ClientHandler::sendFile()
 {
     if (server->files.contains(filename))
     {
-        socket.write(server->files[filename].second);
+        socket.write(server->files[filename]);
         filename.clear();
         filesize = 0;
         request = 255;

@@ -13,7 +13,7 @@ public:
     TcpServer(QObject *parent = 0);
     ~TcpServer();
     void setPort(int port);
-    QHash<QString, QPair<uint32_t, QByteArray>> files;
+    QHash<QString, QByteArray> files;
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
 };
