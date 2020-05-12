@@ -18,10 +18,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         udpServer.cpp \
+        tcpServer.cpp \
         socketServer.cpp
 
 HEADERS += \
         udpServer.h \
+        tcpServer.h \
         socketServer.h
 
 # Default rules for deployment.

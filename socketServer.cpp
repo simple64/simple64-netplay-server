@@ -40,13 +40,15 @@ void SocketServer::processBinaryMessage(QByteArray message)
         {
             if (!rooms.contains(port))
             {
-                UdpServer *server = new UdpServer(port);
-                connect(server, &UdpServer::killMe, this, &SocketServer::closeUdpServer);
+                UdpServer *udpServer = new UdpServer(port);
+                TcpServer *tcpServer = new TcpServer;
+                tcpServer->setPort(port);
+                connect(udpServer, &UdpServer::killMe, this, &SocketServer::closeUdpServer);
                 room = json;
                 room.remove("type");
                 room.remove("player_name");
                 room.insert("port", port);
-                rooms[port] = qMakePair(room, server);
+                rooms[port] = qMakePair(room, qMakePair(udpServer, tcpServer));
                 room.insert("type", "send_room_create");
                 room.insert("player_name", json.value("player_name").toString());
                 clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
@@ -65,7 +67,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     }
     else if (json.value("type").toString() == "get_rooms")
     {
-        QHash<int, QPair<QJsonObject, UdpServer*>>::iterator iter;
+        QHash<int, QPair<QJsonObject, QPair<UdpServer*, TcpServer*>>>::iterator iter;
         for (iter = rooms.begin(); iter != rooms.end(); ++iter)
         {
             room = iter.value().first;
@@ -155,7 +157,8 @@ void SocketServer::sendPlayers(int room_port)
 
 void SocketServer::closeUdpServer(int port)
 {
-    delete rooms[port].second;
+    delete rooms[port].second.first;
+    delete rooms[port].second.second;
     rooms.remove(port);
     clients.remove(port);
 }

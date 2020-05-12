@@ -2,6 +2,7 @@
 #define SOCKETSERVER_H
 
 #include "udpServer.h"
+#include "tcpServer.h"
 #include <QWebSocketServer>
 #include <QWebSocket>
 #include <QJsonObject>
@@ -26,7 +27,7 @@ private slots:
 private:
     void sendPlayers(int room_port);
     QWebSocketServer *webSocketServer;
-    QHash<int, QPair<QJsonObject, UdpServer*>> rooms;
+    QHash<int, QPair<QJsonObject, QPair<UdpServer*, TcpServer*>>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>
 };
 
