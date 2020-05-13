@@ -6,13 +6,14 @@
 #include <QWebSocket>
 #include <QJsonObject>
 #include <QHash>
+#include <QNetworkReply>
 
 class SocketServer : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit SocketServer(QObject *parent = 0);
+    explicit SocketServer(QString _token, QObject *parent = 0);
     ~SocketServer();
 
 signals:
@@ -23,11 +24,18 @@ private slots:
     void processBinaryMessage(QByteArray message);
     void socketDisconnected();
     void closeUdpServer(int port);
+    void createResponse(QNetworkReply *reply);
+    void deleteResponse(QNetworkReply *reply);
+    void inviteResponse(QNetworkReply *reply);
 private:
     void sendPlayers(int room_port);
+    void createDiscord(QString room_name);
+    void deleteDiscord(QString room_name);
     QWebSocketServer *webSocketServer;
     QHash<int, QPair<QJsonObject, ServerThread*>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>
+    QHash<QString, QPair<QString, QString>> discord; // room name, <channel id, invite id>
+    QString token;
 };
 
 #endif
