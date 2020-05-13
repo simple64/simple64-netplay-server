@@ -45,6 +45,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 ServerThread *serverThread = new ServerThread(port, this);
                 connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
+                connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
                 serverThread->start();
                 room = json;
                 room.remove("type");
@@ -241,7 +242,6 @@ void SocketServer::sendPlayers(int room_port)
 void SocketServer::closeUdpServer(int port)
 {
     deleteDiscord(rooms[port].first.value("room_name").toString());
-    rooms[port].second->deleteLater();
     rooms.remove(port);
     clients.remove(port);
 }
