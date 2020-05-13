@@ -19,11 +19,13 @@ SOURCES += \
         main.cpp \
         udpServer.cpp \
         tcpServer.cpp \
+        serverThread.cpp \
         socketServer.cpp
 
 HEADERS += \
         udpServer.h \
         tcpServer.h \
+        serverThread.h \
         socketServer.h
 
 # Default rules for deployment.

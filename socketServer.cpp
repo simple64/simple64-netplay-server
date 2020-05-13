@@ -40,15 +40,14 @@ void SocketServer::processBinaryMessage(QByteArray message)
         {
             if (!rooms.contains(port))
             {
-                UdpServer *udpServer = new UdpServer(port);
-                TcpServer *tcpServer = new TcpServer;
-                tcpServer->setPort(port);
-                connect(udpServer, &UdpServer::killMe, this, &SocketServer::closeUdpServer);
+                ServerThread *serverThread = new ServerThread(port, this);
+                connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
+                serverThread->start();
                 room = json;
                 room.remove("type");
                 room.remove("player_name");
                 room.insert("port", port);
-                rooms[port] = qMakePair(room, qMakePair(udpServer, tcpServer));
+                rooms[port] = qMakePair(room, serverThread);
                 room.insert("type", "send_room_create");
                 room.insert("player_name", json.value("player_name").toString());
                 clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
@@ -67,7 +66,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     }
     else if (json.value("type").toString() == "get_rooms")
     {
-        QHash<int, QPair<QJsonObject, QPair<UdpServer*, TcpServer*>>>::iterator iter;
+        QHash<int, QPair<QJsonObject, ServerThread*>>::iterator iter;
         for (iter = rooms.begin(); iter != rooms.end(); ++iter)
         {
             room = iter.value().first;
@@ -157,8 +156,7 @@ void SocketServer::sendPlayers(int room_port)
 
 void SocketServer::closeUdpServer(int port)
 {
-    delete rooms[port].second.first;
-    delete rooms[port].second.second;
+    rooms[port].second->deleteLater();
     rooms.remove(port);
     clients.remove(port);
 }
@@ -187,7 +185,7 @@ void SocketServer::socketDisconnected()
     }
 
     if (should_delete)
-        closeUdpServer(should_delete);
+        rooms[should_delete].second->quit();
 
     if (client)
         client->deleteLater();
