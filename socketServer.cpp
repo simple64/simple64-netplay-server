@@ -146,7 +146,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         if (discord.contains(json.value("room_name").toString()))
         {
             room.insert("type", "discord_link");
-            room.insert("link", QStringLiteral("discord://discord.gg/") + discord[json.value("room_name").toString()].second);
+            room.insert("link", QStringLiteral("discord.gg/") + discord[json.value("room_name").toString()].second);
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toBinaryData());
         }
