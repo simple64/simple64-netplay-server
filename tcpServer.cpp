@@ -32,7 +32,8 @@ ClientHandler::ClientHandler(qintptr socketDescriptor, QObject *parent)
     request = 255;
     filesize = 0;
     data.clear();
-    connect(&timer, SIGNAL(timeout()), this, SLOT(sendFile()));
+    connect(&fileTimer, SIGNAL(timeout()), this, SLOT(sendFile()));
+    connect(&settingTimer, SIGNAL(timeout()), this, SLOT(sendSettings()));
 }
 
 void ClientHandler::readData()
@@ -42,15 +43,7 @@ void ClientHandler::readData()
     while (process)
     {
         process = 0;
-        int null_index = data.indexOf('\0');
-        if (null_index != -1 && filename.isEmpty()) //get file name
-        {
-            QByteArray name = data.mid(0, null_index + 1);
-            filename = QString::fromStdString(name.toStdString());
-            data = data.mid(null_index + 1);
-            process  = 1;
-        }
-        if (!filename.isEmpty() && (request == 255)) //get request type
+        if (request == 255) //get request type
         {
             if (!data.isEmpty())
             {
@@ -58,6 +51,14 @@ void ClientHandler::readData()
                 data = data.mid(1);
                 process = 1;
             }
+        }
+        int null_index = data.indexOf('\0');
+        if ((request == 1 || request == 2) && (null_index != -1 && filename.isEmpty())) //get file name
+        {
+            QByteArray name = data.mid(0, null_index + 1);
+            filename = QString::fromStdString(name.toStdString());
+            data = data.mid(null_index + 1);
+            process  = 1;
         }
         if (!filename.isEmpty() && (request == 1) && (filesize == 0)) //get file size from sender
         {
@@ -83,13 +84,43 @@ void ClientHandler::readData()
         if (!filename.isEmpty() && (request == 2)) //send requested file
         {
             if (!server->files.contains(filename))
-                timer.start(5);
+                fileTimer.start(5);
             else
             {
                 sendFile();
                 process = 1;
             }
         }
+        if (request == 3) //get settings
+        {
+            if (data.size() >= 20)
+            {
+                server->settings = data.mid(0, 20);
+                data = data.mid(20);
+                request = 255;
+                process = 1;
+            }
+        }
+        if (request == 4) //send settings
+        {
+            if (server->settings.isEmpty())
+                settingTimer.start(5);
+            else
+            {
+                sendSettings();
+                process = 1;
+            }
+        }
+    }
+}
+
+void ClientHandler::sendSettings()
+{
+    if (!server->settings.isEmpty())
+    {
+        socket.write(server->settings);
+        request = 255;
+        settingTimer.stop();
     }
 }
 
@@ -101,6 +132,6 @@ void ClientHandler::sendFile()
         filename.clear();
         filesize = 0;
         request = 255;
-        timer.stop();
+        fileTimer.stop();
     }
 }

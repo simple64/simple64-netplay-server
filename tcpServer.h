@@ -14,6 +14,7 @@ public:
     ~TcpServer();
     void setPort(int port);
     QHash<QString, QByteArray> files;
+    QByteArray settings;
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
 };
@@ -26,6 +27,7 @@ public:
 private slots:
     void readData();
     void sendFile();
+    void sendSettings();
 private:
     QTcpSocket socket;
     QByteArray data;
@@ -33,7 +35,8 @@ private:
     uint8_t request;
     int32_t filesize;
     TcpServer *server;
-    QTimer timer;
+    QTimer fileTimer;
+    QTimer settingTimer;
 };
 
 #endif
