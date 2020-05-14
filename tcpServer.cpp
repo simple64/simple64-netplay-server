@@ -80,7 +80,7 @@ void ClientHandler::readData()
                 process = 1;
             }
         }
-        if (!filename.isEmpty() && (request == 0)) //send requested file
+        if (!filename.isEmpty() && (request == 2)) //send requested file
         {
             if (!server->files.contains(filename))
                 timer.start(5);
