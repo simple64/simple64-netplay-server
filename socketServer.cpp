@@ -38,56 +38,75 @@ void SocketServer::processBinaryMessage(QByteArray message)
     QJsonObject room;
     if (json.value("type").toString() == "create_room")
     {
-        int port;
-        for (port = 45001; port < 45011; ++port)
-        {
-            if (!rooms.contains(port) && !discord.contains(json.value("room_name").toString()))
-            {
-                ServerThread *serverThread = new ServerThread(port, this);
-                connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
-                connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
-                serverThread->start();
-                room = json;
-                room.remove("type");
-                room.remove("player_name");
-                room.insert("port", port);
-                rooms[port] = qMakePair(room, serverThread);
-                room.insert("type", "send_room_create");
-                room.insert("player_name", json.value("player_name").toString());
-                clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
-
-                createDiscord(json.value("room_name").toString());
-
-                break;
-            }
-        }
-
-        if (port == 45011)
+        if (json.value("netplay_version").toInt() != NETPLAY_VER)
         {
             room.insert("type", "message");
-            room.insert("message", "Failed to create room");
+            room.insert("message", "client and server not at same version");
+            json_doc = QJsonDocument(room);
+            client->sendBinaryMessage(json_doc.toBinaryData());
         }
+        else
+        {
+            int port;
+            for (port = 45001; port < 45011; ++port)
+            {
+                if (!rooms.contains(port) && !discord.contains(json.value("room_name").toString()))
+                {
+                    ServerThread *serverThread = new ServerThread(port, this);
+                    connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
+                    connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
+                    serverThread->start();
+                    room = json;
+                    room.remove("type");
+                    room.remove("player_name");
+                    room.insert("port", port);
+                    rooms[port] = qMakePair(room, serverThread);
+                    room.insert("type", "send_room_create");
+                    room.insert("player_name", json.value("player_name").toString());
+                    clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
 
-        json_doc = QJsonDocument(room);
-        client->sendBinaryMessage(json_doc.toBinaryData());
+                    createDiscord(json.value("room_name").toString());
+                    break;
+                }
+            }
+
+            if (port == 45011)
+            {
+                room.insert("type", "message");
+                room.insert("message", "Failed to create room");
+            }
+
+            json_doc = QJsonDocument(room);
+            client->sendBinaryMessage(json_doc.toBinaryData());
+        }
     }
     else if (json.value("type").toString() == "get_rooms")
     {
-        QHash<int, QPair<QJsonObject, ServerThread*>>::iterator iter;
-        for (iter = rooms.begin(); iter != rooms.end(); ++iter)
+        if (json.value("netplay_version").toInt() != NETPLAY_VER)
         {
-            room = iter.value().first;
-            if (room.contains("running"))
-                continue;
-
-            if (room.value("password").toString().isEmpty())
-                room.insert("protected", "No");
-            else
-                room.insert("protected", "Yes");
-            room.remove("password");
-            room.insert("type", "send_room");
+            room.insert("type", "message");
+            room.insert("message", "client and server not at same version");
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toBinaryData());
+        }
+        else
+        {
+            QHash<int, QPair<QJsonObject, ServerThread*>>::iterator iter;
+            for (iter = rooms.begin(); iter != rooms.end(); ++iter)
+            {
+                room = iter.value().first;
+                if (room.contains("running"))
+                    continue;
+
+                if (room.value("password").toString().isEmpty())
+                    room.insert("protected", "No");
+                else
+                    room.insert("protected", "Yes");
+                room.remove("password");
+                room.insert("type", "send_room");
+                json_doc = QJsonDocument(room);
+                client->sendBinaryMessage(json_doc.toBinaryData());
+            }
         }
     }
     else if (json.value("type").toString() == "join_room")
@@ -98,11 +117,14 @@ void SocketServer::processBinaryMessage(QByteArray message)
         if (!room.value("password").toString().isEmpty() &&
            (room.value("password").toString() != json.value("password").toString()))
         {
-            accepted = -1; //bad password
+            accepted = 1; //bad password
+        }
+        else if (room.value("client_sha").toString() != json.value("client_sha").toString())
+        {
+            accepted = 2; //client versions do not match
         }
         else //correct password
         {
-            accepted = 1;
             int player_num = 1;
             for (i = 0; i < clients[room_port].size(); ++i)
             {

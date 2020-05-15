@@ -8,6 +8,8 @@
 #include <QHash>
 #include <QNetworkReply>
 
+#define NETPLAY_VER 2
+
 class SocketServer : public QObject
 {
     Q_OBJECT
