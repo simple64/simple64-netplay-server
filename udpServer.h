@@ -11,6 +11,13 @@ public:
     QPair<uint32_t, uint8_t> data; //<BUTTONS, Plugin>
 };
 
+class HashState : public QObject
+{
+    Q_OBJECT
+public:
+    QList<uint64_t> data;
+};
+
 class UdpServer : public QObject
 {
     Q_OBJECT
@@ -29,6 +36,7 @@ private:
     void sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress address, int port);
     QUdpSocket* udpSocket;
     QCache<uint32_t, InputState> inputs[4]; //<count, <BUTTONS, Plugin>>
+    QCache<uint32_t, HashState> sync_hash; //cp0 hashes
     QHash<uint8_t, uint32_t> reg; //player number, reg_id
     QList<QPair<uint32_t, uint8_t>> buttons[4];
     uint32_t lead_count[4];
@@ -37,6 +45,7 @@ private:
     int timerId;
     int port;
     uint32_t keepalive;
+    uint8_t desync;
 };
 
 #endif

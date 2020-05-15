@@ -1,4 +1,5 @@
 #include "udpServer.h"
+#include "xxh3.h"
 #include <QNetworkDatagram>
 #include <QtEndian>
 
@@ -18,8 +19,10 @@ UdpServer::UdpServer(int _port)
         buffer_health[i] = -1;
         inputs[i].setMaxCost(5000);
     }
+    sync_hash.setMaxCost(5000);
     port = _port;
     keepalive = 0;
+    desync = 0;
 }
 
 UdpServer::~UdpServer()
@@ -53,7 +56,8 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
     uint32_t count_lag = lead_count[playerNum] - count;
     buffer[0] = 1; // Key info from server
     buffer[1] = playerNum;
-    uint32_t curr = 3;
+    buffer[2] = desync;
+    uint32_t curr = 4;
     uint32_t start = count;
     uint32_t end = start + buffer_size[playerNum];
     while ( (curr < 500) && ( (spectator == 0 && count_lag == 0 && (count < end)) || (inputs[playerNum].contains(count)) ) )
@@ -68,9 +72,9 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
         ++count;
     }
 
-    buffer[2] = count - start; //number of counts in packet
+    buffer[3] = count - start; //number of counts in packet
 
-    if (curr > 3)
+    if (curr > 4)
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
@@ -101,8 +105,9 @@ void UdpServer::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddr
 
 void UdpServer::readPendingDatagrams()
 {
-    uint32_t keys, count, reg_id;
+    uint32_t keys, count, reg_id, vi_count;
     uint8_t playerNum, spectator;
+    QSet<uint64_t> set;
     while (udpSocket->hasPendingDatagrams())
     {
         keepalive = 0;
@@ -134,6 +139,18 @@ void UdpServer::readPendingDatagrams()
                 reg_id = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
                 if (playerNum < 4)
                     sendRegResponse(playerNum, reg_id, datagram.senderAddress(), datagram.senderPort());
+                break;
+            case 6: // cp0 info from client
+                vi_count = qFromBigEndian<uint32_t>(&incomingData.data()[1]);
+                if (!sync_hash.contains(vi_count))
+                {
+                    HashState* state = new HashState;
+                    sync_hash.insert(vi_count, state, 1);
+                }
+                sync_hash[vi_count]->data.append(XXH3_64bits(&incomingData.data()[5], 128));
+                set = QSet<uint64_t>::fromList(sync_hash[vi_count]->data);
+                if (set.size() > 1)
+                    desync = 1;
                 break;
             default:
                 printf("Unknown packet type %d\n", incomingData.at(0));
