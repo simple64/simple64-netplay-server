@@ -77,6 +77,9 @@ void SocketServer::processBinaryMessage(QByteArray message)
         for (iter = rooms.begin(); iter != rooms.end(); ++iter)
         {
             room = iter.value().first;
+            if (room.contains("running"))
+                continue;
+
             if (room.value("password").toString().isEmpty())
                 room.insert("protected", "No");
             else
