@@ -17,7 +17,7 @@ UdpServer::UdpServer(int _port)
         lead_count[i] = 0;
         buffer_size[i] = 4;
         buffer_health[i] = -1;
-        inputs[i].setMaxCost(5000);
+        inputs[i].setMaxCost(10000);
     }
     sync_hash.setMaxCost(5000);
     port = _port;
