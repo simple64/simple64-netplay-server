@@ -41,7 +41,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         if (json.value("netplay_version").toInt() != NETPLAY_VER)
         {
             room.insert("type", "message");
-            room.insert("message", "client and server not at same version");
+            room.insert("message", "client and server not at same version. Visit <a href=\"https://m64p.github.io\">here</a> to update");
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toBinaryData());
         }
@@ -85,7 +85,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         if (json.value("netplay_version").toInt() != NETPLAY_VER)
         {
             room.insert("type", "message");
-            room.insert("message", "client and server not at same version");
+            room.insert("message", "client and server not at same version. Visit <a href=\"https://m64p.github.io\">here</a> to update");
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toBinaryData());
         }
