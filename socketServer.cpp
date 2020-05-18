@@ -52,6 +52,8 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 if (!rooms.contains(port) && !discord.contains(json.value("room_name").toString()))
                 {
+                    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+                    printf("%s: creating room: %s, game: %s\n", qPrintable(currentDateTime), qPrintable(json.value("room_name").toString()), qPrintable(json.value("game_name").toString()));
                     ServerThread *serverThread = new ServerThread(port, this);
                     connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
                     connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
@@ -266,6 +268,8 @@ void SocketServer::sendPlayers(int room_port)
 
 void SocketServer::closeUdpServer(int port)
 {
+    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    printf("%s: deleting room: %s, game: %s\n", qPrintable(currentDateTime), qPrintable(rooms[port].first.value("room_name").toString()), qPrintable(rooms[port].first.value("game_name").toString()));
     deleteDiscord(rooms[port].first.value("room_name").toString());
     rooms.remove(port);
     clients.remove(port);

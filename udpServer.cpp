@@ -21,8 +21,7 @@ UdpServer::UdpServer(int _port)
     }
     sync_hash.setMaxCost(5000);
     port = _port;
-    keepalive = 0;
-    desync = 0;
+    status = 0;
 }
 
 UdpServer::~UdpServer()
@@ -56,7 +55,7 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
     uint32_t count_lag = lead_count[playerNum] - count;
     buffer[0] = 1; // Key info from server
     buffer[1] = playerNum;
-    buffer[2] = desync;
+    buffer[2] = status;
     uint32_t curr = 4;
     uint32_t start = count;
     uint32_t end = start + buffer_size[playerNum];
@@ -87,6 +86,8 @@ void UdpServer::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddr
     if (!reg.contains(playerNumber))
     {
         reg[playerNumber] = reg_id;
+        player_keepalive[reg_id].first = 0;
+        player_keepalive[reg_id].second = playerNumber;
         InputState* state = new InputState;
         state->data = qMakePair(0, 1/*PLUGIN_NONE*/);
         inputs[playerNumber].insert(0, state, 1);
@@ -110,7 +111,6 @@ void UdpServer::readPendingDatagrams()
     QSet<uint64_t> set;
     while (udpSocket->hasPendingDatagrams())
     {
-        keepalive = 0;
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
         QByteArray incomingData = datagram.data();
         playerNum = incomingData.at(1);
@@ -123,14 +123,15 @@ void UdpServer::readPendingDatagrams()
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
             case 2: // request for player input data
+                player_keepalive[qFromBigEndian<uint32_t>(&incomingData.data()[2])].first = 0;
                 if (timerId == 0)
                     timerId = startTimer(500);
 
-                count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
-                spectator = incomingData.at(6);
+                count = qFromBigEndian<uint32_t>(&incomingData.data()[6]);
+                spectator = incomingData.at(10);
                 if (count >= lead_count[playerNum] && spectator == 0)
                 {
-                    buffer_health[playerNum] = incomingData.data()[7];
+                    buffer_health[playerNum] = incomingData.data()[11];
                     lead_count[playerNum] = count;
                 }
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, spectator);
@@ -150,7 +151,7 @@ void UdpServer::readPendingDatagrams()
                 sync_hash[vi_count]->data.append(XXH3_64bits(&incomingData.data()[5], 128));
                 set = QSet<uint64_t>::fromList(sync_hash[vi_count]->data);
                 if (set.size() > 1)
-                    desync = 1;
+                    status |= 0x1;
                 break;
             default:
                 printf("Unknown packet type %d\n", incomingData.at(0));
@@ -171,7 +172,22 @@ void UdpServer::timerEvent(QTimerEvent *)
                 ++buffer_size[i];
         }
     }
-   ++keepalive;
-   if (keepalive > 20)
-       emit killMe(port);
+
+    uint32_t should_delete = 0;
+    QHash<uint32_t, QPair<uint8_t, uint8_t>>::iterator iter;
+    for (iter = player_keepalive.begin(); iter != player_keepalive.end(); ++iter)
+    {
+        ++iter.value().first;
+        if (iter.value().first > 20)
+        {
+            status |= (0x1 << (iter.value().second + 1));
+            should_delete = iter.key();
+        }
+    }
+
+    if (should_delete)
+        player_keepalive.remove(should_delete);
+
+    if (player_keepalive.isEmpty())
+        emit killMe(port);
 }

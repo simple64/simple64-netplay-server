@@ -38,14 +38,14 @@ private:
     QCache<uint32_t, InputState> inputs[4]; //<count, <BUTTONS, Plugin>>
     QCache<uint32_t, HashState> sync_hash; //cp0 hashes
     QHash<uint8_t, uint32_t> reg; //player number, reg_id
+    QHash<uint32_t, QPair<uint8_t, uint8_t>> player_keepalive; //reg_id, <keepalive, playernumber>
     QList<QPair<uint32_t, uint8_t>> buttons[4];
     uint32_t lead_count[4];
     uint8_t buffer_size[4];
     int buffer_health[4];
     int timerId;
     int port;
-    uint32_t keepalive;
-    uint8_t desync;
+    uint8_t status;
 };
 
 #endif
