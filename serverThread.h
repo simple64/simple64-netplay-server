@@ -12,6 +12,9 @@ public:
     ServerThread(int _port, QObject *parent = 0);
 signals:
     void killServer(int port);
+    void desynced(int port);
+private slots:
+    void desync(int port);
 private:
     int port;
     UdpServer *udpServer;

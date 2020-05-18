@@ -58,17 +58,11 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 if (!rooms.contains(port) && !discord.contains(json.value("room_name").toString()))
                 {
-                    QTextStream out(log_file);
-                    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-                    out << currentDateTime;
-                    out << QStringLiteral(": creating room: ");
-                    out << json.value("room_name").toString();
-                    out << QStringLiteral(", game: ");
-                    out << json.value("game_name").toString();
-                    out << endl;
-                    log_file->flush();
+                    writeLog("creating room", json.value("room_name").toString(), json.value("game_name").toString());
+
                     ServerThread *serverThread = new ServerThread(port, this);
                     connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
+                    connect(serverThread, SIGNAL(desynced(int)), this, SLOT(desyncMessage(int)));
                     connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
                     serverThread->start();
                     room = json;
@@ -177,6 +171,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         room.insert("type", "begin_game");
         room_port = json.value("port").toInt();
         rooms[room_port].first.insert("running", "true");
+        writeLog("starting game", rooms[room_port].first.value("room_name").toString(), rooms[room_port].first.value("game_name").toString());
         json_doc = QJsonDocument(room);
         for (i = 0; i < clients[room_port].size(); ++i)
             clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
@@ -281,15 +276,7 @@ void SocketServer::sendPlayers(int room_port)
 
 void SocketServer::closeUdpServer(int port)
 {
-    QTextStream out(log_file);
-    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    out << currentDateTime;
-    out << QStringLiteral(": deleting room: ");
-    out << rooms[port].first.value("room_name").toString();
-    out << QStringLiteral(", game: ");
-    out << rooms[port].first.value("game_name").toString();
-    out << endl;
-    log_file->flush();
+    writeLog("deleting room", rooms[port].first.value("room_name").toString(), rooms[port].first.value("game_name").toString());
 
     deleteDiscord(rooms[port].first.value("room_name").toString());
     rooms.remove(port);
@@ -324,4 +311,24 @@ void SocketServer::socketDisconnected()
 
     if (client)
         client->deleteLater();
+}
+
+void SocketServer::writeLog(QString message, QString room_name, QString game_name)
+{
+    QTextStream out(log_file);
+    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    out << currentDateTime;
+    out << QStringLiteral(": room: ");
+    out << room_name;
+    out << QStringLiteral(", game: ");
+    out << game_name;
+    out << QStringLiteral(", ");
+    out << message;
+    out << endl;
+    log_file->flush();
+}
+
+void SocketServer::desyncMessage(int port)
+{
+    writeLog("game desynced", rooms[port].first.value("room_name").toString(), rooms[port].first.value("game_name").toString());
 }

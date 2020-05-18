@@ -14,10 +14,16 @@ void ServerThread::run()
     tcpServer = new TcpServer;
     tcpServer->setPort(port);
     connect(udpServer, &UdpServer::killMe, this, &ServerThread::quit);
+    connect(udpServer, &UdpServer::desynced, this, &ServerThread::desync);
 
     exec();
 
     delete udpServer;
     delete tcpServer;
     emit killServer(port);
+}
+
+void ServerThread::desync(int port)
+{
+    emit desynced(port);
 }

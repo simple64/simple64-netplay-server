@@ -27,6 +27,7 @@ private slots:
     void processBinaryMessage(QByteArray message);
     void socketDisconnected();
     void closeUdpServer(int port);
+    void desyncMessage(int port);
     void createResponse(QNetworkReply *reply);
     void deleteResponse(QNetworkReply *reply);
     void inviteResponse(QNetworkReply *reply);
@@ -34,6 +35,7 @@ private:
     void sendPlayers(int room_port);
     void createDiscord(QString room_name);
     void deleteDiscord(QString room_name);
+    void writeLog(QString message, QString room_name, QString game_name);
     QWebSocketServer *webSocketServer;
     QHash<int, QPair<QJsonObject, ServerThread*>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>

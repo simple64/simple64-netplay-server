@@ -22,6 +22,7 @@ UdpServer::UdpServer(int _port)
     sync_hash.setMaxCost(5000);
     port = _port;
     status = 0;
+    desync = 0;
 }
 
 UdpServer::~UdpServer()
@@ -142,16 +143,23 @@ void UdpServer::readPendingDatagrams()
                     sendRegResponse(playerNum, reg_id, datagram.senderAddress(), datagram.senderPort());
                 break;
             case 6: // cp0 info from client
-                vi_count = qFromBigEndian<uint32_t>(&incomingData.data()[1]);
-                if (!sync_hash.contains(vi_count))
+                if (desync == 0)
                 {
-                    HashState* state = new HashState;
-                    sync_hash.insert(vi_count, state, 1);
+                    vi_count = qFromBigEndian<uint32_t>(&incomingData.data()[1]);
+                    if (!sync_hash.contains(vi_count))
+                    {
+                        HashState* state = new HashState;
+                        sync_hash.insert(vi_count, state, 1);
+                    }
+                    sync_hash[vi_count]->data.append(XXH3_64bits(&incomingData.data()[5], 128));
+                    set = QSet<uint64_t>::fromList(sync_hash[vi_count]->data);
+                    if (set.size() > 1)
+                    {
+                        desync = 1;
+                        status |= 1;
+                        emit desynced(port);
+                    }
                 }
-                sync_hash[vi_count]->data.append(XXH3_64bits(&incomingData.data()[5], 128));
-                set = QSet<uint64_t>::fromList(sync_hash[vi_count]->data);
-                if (set.size() > 1)
-                    status |= 0x1;
                 break;
             default:
                 printf("Unknown packet type %d\n", incomingData.at(0));

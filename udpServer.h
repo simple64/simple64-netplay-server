@@ -30,6 +30,7 @@ protected:
     void timerEvent(QTimerEvent *te) Q_DECL_OVERRIDE;
 signals:
     void killMe(int port);
+    void desynced(int port);
 private:
     void sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator);
     void checkIfExists(uint8_t playerNumber, uint32_t count);
@@ -46,6 +47,7 @@ private:
     int timerId;
     int port;
     uint8_t status;
+    uint8_t desync;
 };
 
 #endif
