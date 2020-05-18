@@ -1,6 +1,8 @@
 #include "socketServer.h"
 #include <QJsonDocument>
 #include <QNetworkAccessManager>
+#include <QCoreApplication>
+#include <QDir>
 
 SocketServer::SocketServer(QString _token, QObject *parent)
     : QObject(parent)
@@ -14,10 +16,14 @@ SocketServer::SocketServer(QString _token, QObject *parent)
     }
 
     token = _token;
+    QDir AppPath(QCoreApplication::applicationDirPath());
+    log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
+    log_file->open(QIODevice::WriteOnly | QIODevice::Text);
 }
 
 SocketServer::~SocketServer()
 {
+    log_file->close();
     webSocketServer->close();
 }
 
@@ -52,8 +58,15 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 if (!rooms.contains(port) && !discord.contains(json.value("room_name").toString()))
                 {
-                    //QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-                    //printf("%s: creating room: %s, game: %s\n", qPrintable(currentDateTime), qPrintable(json.value("room_name").toString()), qPrintable(json.value("game_name").toString()));
+                    QTextStream out(log_file);
+                    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+                    out << currentDateTime;
+                    out << QStringLiteral(": creating room: ");
+                    out << json.value("room_name").toString();
+                    out << QStringLiteral(", game: ");
+                    out << json.value("game_name").toString();
+                    out << endl;
+                    log_file->flush();
                     ServerThread *serverThread = new ServerThread(port, this);
                     connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
                     connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
@@ -268,8 +281,16 @@ void SocketServer::sendPlayers(int room_port)
 
 void SocketServer::closeUdpServer(int port)
 {
-    //QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    //printf("%s: deleting room: %s, game: %s\n", qPrintable(currentDateTime), qPrintable(rooms[port].first.value("room_name").toString()), qPrintable(rooms[port].first.value("game_name").toString()));
+    QTextStream out(log_file);
+    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    out << currentDateTime;
+    out << QStringLiteral(": deleting room: ");
+    out << rooms[port].first.value("room_name").toString();
+    out << QStringLiteral(", game: ");
+    out << rooms[port].first.value("game_name").toString();
+    out << endl;
+    log_file->flush();
+
     deleteDiscord(rooms[port].first.value("room_name").toString());
     rooms.remove(port);
     clients.remove(port);

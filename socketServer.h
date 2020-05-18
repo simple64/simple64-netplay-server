@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QHash>
 #include <QNetworkReply>
+#include <QFile>
 
 #define NETPLAY_VER 3
 
@@ -38,6 +39,7 @@ private:
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>
     QHash<QString, QPair<QString, QString>> discord; // room name, <channel id, invite id>
     QString token;
+    QFile *log_file;
 };
 
 #endif
