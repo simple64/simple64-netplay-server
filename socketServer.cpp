@@ -18,7 +18,7 @@ SocketServer::SocketServer(QString _token, QObject *parent)
     token = _token;
     QDir AppPath(QCoreApplication::applicationDirPath());
     log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
-    log_file->open(QIODevice::WriteOnly | QIODevice::Text);
+    log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
 }
 
 SocketServer::~SocketServer()
