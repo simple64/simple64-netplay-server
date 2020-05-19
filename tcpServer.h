@@ -15,7 +15,7 @@ public:
     void setPort(int port);
     QHash<QString, QByteArray> files;
     QByteArray settings;
-    QHash<uint8_t, QPair<uint32_t, uint8_t>> reg; //player number, <reg_id, raw>
+    QHash<uint8_t, QPair<uint32_t, QPair<uint8_t, uint8_t>>> reg; //player number, <reg_id, <plugin, raw>>
 private slots:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
 signals:

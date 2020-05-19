@@ -130,7 +130,8 @@ void ClientHandler::readData()
                 if (!server->reg.contains(playerNum))
                 {
                     server->reg[playerNum].first = reg_id;
-                    server->reg[playerNum].second = raw;
+                    server->reg[playerNum].second.first = plugin;
+                    server->reg[playerNum].second.second = raw;
                     response = 1;
                     emit reg_player(reg_id, playerNum, plugin);
                 }
@@ -147,6 +148,28 @@ void ClientHandler::readData()
                 request = 255;
                 process = 1;
             }
+        }
+        if (request == 6) //send registration
+        {
+            request = 255;
+            process = 1;
+            QByteArray output;
+            char player_data[6];
+            for (int i = 0; i < 4; ++i)
+            {
+               if (server->reg.contains(i))
+               {
+                   qToBigEndian(server->reg[i].first, &player_data[0]);
+                   player_data[4] = server->reg[i].second.first; //plugin
+                   player_data[5] = server->reg[i].second.second; //raw
+               }
+               else
+               {
+                   memset(&player_data[0], 0, 6);
+               }
+               output.append(&player_data[0], 6);
+            }
+            socket.write(output);
         }
     }
 }
