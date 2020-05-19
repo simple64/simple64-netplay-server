@@ -124,7 +124,7 @@ void ClientHandler::readData()
                 uint8_t playerNum = data.mid(0, 1).at(0);
                 uint8_t plugin = data.mid(1, 1).at(0);
                 uint8_t raw = data.mid(2, 1).at(0);
-                uint32_t reg_id = qFromBigEndian<int32_t>(data.mid(3,4));
+                uint32_t reg_id = qFromBigEndian<uint32_t>(data.mid(3,4));
                 data = data.mid(7);
                 char response;
                 if (!server->reg.contains(playerNum))
