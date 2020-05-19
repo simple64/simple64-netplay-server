@@ -78,36 +78,18 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
-void UdpServer::sendRegResponse(uint8_t playerNumber, uint32_t reg_id, QHostAddress address, int port)
+void UdpServer::register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin)
 {
-    char buffer[3];
-    buffer[0] = 3;
-    buffer[1] = playerNumber;
-
-    if (!reg.contains(playerNumber))
-    {
-        reg[playerNumber] = reg_id;
-        player_keepalive[reg_id].first = 0;
-        player_keepalive[reg_id].second = playerNumber;
-        InputState* state = new InputState;
-        state->data = qMakePair(0, 1/*PLUGIN_NONE*/);
-        inputs[playerNumber].insert(0, state, 1);
-        buffer[2] = 1;
-    }
-    else
-    {
-        if (reg[playerNumber] == reg_id)
-            buffer[2] = 1;
-        else
-            buffer[2] = 0;
-    }
-
-    udpSocket->writeDatagram(&buffer[0], 3, address, port);
+    player_keepalive[reg_id].first = 0;
+    player_keepalive[reg_id].second = playerNum;
+    InputState* state = new InputState;
+    state->data = qMakePair(0, plugin);
+    inputs[playerNum].insert(0, state, 1);
 }
 
 void UdpServer::readPendingDatagrams()
 {
-    uint32_t keys, count, reg_id, vi_count;
+    uint32_t keys, count, vi_count;
     uint8_t playerNum, spectator;
     QSet<uint64_t> set;
     while (udpSocket->hasPendingDatagrams())
@@ -136,11 +118,6 @@ void UdpServer::readPendingDatagrams()
                     lead_count[playerNum] = count;
                 }
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, spectator);
-                break;
-            case 4: // registration request
-                reg_id = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
-                if (playerNum < 4)
-                    sendRegResponse(playerNum, reg_id, datagram.senderAddress(), datagram.senderPort());
                 break;
             case 6: // cp0 info from client
                 if (desync == 0)

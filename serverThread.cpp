@@ -15,6 +15,7 @@ void ServerThread::run()
     tcpServer->setPort(port);
     connect(udpServer, &UdpServer::killMe, this, &ServerThread::quit);
     connect(udpServer, &UdpServer::desynced, this, &ServerThread::desync);
+    connect(tcpServer, &TcpServer::register_player, udpServer, &UdpServer::register_player);
 
     exec();
 

@@ -18,7 +18,13 @@ void TcpServer::setPort(int port)
 
 void TcpServer::incomingConnection(qintptr socketDescriptor)
 {
-    new ClientHandler(socketDescriptor, this);
+    ClientHandler *clientH = new ClientHandler(socketDescriptor, this);
+    connect(clientH, &ClientHandler::reg_player, this, &TcpServer::reg_player);
+}
+
+void TcpServer::reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin)
+{
+    emit register_player(reg_id, playerNum, plugin);
 }
 
 ClientHandler::ClientHandler(qintptr socketDescriptor, QObject *parent)
@@ -108,6 +114,37 @@ void ClientHandler::readData()
             else
             {
                 sendSettings();
+                process = 1;
+            }
+        }
+        if (request == 5) //register player
+        {
+            if (data.size() >= 7)
+            {
+                uint8_t playerNum = data.mid(0, 1).at(0);
+                uint8_t plugin = data.mid(1, 1).at(0);
+                uint8_t raw = data.mid(2, 1).at(0);
+                uint32_t reg_id = qFromBigEndian<int32_t>(data.mid(3,4));
+                data = data.mid(7);
+                char response;
+                if (!server->reg.contains(playerNum))
+                {
+                    server->reg[playerNum].first = reg_id;
+                    server->reg[playerNum].second = raw;
+                    response = 1;
+                    emit reg_player(reg_id, playerNum, plugin);
+                }
+                else
+                {
+                    if (server->reg[playerNum].first == reg_id)
+                        response = 1;
+                    else
+                        response = 0;
+                }
+                QByteArray output;
+                output.append(response);
+                socket.write(output);
+                request = 255;
                 process = 1;
             }
         }
