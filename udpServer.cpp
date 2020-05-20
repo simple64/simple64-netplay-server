@@ -163,7 +163,7 @@ void UdpServer::timerEvent(QTimerEvent *)
     for (iter = player_keepalive.begin(); iter != player_keepalive.end(); ++iter)
     {
         ++iter.value().first;
-        if (iter.value().first > 20)
+        if (iter.value().first > 40)
         {
             status |= (0x1 << (iter.value().second + 1));
             should_delete = iter.key();
