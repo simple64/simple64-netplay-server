@@ -179,6 +179,7 @@ void UdpServer::timerEvent(QTimerEvent *)
 
 void UdpServer::disconnect_player(uint32_t reg_id)
 {
+    status |= (0x1 << (player_keepalive(reg_id).second + 1));
     player_keepalive.remove(reg_id);
 
     if (player_keepalive.isEmpty())
