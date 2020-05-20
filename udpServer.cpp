@@ -164,17 +164,10 @@ void UdpServer::timerEvent(QTimerEvent *)
     {
         ++iter.value().first;
         if (iter.value().first > 40)
-        {
-            status |= (0x1 << (iter.value().second + 1));
             should_delete = iter.key();
-        }
     }
 
-    if (should_delete)
-        player_keepalive.remove(should_delete);
-
-    if (player_keepalive.isEmpty())
-        emit killMe(port);
+    disconnect_player(should_delete);
 }
 
 void UdpServer::disconnect_player(uint32_t reg_id)
