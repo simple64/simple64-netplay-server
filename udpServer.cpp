@@ -119,7 +119,7 @@ void UdpServer::readPendingDatagrams()
                 }
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, spectator);
                 break;
-            case 6: // cp0 info from client
+            case 4: // cp0 info from client
                 if (desync == 0)
                 {
                     vi_count = qFromBigEndian<uint32_t>(&incomingData.data()[1]);
@@ -172,6 +172,14 @@ void UdpServer::timerEvent(QTimerEvent *)
 
     if (should_delete)
         player_keepalive.remove(should_delete);
+
+    if (player_keepalive.isEmpty())
+        emit killMe(port);
+}
+
+void UdpServer::disconnect_player(uint32_t reg_id)
+{
+    player_keepalive.remove(reg_id);
 
     if (player_keepalive.isEmpty())
         emit killMe(port);

@@ -20,11 +20,17 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
 {
     ClientHandler *clientH = new ClientHandler(socketDescriptor, this);
     connect(clientH, &ClientHandler::reg_player, this, &TcpServer::reg_player);
+    connect(clientH, &ClientHandler::playerDisconnect, this, &TcpServer::playerDisconnect);
 }
 
 void TcpServer::reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin)
 {
     emit register_player(reg_id, playerNum, plugin);
+}
+
+void TcpServer::playerDisconnect(uint32_t reg_id)
+{
+    emit disconnect_player(reg_id);
 }
 
 ClientHandler::ClientHandler(qintptr socketDescriptor, QObject *parent)
@@ -170,6 +176,17 @@ void ClientHandler::readData()
                output.append(&player_data[0], 6);
             }
             socket.write(output);
+        }
+        if (request == 7) //disconnect notice
+        {
+            if (data.size() >= 4)
+            {
+                uint32_t reg_id = qFromBigEndian<uint32_t>(data.mid(0,4));
+                emit playerDisconnect(reg_id);
+                data = data.mid(4);
+                request = 255;
+                process = 1;
+            }
         }
     }
 }

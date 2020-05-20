@@ -18,8 +18,10 @@ public:
     QHash<uint8_t, QPair<uint32_t, QPair<uint8_t, uint8_t>>> reg; //player number, <reg_id, <plugin, raw>>
 private slots:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
+    void playerDisconnect(uint32_t reg_id);
 signals:
     void register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
+    void disconnect_player(uint32_t reg_id);
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
 };
@@ -35,6 +37,7 @@ private slots:
     void sendSettings();
 signals:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
+    void playerDisconnect(uint32_t reg_id);
 private:
     QTcpSocket socket;
     QByteArray data;
