@@ -167,7 +167,8 @@ void UdpServer::timerEvent(QTimerEvent *)
             should_delete = iter.key();
     }
 
-    disconnect_player(should_delete);
+    if (should_delete)
+        disconnect_player(should_delete);
 }
 
 void UdpServer::disconnect_player(uint32_t reg_id)
