@@ -132,24 +132,28 @@ void ClientHandler::readData()
                 uint8_t raw = data.mid(2, 1).at(0);
                 uint32_t reg_id = qFromBigEndian<uint32_t>(data.mid(3,4));
                 data = data.mid(7);
-                char response;
+                char response[2];
+                char buffer_target = 3;
                 if (!server->reg.contains(playerNum))
                 {
                     server->reg[playerNum].first = reg_id;
                     server->reg[playerNum].second.first = plugin;
                     server->reg[playerNum].second.second = raw;
-                    response = 1;
+                    response[0] = 1;
+                    response[1] = buffer_target;
                     emit reg_player(reg_id, playerNum, plugin);
                 }
                 else
                 {
                     if (server->reg[playerNum].first == reg_id)
-                        response = 1;
+                        response[0] = 1;
                     else
-                        response = 0;
+                        response[0] = 0;
+
+                    response[1] = buffer_target;
                 }
                 QByteArray output;
-                output.append(response);
+                output.append(&response[0], 2);
                 socket.write(output);
                 request = 255;
                 process = 1;
