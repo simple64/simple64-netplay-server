@@ -15,7 +15,7 @@ UdpServer::UdpServer(int _port)
     for (int i = 0; i < 4; ++i)
     {
         lead_count[i] = 0;
-        buffer_size[i] = 4;
+        buffer_size[i] = 3;
         buffer_health[i] = -1;
         inputs[i].setMaxCost(5000);
     }
@@ -102,7 +102,7 @@ void UdpServer::readPendingDatagrams()
             case 0: // key info from client
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[2]);
                 keys = qFromBigEndian<uint32_t>(&incomingData.data()[6]);
-                if (buttons[playerNum].size() < 2)
+                if (buttons[playerNum].size() == 0)
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
             case 2: // request for player input data
@@ -151,9 +151,9 @@ void UdpServer::timerEvent(QTimerEvent *)
     {
         if (buffer_health[i] != -1)
         {
-            if (buffer_health[i] > 3 && buffer_size[i] > 3)
+            if (buffer_health[i] > 2 && buffer_size[i] > 1)
                 --buffer_size[i];
-            else if (buffer_health[i] < 3)
+            else if (buffer_health[i] < 2)
                 ++buffer_size[i];
         }
     }
