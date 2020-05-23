@@ -57,7 +57,8 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
     buffer[0] = 1; // Key info from server
     buffer[1] = playerNum;
     buffer[2] = status;
-    uint32_t curr = 4;
+    buffer[3] = (uint8_t) count_lag;
+    uint32_t curr = 5;
     uint32_t start = count;
     uint32_t end = start + buffer_size[playerNum];
     while ( (curr < 500) && ( (spectator == 0 && count_lag == 0 && (count < end)) || (inputs[playerNum].contains(count)) ) )
@@ -72,9 +73,9 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
         ++count;
     }
 
-    buffer[3] = count - start; //number of counts in packet
+    buffer[4] = count - start; //number of counts in packet
 
-    if (curr > 4)
+    if (curr > 5)
         udpSocket->writeDatagram(&buffer[0], curr, address, port);
 }
 
