@@ -9,7 +9,7 @@
 #include <QNetworkReply>
 #include <QFile>
 
-#define NETPLAY_VER 5
+#define NETPLAY_VER 6
 
 class SocketServer : public QObject
 {
