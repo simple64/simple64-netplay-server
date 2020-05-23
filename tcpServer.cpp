@@ -133,7 +133,7 @@ void ClientHandler::readData()
                 uint32_t reg_id = qFromBigEndian<uint32_t>(data.mid(3,4));
                 data = data.mid(7);
                 char response[2];
-                char buffer_target = 3;
+                char buffer_target = 4;
                 if (!server->reg.contains(playerNum))
                 {
                     server->reg[playerNum].first = reg_id;
