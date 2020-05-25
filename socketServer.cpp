@@ -375,7 +375,8 @@ void SocketServer::socketDisconnected()
             if (iter.value()[j].first == client)
             {
                 iter.value().removeAt(j);
-                sendPlayers(iter.key());
+                if (!rooms[iter.key()].first.contains("running"))
+                    sendPlayers(iter.key());
             }
 
             if (iter.value().isEmpty() && !rooms[iter.key()].first.contains("running")) //no more clients connected to room
