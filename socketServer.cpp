@@ -4,7 +4,7 @@
 #include <QCoreApplication>
 #include <QDir>
 
-SocketServer::SocketServer(QString _token, QObject *parent)
+SocketServer::SocketServer(QString _token, QString _region, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
@@ -16,16 +16,80 @@ SocketServer::SocketServer(QString _token, QObject *parent)
     }
 
     token = _token;
+    region = _region;
     QDir AppPath(QCoreApplication::applicationDirPath());
     log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
     writeLog("Server started", "None", "None");
+
+    if (!token.isEmpty())
+    {
+        discordCounter = -1;
+        connect(&discordClient, &QWebSocket::textMessageReceived, this, &SocketServer::discordConnected);
+        connect(&discordClient, &QWebSocket::disconnected, this, &SocketServer::discordReconnect);
+        discordClient.open(QUrl("wss://gateway.discord.gg/?v=6&encoding=json"));
+    }
 }
 
 SocketServer::~SocketServer()
 {
     log_file->close();
     webSocketServer->close();
+    if (!token.isEmpty())
+        discordClient.close();
+}
+
+void SocketServer::discordReconnect()
+{
+    discordCounter = -1;
+    discordClient.open(QUrl("wss://gateway.discord.gg/?v=6&encoding=json"));
+}
+
+void SocketServer::discordConnected(QString message)
+{
+    QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
+    QJsonObject json = doc.object();
+    if (json.contains("s"))
+    {
+        if (json.value("s").isNull())
+            discordCounter = -1;
+        else
+            discordCounter = json.value("s").toInt();
+    }
+    if (json.value("op").toInt() == 10) //hello
+    {
+        int heartbeat = json.value("d").toObject().value("heartbeat_interval").toInt();
+        QTimer *discordTimer = new QTimer(this);
+        connect(discordTimer, &QTimer::timeout, this, &SocketServer::discordHeartbeat);
+        discordTimer->start(heartbeat);
+
+        QJsonObject ident;
+        ident.insert("op", 2);
+        QJsonObject d;
+        QJsonObject prop;
+        d.insert("token", token);
+        prop.insert("$os", "linux");
+        prop.insert("$browser", "qt");
+        prop.insert("$device", "aws");
+        d.insert("properties", prop);
+        ident.insert("d", d);
+        QJsonDocument ident_doc(ident);
+        discordClient.sendTextMessage(ident_doc.toJson());
+    }
+}
+
+void SocketServer::discordHeartbeat()
+{
+    QJsonObject json;
+    json.insert("op", 1);
+    if (discordCounter == -1)
+    {
+        json.insert("d", QJsonValue());
+    }
+    else
+        json.insert("d", discordCounter);
+    QJsonDocument json_doc(json);
+    discordClient.sendTextMessage(json_doc.toJson());
 }
 
 void SocketServer::onNewConnection()
@@ -75,7 +139,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     room.insert("player_name", json.value("player_name").toString());
                     clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
 
-                    createDiscord(json.value("room_name").toString());
+                    createDiscord(json.value("room_name").toString(), json.value("game_name").toString(), json.value("password").toString().isEmpty());
                     break;
                 }
             }
@@ -189,11 +253,12 @@ void SocketServer::processBinaryMessage(QByteArray message)
     }
 }
 
-void SocketServer::createDiscord(QString room_name)
+void SocketServer::createDiscord(QString room_name, QString game_name, bool is_public)
 {
     if (token.isEmpty())
         return;
 
+    //Create voice channel
     QNetworkRequest request(QUrl("https://discord.com/api/guilds/709975510981279765/channels"));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QString auth = "Bot " + token;
@@ -205,6 +270,20 @@ void SocketServer::createDiscord(QString room_name)
     connect(nam, SIGNAL(finished(QNetworkReply*)),
             SLOT(createResponse(QNetworkReply*)));
     nam->post(request, QJsonDocument(json).toJson());
+
+    //Annouce room
+    if (is_public)
+    {
+        QNetworkRequest request2(QUrl("https://discord.com/api/channels/709975511484334083/messages"));
+        request2.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        request2.setRawHeader("Authorization", auth.toLocal8Bit());
+        QJsonObject json2;
+        json2.insert("content", "New netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name);
+        QNetworkAccessManager *nam2 = new QNetworkAccessManager(this);
+        connect(nam2, SIGNAL(finished(QNetworkReply*)),
+            SLOT(createResponse(QNetworkReply*)));
+        nam2->post(request2, QJsonDocument(json2).toJson());
+    }
 }
 
 void SocketServer::createResponse(QNetworkReply *reply)
