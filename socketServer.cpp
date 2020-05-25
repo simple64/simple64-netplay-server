@@ -283,8 +283,6 @@ void SocketServer::createDiscord(QString room_name, QString game_name, bool is_p
         QJsonObject json2;
         json2.insert("content", "New netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name);
         QNetworkAccessManager *nam2 = new QNetworkAccessManager(this);
-        connect(nam2, SIGNAL(finished(QNetworkReply*)),
-            SLOT(createResponse(QNetworkReply*)));
         nam2->post(request2, QJsonDocument(json2).toJson());
     }
 }
