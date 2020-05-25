@@ -136,6 +136,8 @@ void ClientHandler::readData()
                 char buffer_target = 4;
                 if (!server->reg.contains(playerNum))
                 {
+                    if (playerNum > 0 && plugin == 2) //Only P1 can use mempak
+                        plugin = 1;
                     server->reg[playerNum].first = reg_id;
                     server->reg[playerNum].second.first = plugin;
                     server->reg[playerNum].second.second = raw;
