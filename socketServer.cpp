@@ -28,6 +28,7 @@ SocketServer::SocketServer(QString _token, QString _region, QObject *parent)
         connect(&discordClient, &QWebSocket::textMessageReceived, this, &SocketServer::discordConnected);
         connect(&discordClient, &QWebSocket::disconnected, this, &SocketServer::discordReconnect);
         discordClient.open(QUrl("wss://gateway.discord.gg/?v=6&encoding=json"));
+        connect(&discordTimer, &QTimer::timeout, this, &SocketServer::discordHeartbeat);
     }
 }
 
@@ -36,11 +37,15 @@ SocketServer::~SocketServer()
     log_file->close();
     webSocketServer->close();
     if (!token.isEmpty())
+    {
         discordClient.close();
+        discordTimer.stop();
+    }
 }
 
 void SocketServer::discordReconnect()
 {
+    discordTimer.stop();
     discordCounter = -1;
     discordClient.open(QUrl("wss://gateway.discord.gg/?v=6&encoding=json"));
 }
@@ -59,9 +64,7 @@ void SocketServer::discordConnected(QString message)
     if (json.value("op").toInt() == 10) //hello
     {
         int heartbeat = json.value("d").toObject().value("heartbeat_interval").toInt();
-        QTimer *discordTimer = new QTimer(this);
-        connect(discordTimer, &QTimer::timeout, this, &SocketServer::discordHeartbeat);
-        discordTimer->start(heartbeat);
+        discordTimer.start(heartbeat);
 
         QJsonObject ident;
         ident.insert("op", 2);
@@ -274,7 +277,7 @@ void SocketServer::createDiscord(QString room_name, QString game_name, bool is_p
     //Annouce room
     if (is_public)
     {
-        QNetworkRequest request2(QUrl("https://discord.com/api/channels/709975511484334083/messages"));
+        QNetworkRequest request2(QUrl("https://discord.com/api/channels/714342667814830111/messages"));
         request2.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         request2.setRawHeader("Authorization", auth.toLocal8Bit());
         QJsonObject json2;

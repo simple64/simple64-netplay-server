@@ -48,6 +48,7 @@ private:
     QFile *log_file;
     QWebSocket discordClient;
     int discordCounter;
+    QTimer discordTimer;
 };
 
 #endif
