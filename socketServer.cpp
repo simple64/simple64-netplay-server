@@ -129,8 +129,8 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     writeLog("creating room", json.value("room_name").toString(), json.value("game_name").toString());
 
                     ServerThread *serverThread = new ServerThread(port, this);
-                    connect(serverThread, SIGNAL(killServer(int)), this, SLOT(closeUdpServer(int)));
-                    connect(serverThread, SIGNAL(desynced(int)), this, SLOT(desyncMessage(int)));
+                    connect(serverThread, &ServerThread::killServer, this, &SocketServer::closeUdpServer);
+                    connect(serverThread, &ServerThread::desynced, this, &SocketServer::desyncMessage);
                     connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
                     serverThread->start();
                     room = json;
@@ -270,8 +270,7 @@ void SocketServer::createDiscord(QString room_name, QString game_name, bool is_p
     json.insert("name", room_name);
     json.insert("type", 2);
     QNetworkAccessManager *nam = new QNetworkAccessManager(this);
-    connect(nam, SIGNAL(finished(QNetworkReply*)),
-            SLOT(createResponse(QNetworkReply*)));
+    connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::createResponse);
     nam->post(request, QJsonDocument(json).toJson());
 
     //Annouce room
@@ -283,6 +282,7 @@ void SocketServer::createDiscord(QString room_name, QString game_name, bool is_p
         QJsonObject json2;
         json2.insert("content", "New netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name);
         QNetworkAccessManager *nam2 = new QNetworkAccessManager(this);
+        connect(nam2, &QNetworkAccessManager::finished, this, &SocketServer::deleteResponse);
         nam2->post(request2, QJsonDocument(json2).toJson());
     }
 }
@@ -301,8 +301,7 @@ void SocketServer::createResponse(QNetworkReply *reply)
     QJsonObject json_invite;
     json.insert("temporary", true);
     QNetworkAccessManager *nam = new QNetworkAccessManager(this);
-    connect(nam, SIGNAL(finished(QNetworkReply*)),
-            SLOT(inviteResponse(QNetworkReply*)));
+    connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::inviteResponse);
     nam->post(request, QJsonDocument(json_invite).toJson());
 }
 
@@ -326,8 +325,7 @@ void SocketServer::deleteDiscord(QString room_name)
     QString auth = "Bot " + token;
     request.setRawHeader("Authorization", auth.toLocal8Bit());
     QNetworkAccessManager *nam = new QNetworkAccessManager(this);
-    connect(nam, SIGNAL(finished(QNetworkReply*)),
-            SLOT(deleteResponse(QNetworkReply*)));
+    connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::deleteResponse);
     nam->deleteResource(request);
     discord.remove(room_name);
 }

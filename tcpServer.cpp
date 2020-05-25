@@ -39,13 +39,13 @@ ClientHandler::ClientHandler(qintptr socketDescriptor, QObject *parent)
     server = (TcpServer*)parent;
     socket.setSocketDescriptor(socketDescriptor);
     connect(&socket, &QAbstractSocket::disconnected, this, &QObject::deleteLater);
-    connect(&socket, SIGNAL(readyRead()), this, SLOT(readData()));
+    connect(&socket, &QTcpSocket::readyRead, this, &ClientHandler::readData);
     filename.clear();
     request = 255;
     filesize = 0;
     data.clear();
-    connect(&fileTimer, SIGNAL(timeout()), this, SLOT(sendFile()));
-    connect(&settingTimer, SIGNAL(timeout()), this, SLOT(sendSettings()));
+    connect(&fileTimer, &QTimer::timeout, this, &ClientHandler::sendFile);
+    connect(&settingTimer, &QTimer::timeout, this, &ClientHandler::sendSettings);
 }
 
 void ClientHandler::readData()
