@@ -92,7 +92,6 @@ void UdpServer::readPendingDatagrams()
 {
     uint32_t keys, count, vi_count;
     uint8_t playerNum, spectator;
-    QSet<uint64_t> set;
     while (udpSocket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = udpSocket->receiveDatagram();
@@ -128,10 +127,9 @@ void UdpServer::readPendingDatagrams()
                     {
                         HashState* state = new HashState;
                         sync_hash.insert(vi_count, state, 1);
+                        sync_hash[vi_count]->cp0_hash = XXH3_64bits(&incomingData.data()[5], 128);
                     }
-                    sync_hash[vi_count]->data.append(XXH3_64bits(&incomingData.data()[5], 128));
-                    set = QSet<uint64_t>::fromList(sync_hash[vi_count]->data);
-                    if (set.size() > 1)
+                    else if (sync_hash[vi_count]->cp0_hash != XXH3_64bits(&incomingData.data()[5], 128))
                     {
                         desync = 1;
                         status |= 1;

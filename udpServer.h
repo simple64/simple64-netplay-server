@@ -15,7 +15,7 @@ class HashState : public QObject
 {
     Q_OBJECT
 public:
-    QList<uint64_t> data;
+    uint64_t cp0_hash;
 };
 
 class UdpServer : public QObject
