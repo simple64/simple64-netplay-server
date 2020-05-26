@@ -48,7 +48,6 @@ private:
     int timerId;
     int port;
     uint8_t status;
-    uint8_t desync;
 };
 
 #endif

@@ -22,7 +22,6 @@ UdpServer::UdpServer(int _port)
     sync_hash.setMaxCost(5000);
     port = _port;
     status = 0;
-    desync = 0;
 }
 
 UdpServer::~UdpServer()
@@ -120,7 +119,7 @@ void UdpServer::readPendingDatagrams()
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, spectator);
                 break;
             case 4: // cp0 info from client
-                if (desync == 0)
+                if ((status & 1) == 0)
                 {
                     vi_count = qFromBigEndian<uint32_t>(&incomingData.data()[1]);
                     if (!sync_hash.contains(vi_count))
@@ -131,7 +130,6 @@ void UdpServer::readPendingDatagrams()
                     }
                     else if (sync_hash[vi_count]->cp0_hash != XXH3_64bits(&incomingData.data()[5], 128))
                     {
-                        desync = 1;
                         status |= 1;
                         emit desynced(port);
                     }
