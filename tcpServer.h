@@ -19,18 +19,17 @@ public:
 private slots:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void playerDisconnect(uint32_t reg_id);
+    void onNewConnection();
 signals:
     void register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void disconnect_player(uint32_t reg_id);
-protected:
-    void incomingConnection(qintptr socketDescriptor) override;
 };
 
 class ClientHandler : public QObject
 {
     Q_OBJECT
 public:
-    ClientHandler(qintptr socketDescriptor, QObject *parent = 0);
+    ClientHandler(QTcpSocket *_socket, QObject *parent = 0);
 private slots:
     void readData();
     void sendFile();
@@ -39,7 +38,7 @@ signals:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void playerDisconnect(uint32_t reg_id);
 private:
-    QTcpSocket socket;
+    QTcpSocket *socket;
     QByteArray data;
     QString filename;
     uint8_t request;

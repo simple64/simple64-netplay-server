@@ -4,6 +4,7 @@
 TcpServer::TcpServer(QObject *parent)
     : QTcpServer(parent)
 {
+    connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 }
 
 TcpServer::~TcpServer()
@@ -16,9 +17,9 @@ void TcpServer::setPort(int port)
     listen(QHostAddress::Any, port);
 }
 
-void TcpServer::incomingConnection(qintptr socketDescriptor)
+void TcpServer::onNewConnection()
 {
-    ClientHandler *clientH = new ClientHandler(socketDescriptor, this);
+    ClientHandler *clientH = new ClientHandler(nextPendingConnection(), this);
     connect(clientH, &ClientHandler::reg_player, this, &TcpServer::reg_player);
     connect(clientH, &ClientHandler::playerDisconnect, this, &TcpServer::playerDisconnect);
 }
@@ -33,13 +34,13 @@ void TcpServer::playerDisconnect(uint32_t reg_id)
     emit disconnect_player(reg_id);
 }
 
-ClientHandler::ClientHandler(qintptr socketDescriptor, QObject *parent)
+ClientHandler::ClientHandler(QTcpSocket *_socket, QObject *parent)
     : QObject(parent)
 {
     server = (TcpServer*)parent;
-    socket.setSocketDescriptor(socketDescriptor);
-    connect(&socket, &QAbstractSocket::disconnected, this, &QObject::deleteLater);
-    connect(&socket, &QTcpSocket::readyRead, this, &ClientHandler::readData);
+    socket = _socket;
+    connect(socket, &QTcpSocket::disconnected, this, &ClientHandler::deleteLater);
+    connect(socket, &QTcpSocket::readyRead, this, &ClientHandler::readData);
     filename.clear();
     request = 255;
     filesize = 0;
@@ -50,7 +51,7 @@ ClientHandler::ClientHandler(qintptr socketDescriptor, QObject *parent)
 
 void ClientHandler::readData()
 {
-    data.append(socket.readAll());
+    data.append(socket->readAll());
     int process = 1;
     while (process)
     {
@@ -156,7 +157,7 @@ void ClientHandler::readData()
                 }
                 QByteArray output;
                 output.append(&response[0], 2);
-                socket.write(output);
+                socket->write(output);
                 request = 255;
                 process = 1;
             }
@@ -181,7 +182,7 @@ void ClientHandler::readData()
                }
                output.append(&player_data[0], 6);
             }
-            socket.write(output);
+            socket->write(output);
         }
         if (request == 7) //disconnect notice
         {
@@ -201,7 +202,7 @@ void ClientHandler::sendSettings()
 {
     if (!server->settings.isEmpty())
     {
-        socket.write(server->settings);
+        socket->write(server->settings);
         request = 255;
         settingTimer.stop();
     }
@@ -211,7 +212,7 @@ void ClientHandler::sendFile()
 {
     if (server->files.contains(filename))
     {
-        socket.write(server->files[filename]);
+        socket->write(server->files[filename]);
         filename.clear();
         filesize = 0;
         request = 255;
