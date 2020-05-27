@@ -201,6 +201,10 @@ void SocketServer::processBinaryMessage(QByteArray message)
         {
             accepted = 2; //client versions do not match
         }
+        else if (clients[room_port].size() >= 4)
+        {
+            accepted = 3; //room is full
+        }
         else //correct password
         {
             int player_num = 1;
