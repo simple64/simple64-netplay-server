@@ -291,18 +291,22 @@ void SocketServer::createResponse(QNetworkReply *reply)
 {
     QJsonDocument json_doc = QJsonDocument::fromJson(reply->readAll());
     QJsonObject json = json_doc.object();
-    discord[json.value("name").toString()].first = json.value("id").toString();
-    reply->deleteLater();
 
-    QNetworkRequest request(QUrl("https://discord.com/api/channels/" + json.value("id").toString() + "/invites"));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    QString auth = "Bot " + token;
-    request.setRawHeader("Authorization", auth.toLocal8Bit());
-    QJsonObject json_invite;
-    json.insert("temporary", true);
-    QNetworkAccessManager *nam = new QNetworkAccessManager(this);
-    connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::inviteResponse);
-    nam->post(request, QJsonDocument(json_invite).toJson());
+    if (json.contains("name") && json.contains("id"))
+    {
+        discord[json.value("name").toString()].first = json.value("id").toString();
+
+        QNetworkRequest request(QUrl("https://discord.com/api/channels/" + json.value("id").toString() + "/invites"));
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QString auth = "Bot " + token;
+        request.setRawHeader("Authorization", auth.toLocal8Bit());
+        QJsonObject json_invite;
+        QNetworkAccessManager *nam = new QNetworkAccessManager(this);
+        connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::inviteResponse);
+        nam->post(request, QJsonDocument(json_invite).toJson());
+    }
+
+    reply->deleteLater();
 }
 
 void SocketServer::inviteResponse(QNetworkReply *reply)
@@ -310,8 +314,11 @@ void SocketServer::inviteResponse(QNetworkReply *reply)
     QJsonDocument json_doc = QJsonDocument::fromJson(reply->readAll());
     QJsonObject json = json_doc.object();
 
-    QString room_name = json.value("channel").toObject().value("name").toString();
-    discord[room_name].second = json.value("code").toString();
+    if (json.contains("channel") && json.contains("code"))
+    {
+        QString room_name = json.value("channel").toObject().value("name").toString();
+        discord[room_name].second = json.value("code").toString();
+    }
 
     reply->deleteLater();
 }
@@ -321,13 +328,16 @@ void SocketServer::deleteDiscord(QString room_name)
     if (token.isEmpty())
         return;
 
-    QNetworkRequest request(QUrl("https://discord.com/api/channels/" + discord[room_name].first));
-    QString auth = "Bot " + token;
-    request.setRawHeader("Authorization", auth.toLocal8Bit());
-    QNetworkAccessManager *nam = new QNetworkAccessManager(this);
-    connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::deleteResponse);
-    nam->deleteResource(request);
-    discord.remove(room_name);
+    if (discord.contains(room_name))
+    {
+        QNetworkRequest request(QUrl("https://discord.com/api/channels/" + discord[room_name].first));
+        QString auth = "Bot " + token;
+        request.setRawHeader("Authorization", auth.toLocal8Bit());
+        QNetworkAccessManager *nam = new QNetworkAccessManager(this);
+        connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::deleteResponse);
+        nam->deleteResource(request);
+        discord.remove(room_name);
+    }
 }
 
 void SocketServer::deleteResponse(QNetworkReply *reply)
