@@ -16,10 +16,13 @@ public:
     QHash<QString, QByteArray> files;
     QByteArray settings;
     QHash<uint8_t, QPair<uint32_t, QPair<uint8_t, uint8_t>>> reg; //player number, <reg_id, <plugin, raw>>
+    int client_number;
 private slots:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void playerDisconnect(uint32_t reg_id);
     void onNewConnection();
+public slots:
+    void getClientNumber(int size);
 signals:
     void register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void disconnect_player(uint32_t reg_id);
@@ -34,6 +37,7 @@ private slots:
     void readData();
     void sendFile();
     void sendSettings();
+    void sendReg();
 signals:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void playerDisconnect(uint32_t reg_id);
@@ -46,6 +50,7 @@ private:
     TcpServer *server;
     QTimer fileTimer;
     QTimer settingTimer;
+    QTimer regTimer;
 };
 
 #endif

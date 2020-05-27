@@ -17,6 +17,7 @@ void ServerThread::run()
     connect(udpServer, &UdpServer::desynced, this, &ServerThread::desync);
     connect(tcpServer, &TcpServer::register_player, udpServer, &UdpServer::register_player);
     connect(tcpServer, &TcpServer::disconnect_player, udpServer, &UdpServer::disconnect_player);
+    connect(this, &ServerThread::sendClientNumber, tcpServer, &TcpServer::getClientNumber);
 
     exec();
 
@@ -25,7 +26,13 @@ void ServerThread::run()
     emit killServer(port);
 }
 
-void ServerThread::desync(int port)
+void ServerThread::desync()
 {
     emit desynced(port);
+}
+
+void ServerThread::getClientNumber(int _port, int size)
+{
+    if (_port == port)
+        emit sendClientNumber(size);
 }

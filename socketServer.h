@@ -21,6 +21,7 @@ public:
 
 signals:
     void closed();
+    void setClientNumber(int room_port, int size);
 
 private slots:
     void onNewConnection();

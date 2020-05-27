@@ -131,7 +131,7 @@ void UdpServer::readPendingDatagrams()
                     else if (sync_hash[vi_count]->cp0_hash != XXH3_64bits(&incomingData.data()[5], 128))
                     {
                         status |= 1;
-                        emit desynced(port);
+                        emit desynced();
                     }
                 }
                 break;

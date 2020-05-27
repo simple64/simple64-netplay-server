@@ -131,7 +131,8 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     ServerThread *serverThread = new ServerThread(port, this);
                     connect(serverThread, &ServerThread::killServer, this, &SocketServer::closeUdpServer);
                     connect(serverThread, &ServerThread::desynced, this, &SocketServer::desyncMessage);
-                    connect(serverThread, &QThread::finished, serverThread, &QObject::deleteLater);
+                    connect(serverThread, &ServerThread::finished, serverThread, &ServerThread::deleteLater);
+                    connect(this, &SocketServer::setClientNumber, serverThread, &ServerThread::getClientNumber);
                     serverThread->start();
                     room = json;
                     room.remove("type");
@@ -238,6 +239,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     {
         room.insert("type", "begin_game");
         room_port = json.value("port").toInt();
+        emit setClientNumber(room_port, clients[room_port].size());
         rooms[room_port].first.insert("running", "true");
         writeLog("starting game", rooms[room_port].first.value("room_name").toString(), rooms[room_port].first.value("game_name").toString());
         json_doc = QJsonDocument(room);

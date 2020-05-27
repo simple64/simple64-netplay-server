@@ -4,12 +4,18 @@
 TcpServer::TcpServer(QObject *parent)
     : QTcpServer(parent)
 {
+    client_number = 0;
     connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 }
 
 TcpServer::~TcpServer()
 {
     close();
+}
+
+void TcpServer::getClientNumber(int size)
+{
+    client_number = size;
 }
 
 void TcpServer::setPort(int port)
@@ -47,6 +53,7 @@ ClientHandler::ClientHandler(QTcpSocket *_socket, QObject *parent)
     data.clear();
     connect(&fileTimer, &QTimer::timeout, this, &ClientHandler::sendFile);
     connect(&settingTimer, &QTimer::timeout, this, &ClientHandler::sendSettings);
+    connect(&regTimer, &QTimer::timeout, this, &ClientHandler::sendReg);
 }
 
 void ClientHandler::readData()
@@ -164,25 +171,13 @@ void ClientHandler::readData()
         }
         if (request == 6) //send registration
         {
-            request = 255;
-            process = 1;
-            QByteArray output;
-            char player_data[6];
-            for (int i = 0; i < 4; ++i)
+            if (server->reg.size() == server->client_number)
             {
-               if (server->reg.contains(i))
-               {
-                   qToBigEndian(server->reg[i].first, &player_data[0]);
-                   player_data[4] = server->reg[i].second.first; //plugin
-                   player_data[5] = server->reg[i].second.second; //raw
-               }
-               else
-               {
-                   memset(&player_data[0], 0, 6);
-               }
-               output.append(&player_data[0], 6);
+                sendReg();
+                process = 1;
             }
-            socket->write(output);
+            else
+                regTimer.start(5);
         }
         if (request == 7) //disconnect notice
         {
@@ -205,6 +200,33 @@ void ClientHandler::sendSettings()
         socket->write(server->settings);
         request = 255;
         settingTimer.stop();
+    }
+}
+
+void ClientHandler::sendReg()
+{
+    if (server->reg.size() == server->client_number)
+    {
+        QByteArray output;
+        char player_data[6];
+        for (int i = 0; i < 4; ++i)
+        {
+           if (server->reg.contains(i))
+           {
+               qToBigEndian(server->reg[i].first, &player_data[0]);
+               player_data[4] = server->reg[i].second.first; //plugin
+               player_data[5] = server->reg[i].second.second; //raw
+           }
+           else
+           {
+               memset(&player_data[0], 0, 6);
+           }
+           output.append(&player_data[0], 6);
+        }
+        socket->write(output);
+
+        request = 255;
+        regTimer.stop();
     }
 }
 

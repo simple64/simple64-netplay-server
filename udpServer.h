@@ -30,7 +30,7 @@ protected:
     void timerEvent(QTimerEvent *te) Q_DECL_OVERRIDE;
 signals:
     void killMe(int port);
-    void desynced(int port);
+    void desynced();
 public slots:
     void register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void disconnect_player(uint32_t reg_id);
