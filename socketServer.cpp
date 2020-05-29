@@ -279,18 +279,24 @@ void SocketServer::createDiscord(QString room_name, QString game_name, bool is_p
     connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::createResponse);
     nam->post(request, QJsonDocument(json).toJson());
 
+    QString type = is_public ? QStringLiteral("public") : QStringLiteral("private");
     //Annouce room
     if (is_public)
-    {
-        QNetworkRequest request2(QUrl("https://discord.com/api/channels/714342667814830111/messages"));
-        request2.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        request2.setRawHeader("Authorization", auth.toLocal8Bit());
-        QJsonObject json2;
-        json2.insert("content", "New netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name);
-        QNetworkAccessManager *nam2 = new QNetworkAccessManager(this);
-        connect(nam2, &QNetworkAccessManager::finished, this, &SocketServer::deleteResponse);
-        nam2->post(request2, QJsonDocument(json2).toJson());
-    }
+        announceDiscord("714342667814830111", room_name, game_name, type); //Discord64
+    announceDiscord("709975511484334083", room_name, game_name, type); //m64p discord
+}
+
+void SocketServer::announceDiscord(QString channel, QString room_name, QString game_name, QString type)
+{
+    QNetworkRequest request(QUrl("https://discord.com/api/channels/" + channel + "/messages"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QString auth = "Bot " + token;
+    request.setRawHeader("Authorization", auth.toLocal8Bit());
+    QJsonObject json;
+    json.insert("content", "New " + type + " netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name);
+    QNetworkAccessManager *nam = new QNetworkAccessManager(this);
+    connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::deleteResponse);
+    nam->post(request, QJsonDocument(json).toJson());
 }
 
 void SocketServer::createResponse(QNetworkReply *reply)
