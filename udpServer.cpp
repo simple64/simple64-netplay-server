@@ -111,7 +111,7 @@ void UdpServer::readPendingDatagrams()
 
                 count = qFromBigEndian<uint32_t>(&incomingData.data()[6]);
                 spectator = incomingData.at(10);
-                if (count >= lead_count[playerNum] && spectator == 0)
+                if (((count - lead_count[playerNum]) < (UINT32_MAX / 2)) && spectator == 0)
                 {
                     buffer_health[playerNum] = incomingData.data()[11];
                     lead_count[playerNum] = count;
