@@ -113,7 +113,7 @@ void UdpServer::readPendingDatagrams()
                 spectator = incomingData.at(10);
                 if (((count - lead_count[playerNum]) < (UINT32_MAX / 2)) && spectator == 0)
                 {
-                    buffer_health[playerNum] = incomingData.data()[11];
+                    buffer_health[playerNum] = incomingData.at(11);
                     lead_count[playerNum] = count;
                 }
                 sendInput(count, datagram.senderAddress(), datagram.senderPort(), playerNum, spectator);
