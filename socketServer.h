@@ -40,7 +40,7 @@ private:
     void createDiscord(QString room_name, QString game_name, bool is_public);
     void deleteDiscord(QString room_name);
     void writeLog(QString message, QString room_name, QString game_name);
-    void announceDiscord(QString channel, QString room_name, QString game_name, QString type);
+    void announceDiscord(QString channel, QString message);
     QWebSocketServer *webSocketServer;
     QHash<int, QPair<QJsonObject, ServerThread*>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>

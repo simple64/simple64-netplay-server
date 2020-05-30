@@ -280,20 +280,24 @@ void SocketServer::createDiscord(QString room_name, QString game_name, bool is_p
     nam->post(request, QJsonDocument(json).toJson());
 
     QString type = is_public ? QStringLiteral("public") : QStringLiteral("private");
+    QString message = "New " + type + " netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name;
     //Annouce room
     if (is_public)
-        announceDiscord("714342667814830111", room_name, game_name, type); //Discord64
-    announceDiscord("709975511484334083", room_name, game_name, type); //m64p discord
+    {
+        announceDiscord("714342667814830111", message); //Discord64
+        announceDiscord("709975511484334083", message); //m64p discord
+    }
+    announceDiscord("716049124188749845", message); //m64p discord dev channel
 }
 
-void SocketServer::announceDiscord(QString channel, QString room_name, QString game_name, QString type)
+void SocketServer::announceDiscord(QString channel, QString message)
 {
     QNetworkRequest request(QUrl("https://discord.com/api/channels/" + channel + "/messages"));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QString auth = "Bot " + token;
     request.setRawHeader("Authorization", auth.toLocal8Bit());
     QJsonObject json;
-    json.insert("content", "New " + type + " netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name);
+    json.insert("content", message);
     QNetworkAccessManager *nam = new QNetworkAccessManager(this);
     connect(nam, &QNetworkAccessManager::finished, this, &SocketServer::deleteResponse);
     nam->post(request, QJsonDocument(json).toJson());
@@ -432,5 +436,9 @@ void SocketServer::writeLog(QString message, QString room_name, QString game_nam
 
 void SocketServer::desyncMessage(int port)
 {
-    writeLog("game desynced", rooms[port].first.value("room_name").toString(), rooms[port].first.value("game_name").toString());
+    QString room_name = rooms[port].first.value("room_name").toString();
+    QString game_name = rooms[port].first.value("game_name").toString();
+    writeLog("game desynced", room_name, game_name);
+    QString message = "Desync in netplay room running in " + region + ": **" + room_name + "** game: " + game_name;
+    announceDiscord("716049124188749845", message); //m64p discord dev channel
 }
