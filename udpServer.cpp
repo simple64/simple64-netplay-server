@@ -148,7 +148,7 @@ void UdpServer::timerEvent(QTimerEvent *)
     {
         if (buffer_health[i] != -1)
         {
-            if (buffer_health[i] > 2 && buffer_size[i] > 1)
+            if (buffer_health[i] > 2 && buffer_size[i] > 0)
                 --buffer_size[i];
             else if (buffer_health[i] < 2)
                 ++buffer_size[i];
