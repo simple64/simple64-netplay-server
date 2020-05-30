@@ -60,7 +60,7 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
     uint32_t curr = 5;
     uint32_t start = count;
     uint32_t end = start + buffer_size[playerNum];
-    while ( (curr < 500) && ( (spectator == 0 && count_lag == 0 && count != end) || inputs[playerNum].contains(count) ) )
+    while ( (curr < 500) && ( (spectator == 0 && count_lag == 0 && (count - end) > (UINT32_MAX / 2)) || inputs[playerNum].contains(count) ) )
     {
         qToBigEndian(count, &buffer[curr]);
         curr += 4;
