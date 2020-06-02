@@ -5,6 +5,8 @@ TcpServer::TcpServer(QObject *parent)
     : QTcpServer(parent)
 {
     client_number = 0;
+    settings.clear();
+    gliden64_settings.clear();
     connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 }
 
@@ -53,6 +55,7 @@ ClientHandler::ClientHandler(QTcpSocket *_socket, QObject *parent)
     data.clear();
     connect(&fileTimer, &QTimer::timeout, this, &ClientHandler::sendFile);
     connect(&settingTimer, &QTimer::timeout, this, &ClientHandler::sendSettings);
+    connect(&gliden64_settingTimer, &QTimer::timeout, this, &ClientHandler::sendGliden64Settings);
     connect(&regTimer, &QTimer::timeout, this, &ClientHandler::sendReg);
 }
 
@@ -111,7 +114,7 @@ void ClientHandler::readData()
                 process = 1;
             }
         }
-        if (request == 3) //get settings
+        if (request == 3) //get settings from P1
         {
             if (data.size() >= 20)
             {
@@ -121,7 +124,7 @@ void ClientHandler::readData()
                 process = 1;
             }
         }
-        if (request == 4) //send settings
+        if (request == 4) //send settings to P2-4
         {
             if (server->settings.isEmpty())
                 settingTimer.start(5);
@@ -190,6 +193,26 @@ void ClientHandler::readData()
                 process = 1;
             }
         }
+        if (request == 8) //get GLideN64 settings from P1
+        {
+            if (data.size() >= 92)
+            {
+                server->gliden64_settings = data.mid(0, 92);
+                data = data.mid(92);
+                request = 255;
+                process = 1;
+            }
+        }
+        if (request == 9) //send GLideN64 settings to P2-4
+        {
+            if (server->gliden64_settings.isEmpty())
+                gliden64_settingTimer.start(5);
+            else
+            {
+                sendGliden64Settings();
+                process = 1;
+            }
+        }
     }
 }
 
@@ -200,6 +223,16 @@ void ClientHandler::sendSettings()
         socket->write(server->settings);
         request = 255;
         settingTimer.stop();
+    }
+}
+
+void ClientHandler::sendGliden64Settings()
+{
+    if (!server->gliden64_settings.isEmpty())
+    {
+        socket->write(server->gliden64_settings);
+        request = 255;
+        gliden64_settingTimer.stop();
     }
 }
 

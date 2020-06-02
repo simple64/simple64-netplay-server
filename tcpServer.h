@@ -15,6 +15,7 @@ public:
     void setPort(int port);
     QHash<QString, QByteArray> files;
     QByteArray settings;
+    QByteArray gliden64_settings;
     QHash<uint8_t, QPair<uint32_t, QPair<uint8_t, uint8_t>>> reg; //player number, <reg_id, <plugin, raw>>
     int client_number;
 private slots:
@@ -37,6 +38,7 @@ private slots:
     void readData();
     void sendFile();
     void sendSettings();
+    void sendGliden64Settings();
     void sendReg();
 signals:
     void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
@@ -50,6 +52,7 @@ private:
     TcpServer *server;
     QTimer fileTimer;
     QTimer settingTimer;
+    QTimer gliden64_settingTimer;
     QTimer regTimer;
 };
 
