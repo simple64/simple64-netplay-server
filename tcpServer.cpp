@@ -141,7 +141,7 @@ void ClientHandler::readData()
                 uint32_t reg_id = qFromBigEndian<uint32_t>(data.mid(3,4));
                 data = data.mid(7);
                 char response[2];
-                char buffer_target = 3;
+                char buffer_target = 2;
                 if (!server->reg.contains(playerNum))
                 {
                     if (playerNum > 0 && plugin == 2) //Only P1 can use mempak
