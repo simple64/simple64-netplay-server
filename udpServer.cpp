@@ -17,9 +17,7 @@ UdpServer::UdpServer(int _port)
         lead_count[i] = 0;
         buffer_size[i] = 3;
         buffer_health[i] = -1;
-        inputs[i].setMaxCost(5000);
     }
-    sync_hash.setMaxCost(5000);
     port = _port;
     status = 0;
 }
@@ -38,14 +36,15 @@ void UdpServer::checkIfExists(uint8_t playerNumber, uint32_t count)
 {
     if (!inputs[playerNumber].contains(count)) //They are asking for a value we don't have
     {
-        InputState* state = new InputState;
         if (!buttons[playerNumber].isEmpty())
-            state->data = buttons[playerNumber].takeFirst();
+            inputs[playerNumber].insert(count, buttons[playerNumber].takeFirst());
         else if (inputs[playerNumber].contains(count-1))
-            state->data = inputs[playerNumber].object(count-1)->data;
+            inputs[playerNumber].insert(count, inputs[playerNumber].value(count-1));
         else
-            state->data = qMakePair(0, 0/*Controller not present*/);
-        inputs[playerNumber].insert(count, state, 1);
+            inputs[playerNumber].insert(count, qMakePair(0, 0/*Controller not present*/));
+
+        if (inputs[playerNumber].size() == 5000)
+            inputs[playerNumber].remove(count - 4999);
     }
 }
 
@@ -65,9 +64,9 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
         qToBigEndian(count, &buffer[curr]);
         curr += 4;
         checkIfExists(playerNum, count);
-        qToBigEndian(inputs[playerNum].object(count)->data.first, &buffer[curr]);
+        qToBigEndian(inputs[playerNum].value(count).first, &buffer[curr]);
         curr += 4;
-        buffer[curr] = inputs[playerNum].object(count)->data.second;
+        buffer[curr] = inputs[playerNum].value(count).second;
         curr += 1;
         ++count;
     }
@@ -82,9 +81,7 @@ void UdpServer::register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plug
 {
     player_keepalive[reg_id].first = 0;
     player_keepalive[reg_id].second = playerNum;
-    InputState* state = new InputState;
-    state->data = qMakePair(0, plugin);
-    inputs[playerNum].insert(0, state, 1);
+    inputs[playerNum].insert(0, qMakePair(0, plugin));
 }
 
 void UdpServer::readPendingDatagrams()
@@ -124,11 +121,11 @@ void UdpServer::readPendingDatagrams()
                     vi_count = qFromBigEndian<uint32_t>(&incomingData.data()[1]);
                     if (!sync_hash.contains(vi_count))
                     {
-                        HashState* state = new HashState;
-                        sync_hash.insert(vi_count, state, 1);
-                        sync_hash[vi_count]->cp0_hash = XXH3_64bits(&incomingData.data()[5], 128);
+                        sync_hash.insert(vi_count, XXH3_64bits(&incomingData.data()[5], 128));
+                        if (sync_hash.size() == 5000)
+                            sync_hash.remove(vi_count - 4999);
                     }
-                    else if (sync_hash[vi_count]->cp0_hash != XXH3_64bits(&incomingData.data()[5], 128))
+                    else if (sync_hash.value(vi_count) != XXH3_64bits(&incomingData.data()[5], 128))
                     {
                         status |= 1;
                         emit desynced();
