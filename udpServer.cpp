@@ -118,12 +118,13 @@ void UdpServer::readPendingDatagrams()
             case 4: // cp0 info from client
                 if ((status & 1) == 0)
                 {
+                    if (sync_hash.size() > 500)
+                        sync_hash.clear();
+
                     vi_count = qFromBigEndian<uint32_t>(&incomingData.data()[1]);
                     if (!sync_hash.contains(vi_count))
                     {
                         sync_hash.insert(vi_count, XXH3_64bits(&incomingData.data()[5], 128));
-                        if (sync_hash.size() > 500)
-                            sync_hash.clear();
                     }
                     else if (sync_hash.value(vi_count) != XXH3_64bits(&incomingData.data()[5], 128))
                     {
