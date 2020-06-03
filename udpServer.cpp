@@ -122,8 +122,8 @@ void UdpServer::readPendingDatagrams()
                     if (!sync_hash.contains(vi_count))
                     {
                         sync_hash.insert(vi_count, XXH3_64bits(&incomingData.data()[5], 128));
-                        if (sync_hash.size() > 5000)
-                            sync_hash.remove(vi_count - 5000);
+                        if (sync_hash.size() > 500)
+                            sync_hash.clear();
                     }
                     else if (sync_hash.value(vi_count) != XXH3_64bits(&incomingData.data()[5], 128))
                     {
