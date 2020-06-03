@@ -43,8 +43,8 @@ void UdpServer::checkIfExists(uint8_t playerNumber, uint32_t count)
         else
             inputs[playerNumber].insert(count, qMakePair(0, 0/*Controller not present*/));
 
-        if (inputs[playerNumber].size() == 5000)
-            inputs[playerNumber].remove(count - 4999);
+        if (inputs[playerNumber].size() > 5000)
+            inputs[playerNumber].remove(count - 5000);
     }
 }
 
@@ -122,8 +122,8 @@ void UdpServer::readPendingDatagrams()
                     if (!sync_hash.contains(vi_count))
                     {
                         sync_hash.insert(vi_count, XXH3_64bits(&incomingData.data()[5], 128));
-                        if (sync_hash.size() == 5000)
-                            sync_hash.remove(vi_count - 4999);
+                        if (sync_hash.size() > 5000)
+                            sync_hash.remove(vi_count - 5000);
                     }
                     else if (sync_hash.value(vi_count) != XXH3_64bits(&incomingData.data()[5], 128))
                     {
