@@ -43,8 +43,7 @@ void UdpServer::checkIfExists(uint8_t playerNumber, uint32_t count)
         else
             inputs[playerNumber].insert(count, qMakePair(0, 0/*Controller not present*/));
 
-        if (inputs[playerNumber].size() > 5000)
-            inputs[playerNumber].remove(count - 5000);
+        inputs[playerNumber].remove(count - 5000);
     }
 }
 
