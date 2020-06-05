@@ -8,9 +8,9 @@ int main(int argc, char *argv[])
 
     QCommandLineParser parser;
     parser.addHelpOption();
-    QCommandLineOption discord_opt("discord", "Discord bot auth token.");
+    QCommandLineOption discord_opt("discord", "Discord bot auth token (optional).");
     discord_opt.setValueName("bot token");
-    QCommandLineOption name_opt("name", "Server name.");
+    QCommandLineOption name_opt("name", "Server name (required).");
     name_opt.setValueName("name");
     parser.addOption(discord_opt);
     parser.addOption(name_opt);
