@@ -1,6 +1,8 @@
 #include "socketServer.h"
 #include <QJsonDocument>
 #include <QNetworkAccessManager>
+#include <QNetworkDatagram>
+#include <QNetworkAddressEntry>
 #include <QCoreApplication>
 #include <QDir>
 
@@ -8,6 +10,10 @@ SocketServer::SocketServer(QString _token, QString _region, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
+    multicastSocket.bind(QHostAddress::Any, 45000);
+    connect(&multicastSocket, &QUdpSocket::readyRead, this, &SocketServer::processMulticast);
+    QHostAddress multicastAddr(QStringLiteral("239.64.64.64"));
+    multicastSocket.joinMulticastGroup(multicastAddr);
 
     if (webSocketServer->listen(QHostAddress::Any, 45000))
     {
@@ -36,10 +42,30 @@ SocketServer::~SocketServer()
 {
     log_file->close();
     webSocketServer->close();
+    multicastSocket.close();
     if (!token.isEmpty())
     {
         discordClient.close();
         discordTimer.stop();
+    }
+}
+
+void SocketServer::processMulticast()
+{
+    while (multicastSocket.hasPendingDatagrams())
+    {
+        QNetworkDatagram datagram = multicastSocket.receiveDatagram();
+        QByteArray incomingData = datagram.data();
+        if (incomingData.at(0) == 1)
+        {
+            QNetworkInterface inter = QNetworkInterface::interfaceFromIndex(datagram.interfaceIndex());
+            QList<QNetworkAddressEntry> addresses = inter.addressEntries();
+            QHostAddress ip = addresses.at(0).ip();
+            QJsonObject json;
+            json.insert(region, QStringLiteral("ws://") + ip.toString() + QStringLiteral(":45000"));
+            QJsonDocument json_doc(json);
+            multicastSocket.writeDatagram(json_doc.toJson(), datagram.senderAddress(), datagram.senderPort());
+        }
     }
 }
 
@@ -107,7 +133,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
 {
     int i, room_port;
     QWebSocket *client = qobject_cast<QWebSocket *>(sender());
-    QJsonDocument json_doc = QJsonDocument::fromBinaryData(message);
+    QJsonDocument json_doc = QJsonDocument::fromJson(message);
     QJsonObject json = json_doc.object();
     QJsonObject room;
     if (json.value("type").toString() == "create_room")
@@ -117,7 +143,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.insert("type", "message");
             room.insert("message", "client and server not at same version. Visit <a href=\"https://m64p.github.io\">here</a> to update");
             json_doc = QJsonDocument(room);
-            client->sendBinaryMessage(json_doc.toBinaryData());
+            client->sendBinaryMessage(json_doc.toJson());
         }
         else
         {
@@ -155,7 +181,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             }
 
             json_doc = QJsonDocument(room);
-            client->sendBinaryMessage(json_doc.toBinaryData());
+            client->sendBinaryMessage(json_doc.toJson());
         }
     }
     else if (json.value("type").toString() == "get_rooms")
@@ -165,7 +191,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.insert("type", "message");
             room.insert("message", "client and server not at same version. Visit <a href=\"https://m64p.github.io\">here</a> to update");
             json_doc = QJsonDocument(room);
-            client->sendBinaryMessage(json_doc.toBinaryData());
+            client->sendBinaryMessage(json_doc.toJson());
         }
         else
         {
@@ -183,7 +209,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 room.remove("password");
                 room.insert("type", "send_room");
                 json_doc = QJsonDocument(room);
-                client->sendBinaryMessage(json_doc.toBinaryData());
+                client->sendBinaryMessage(json_doc.toJson());
             }
         }
     }
@@ -223,7 +249,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         room.insert("type", "accept_join");
         room.insert("accept", accepted);
         json_doc = QJsonDocument(room);
-        client->sendBinaryMessage(json_doc.toBinaryData());
+        client->sendBinaryMessage(json_doc.toJson());
     }
     else if (json.value("type").toString() == "request_players")
     {
@@ -237,7 +263,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         room.insert("message", message);
         json_doc = QJsonDocument(room);
         for (i = 0; i < clients[room_port].size(); ++i)
-            clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
+            clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
     }
     else if (json.value("type").toString() == "start_game")
     {
@@ -248,7 +274,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         writeLog("starting game", rooms[room_port].first.value("room_name").toString(), rooms[room_port].first.value("game_name").toString());
         json_doc = QJsonDocument(room);
         for (i = 0; i < clients[room_port].size(); ++i)
-            clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
+            clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
     }
     else if (json.value("type").toString() == "get_discord")
     {
@@ -257,7 +283,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             room.insert("type", "discord_link");
             room.insert("link", QStringLiteral("discord.gg/") + discord[json.value("room_name").toString()].second);
             json_doc = QJsonDocument(room);
-            client->sendBinaryMessage(json_doc.toBinaryData());
+            client->sendBinaryMessage(json_doc.toJson());
         }
     }
 }
@@ -374,7 +400,7 @@ void SocketServer::sendPlayers(int room_port)
     json_doc = QJsonDocument(room);
     for (i = 0; i < clients[room_port].size(); ++i)
     {
-        clients[room_port][i].first->sendBinaryMessage(json_doc.toBinaryData());
+        clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
     }
 
 }

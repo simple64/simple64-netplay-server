@@ -5,10 +5,9 @@
 
 UdpServer::UdpServer(int _port)
 {
-    udpSocket = new QUdpSocket(this);
-    udpSocket->bind(QHostAddress::Any, _port);
+    udpSocket.bind(QHostAddress::Any, _port);
 
-    connect(udpSocket, &QUdpSocket::readyRead,
+    connect(&udpSocket, &QUdpSocket::readyRead,
             this, &UdpServer::readPendingDatagrams);
 
     timerId = 0;
@@ -24,7 +23,7 @@ UdpServer::UdpServer(int _port)
 
 UdpServer::~UdpServer()
 {
-    udpSocket->close();
+    udpSocket.close();
 }
 
 int UdpServer::getPort()
@@ -73,7 +72,7 @@ void UdpServer::sendInput(uint32_t count, QHostAddress address, int port, uint8_
     buffer[4] = count - start; //number of counts in packet
 
     if (curr > 5)
-        udpSocket->writeDatagram(&buffer[0], curr, address, port);
+        udpSocket.writeDatagram(&buffer[0], curr, address, port);
 }
 
 void UdpServer::register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin)
@@ -87,9 +86,9 @@ void UdpServer::readPendingDatagrams()
 {
     uint32_t keys, count, vi_count;
     uint8_t playerNum, spectator;
-    while (udpSocket->hasPendingDatagrams())
+    while (udpSocket.hasPendingDatagrams())
     {
-        QNetworkDatagram datagram = udpSocket->receiveDatagram();
+        QNetworkDatagram datagram = udpSocket.receiveDatagram();
         QByteArray incomingData = datagram.data();
         playerNum = incomingData.at(1);
         switch (incomingData.at(0))
