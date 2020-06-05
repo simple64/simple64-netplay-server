@@ -10,7 +10,7 @@ SocketServer::SocketServer(QString _token, QString _region, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
-    multicastSocket.bind(QHostAddress::Any, 45000);
+    multicastSocket.bind(QHostAddress::AnyIPv4, 45000);
     connect(&multicastSocket, &QUdpSocket::readyRead, this, &SocketServer::processMulticast);
     QHostAddress multicastAddr(QStringLiteral("239.64.64.64"));
     multicastSocket.joinMulticastGroup(multicastAddr);
