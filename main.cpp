@@ -20,9 +20,9 @@ int main(int argc, char *argv[])
     QString token;
     QString region;
     if (parser.isSet(discord_opt))
-        token = discord_opt.valueName();
+        token = parser.value("discord");
     if (parser.isSet(name_opt))
-        region = name_opt.valueName();
+        region = parser.value("name");
     else
     {
         printf("must set server name\n");
