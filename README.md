@@ -17,4 +17,4 @@ cd m64p-netplay-server/build
 ```
 
 ## Playing locally
-The server is discoverable on a LAN (similar to how a Chromcast works). When the server is running, clients on the same LAN should find the server automatically.
+The server is discoverable on a LAN (similar to how a Chromecast works). When the server is running, clients on the same LAN should find the server automatically.
