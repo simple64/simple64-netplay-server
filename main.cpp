@@ -7,18 +7,27 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     QCommandLineParser parser;
-    parser.addPositionalArgument("discordbot", QCoreApplication::translate("main", "Discord bot auth token."));
-    parser.addPositionalArgument("region", QCoreApplication::translate("main", "Server region."));
+    parser.addHelpOption();
+    QCommandLineOption discord_opt("discord", "Discord bot auth token (optional).");
+    discord_opt.setValueName("bot token");
+    QCommandLineOption name_opt("name", "Server name (required).");
+    name_opt.setValueName("name");
+    parser.addOption(discord_opt);
+    parser.addOption(name_opt);
 
     parser.process(a);
-    const QStringList args = parser.positionalArguments();
 
     QString token;
     QString region;
-    if (args.size() > 0)
-        token = args.at(0);
-    if (args.size() > 1)
-        region = args.at(1);
+    if (parser.isSet(discord_opt))
+        token = parser.value("discord");
+    if (parser.isSet(name_opt))
+        region = parser.value("name");
+    else
+    {
+        printf("must set server name\n");
+        return 0;
+    }
 
     SocketServer socketServer(token, region);
 

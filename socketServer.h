@@ -9,7 +9,7 @@
 #include <QNetworkReply>
 #include <QFile>
 
-#define NETPLAY_VER 6
+#define NETPLAY_VER 7
 
 class SocketServer : public QObject
 {
@@ -35,6 +35,7 @@ private slots:
     void discordConnected(QString message);
     void discordHeartbeat();
     void discordReconnect();
+    void processMulticast();
 private:
     void sendPlayers(int room_port);
     void createDiscord(QString room_name, QString game_name, bool is_public);
@@ -51,6 +52,7 @@ private:
     QWebSocket discordClient;
     int discordCounter;
     QTimer discordTimer;
+    QUdpSocket multicastSocket;
 };
 
 #endif
