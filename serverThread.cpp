@@ -20,6 +20,9 @@ void ServerThread::run()
 
     exec();
 
+    udpServer.close();
+    tcpServer.close();
+
     emit killServer(port);
 }
 

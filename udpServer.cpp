@@ -24,7 +24,7 @@ void UdpServer::setPort(int _port)
     port = _port;
 }
 
-UdpServer::~UdpServer()
+void UdpServer::close()
 {
     udpSocket.close();
 }

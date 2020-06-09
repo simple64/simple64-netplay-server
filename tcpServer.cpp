@@ -10,11 +10,6 @@ TcpServer::TcpServer(QObject *parent)
     connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 }
 
-TcpServer::~TcpServer()
-{
-    close();
-}
-
 void TcpServer::getClientNumber(int size)
 {
     client_number = size;
