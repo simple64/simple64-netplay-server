@@ -456,7 +456,7 @@ void SocketServer::writeLog(QString message, QString room_name, QString game_nam
     out << game_name;
     out << QStringLiteral(", ");
     out << message;
-    out << Qt::endl;
+    out << endl;
     log_file->flush();
 }
 
