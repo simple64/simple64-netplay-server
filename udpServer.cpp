@@ -5,9 +5,6 @@
 
 UdpServer::UdpServer()
 {
-    connect(&udpSocket, &QUdpSocket::readyRead,
-            this, &UdpServer::readPendingDatagrams);
-
     timerId = 0;
     for (int i = 0; i < 4; ++i)
     {
@@ -22,6 +19,9 @@ void UdpServer::setPort(int _port)
 {
     udpSocket.bind(QHostAddress::Any, _port);
     port = _port;
+
+    connect(&udpSocket, &QUdpSocket::readyRead,
+            this, &UdpServer::readPendingDatagrams);
 }
 
 void UdpServer::close()

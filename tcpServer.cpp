@@ -7,7 +7,6 @@ TcpServer::TcpServer(QObject *parent)
     client_number = 0;
     settings.clear();
     gliden64_settings.clear();
-    connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 }
 
 void TcpServer::getClientNumber(int size)
@@ -18,6 +17,7 @@ void TcpServer::getClientNumber(int size)
 void TcpServer::setPort(int port)
 {
     listen(QHostAddress::Any, port);
+    connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 }
 
 void TcpServer::onNewConnection()
