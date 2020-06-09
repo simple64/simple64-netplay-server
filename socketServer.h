@@ -8,6 +8,8 @@
 #include <QHash>
 #include <QNetworkReply>
 #include <QFile>
+#include <QTimer>
+#include <QUdpSocket>
 
 #define NETPLAY_VER 7
 

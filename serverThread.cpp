@@ -10,6 +10,8 @@ ServerThread::ServerThread(int _port, QObject *parent)
 
 void ServerThread::run()
 {
+    UdpServer udpServer;
+    TcpServer tcpServer;
     udpServer.setPort(port);
     tcpServer.setPort(port);
     connect(&udpServer, &UdpServer::killMe, this, &ServerThread::quit);

@@ -1,8 +1,6 @@
 #ifndef SERVERTHREAD_H
 #define SERVERTHREAD_H
 #include <QThread>
-#include "udpServer.h"
-#include "tcpServer.h"
 
 class ServerThread : public QThread
 {
@@ -20,8 +18,6 @@ public slots:
     void getClientNumber(int _port, int size);
 private:
     int port;
-    UdpServer udpServer;
-    TcpServer tcpServer;
 };
 
 #endif
