@@ -3,10 +3,8 @@
 #include <QNetworkDatagram>
 #include <QtEndian>
 
-UdpServer::UdpServer(int _port)
+UdpServer::UdpServer()
 {
-    udpSocket.bind(QHostAddress::Any, _port);
-
     connect(&udpSocket, &QUdpSocket::readyRead,
             this, &UdpServer::readPendingDatagrams);
 
@@ -17,8 +15,13 @@ UdpServer::UdpServer(int _port)
         buffer_size[i] = 3;
         buffer_health[i] = -1;
     }
-    port = _port;
     status = 0;
+}
+
+void UdpServer::setPort(int _port)
+{
+    udpSocket.bind(QHostAddress::Any, _port);
+    port = _port;
 }
 
 UdpServer::~UdpServer()

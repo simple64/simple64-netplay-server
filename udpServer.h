@@ -8,10 +8,11 @@ class UdpServer : public QObject
 {
     Q_OBJECT
 public:
-    UdpServer(int _port);
+    UdpServer();
     ~UdpServer();
     void readPendingDatagrams();
     int getPort();
+    void setPort(int _port);
 protected:
     void timerEvent(QTimerEvent *te) Q_DECL_OVERRIDE;
 signals:

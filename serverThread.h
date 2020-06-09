@@ -20,8 +20,8 @@ public slots:
     void getClientNumber(int _port, int size);
 private:
     int port;
-    UdpServer *udpServer;
-    TcpServer *tcpServer;
+    UdpServer udpServer;
+    TcpServer tcpServer;
 };
 
 #endif
