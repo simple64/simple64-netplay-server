@@ -37,7 +37,7 @@ private slots:
     void discordConnected(QString message);
     void discordHeartbeat();
     void discordReconnect();
-    void processMulticast();
+    void processBroadcast();
 private:
     void sendPlayers(int room_port);
     void createDiscord(QString room_name, QString game_name, bool is_public);
@@ -54,7 +54,7 @@ private:
     QWebSocket discordClient;
     int discordCounter;
     QTimer discordTimer;
-    QUdpSocket multicastSocket;
+    QUdpSocket broadcastSocket;
 };
 
 #endif

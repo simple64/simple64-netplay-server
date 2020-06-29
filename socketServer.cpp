@@ -10,10 +10,8 @@ SocketServer::SocketServer(QString _token, QString _region, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
-    multicastSocket.bind(QHostAddress::AnyIPv4, 45000);
-    connect(&multicastSocket, &QUdpSocket::readyRead, this, &SocketServer::processMulticast);
-    QHostAddress multicastAddr(QStringLiteral("239.64.64.64"));
-    multicastSocket.joinMulticastGroup(multicastAddr);
+    broadcastSocket.bind(45000, QUdpSocket::ShareAddress);
+    connect(&broadcastSocket, &QUdpSocket::readyRead, this, &SocketServer::processBroadcast);
 
     if (webSocketServer->listen(QHostAddress::Any, 45000))
     {
@@ -42,7 +40,7 @@ SocketServer::~SocketServer()
 {
     log_file->close();
     webSocketServer->close();
-    multicastSocket.close();
+    broadcastSocket.close();
     if (!token.isEmpty())
     {
         discordClient.close();
@@ -50,11 +48,11 @@ SocketServer::~SocketServer()
     }
 }
 
-void SocketServer::processMulticast()
+void SocketServer::processBroadcast()
 {
-    while (multicastSocket.hasPendingDatagrams())
+    while (broadcastSocket.hasPendingDatagrams())
     {
-        QNetworkDatagram datagram = multicastSocket.receiveDatagram();
+        QNetworkDatagram datagram = broadcastSocket.receiveDatagram();
         QByteArray incomingData = datagram.data();
         if (incomingData.at(0) == 1)
         {
@@ -64,7 +62,7 @@ void SocketServer::processMulticast()
             QJsonObject json;
             json.insert(region, QStringLiteral("ws://") + ip.toString() + QStringLiteral(":45000"));
             QJsonDocument json_doc(json);
-            multicastSocket.writeDatagram(json_doc.toJson(), datagram.senderAddress(), datagram.senderPort());
+            broadcastSocket.writeDatagram(json_doc.toJson(), datagram.senderAddress(), datagram.senderPort());
         }
     }
 }
