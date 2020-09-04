@@ -327,5 +327,7 @@ void SocketServer::desyncMessage(int port)
     QString game_name = rooms[port].first.value("game_name").toString();
     writeLog("game desynced", room_name, game_name);
     QString message = "Desync in netplay room running in " + region + ": **" + room_name + "** game: " + game_name;
-    announceDiscord("716049124188749845", message); //m64p discord dev channel
+    QString path = qEnvironmentVariable("M64P_DEV_CHANNEL");
+    if (!path.isEmpty())
+        announceDiscord(path, message); //m64p discord dev channel
 }
