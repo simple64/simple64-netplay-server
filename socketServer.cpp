@@ -333,7 +333,7 @@ void SocketServer::desyncMessage(int port)
         announceDiscord(path, message); //m64p discord dev channel
 }
 
-void SocketServer::receiveLog(QString message, uint32_t port)
+void SocketServer::receiveLog(QString message, int port)
 {
     QString room_name = rooms[port].first.value("room_name").toString();
     QString game_name = rooms[port].first.value("game_name").toString();

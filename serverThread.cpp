@@ -29,7 +29,7 @@ void ServerThread::run()
     emit killServer(port);
 }
 
-void ServerThread::receiveLog(QString message, uint32_t port)
+void ServerThread::receiveLog(QString message, int port)
 {
     emit writeLog(message, port);
 }

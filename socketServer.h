@@ -33,7 +33,7 @@ private slots:
     void desyncMessage(int port);
     void deleteResponse(QNetworkReply *reply);
     void processBroadcast();
-    void receiveLog(QString message, uint32_t port);
+    void receiveLog(QString message, int port);
 private:
     void sendPlayers(int room_port);
     void createDiscord(QString room_name, QString game_name, bool is_public);
