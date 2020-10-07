@@ -83,6 +83,7 @@ void UdpServer::register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plug
     player_keepalive[reg_id].first = 0;
     player_keepalive[reg_id].second = playerNum;
     inputs[playerNum].insert(0, qMakePair(0, plugin));
+    emit writeLog("Player " + QString::number(playerNum + 1) + " registered", port);
 }
 
 void UdpServer::readPendingDatagrams()
@@ -168,6 +169,8 @@ void UdpServer::timerEvent(QTimerEvent *)
 
 void UdpServer::disconnect_player(uint32_t reg_id)
 {
+    emit writeLog("Player " + QString::number(player_keepalive[reg_id].second + 1) + " disconnected", port);
+
     status |= (0x1 << (player_keepalive[reg_id].second + 1));
     player_keepalive.remove(reg_id);
 

@@ -12,8 +12,10 @@ signals:
     void killServer(int port);
     void desynced(int port);
     void sendClientNumber(int size);
+    void writeLog(QString message, uint32_t port);
 private slots:
     void desync();
+    void receiveLog(QString message, uint32_t port);
 public slots:
     void getClientNumber(int _port, int size);
 private:

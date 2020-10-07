@@ -86,6 +86,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     writeLog("creating room", json.value("room_name").toString(), json.value("game_name").toString());
 
                     ServerThread *serverThread = new ServerThread(port, this);
+                    connect(serverThread, &ServerThread::writeLog, this, &SocketServer::receiveLog);
                     connect(serverThread, &ServerThread::killServer, this, &SocketServer::closeUdpServer);
                     connect(serverThread, &ServerThread::desynced, this, &SocketServer::desyncMessage);
                     connect(serverThread, &ServerThread::finished, serverThread, &ServerThread::deleteLater);
@@ -330,4 +331,11 @@ void SocketServer::desyncMessage(int port)
     QString path = qEnvironmentVariable("M64P_DEV_CHANNEL");
     if (!path.isEmpty())
         announceDiscord(path, message); //m64p discord dev channel
+}
+
+void SocketServer::receiveLog(QString message, uint32_t port)
+{
+    QString room_name = rooms[port].first.value("room_name").toString();
+    QString game_name = rooms[port].first.value("game_name").toString();
+    writeLog(message, room_name, game_name);
 }

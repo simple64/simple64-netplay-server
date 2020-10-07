@@ -14,6 +14,7 @@ void ServerThread::run()
     TcpServer tcpServer;
     udpServer.setPort(port);
     tcpServer.setPort(port);
+    connect(&udpServer, &UdpServer::writeLog, this, &ServerThread::receiveLog);
     connect(&udpServer, &UdpServer::killMe, this, &ServerThread::quit);
     connect(&udpServer, &UdpServer::desynced, this, &ServerThread::desync);
     connect(&tcpServer, &TcpServer::register_player, &udpServer, &UdpServer::register_player);
@@ -26,6 +27,11 @@ void ServerThread::run()
     tcpServer.close();
 
     emit killServer(port);
+}
+
+void ServerThread::receiveLog(QString message, uint32_t port)
+{
+    emit writeLog(message, port);
 }
 
 void ServerThread::desync()
