@@ -2,6 +2,7 @@
 #include "xxh3.h"
 #include <QNetworkDatagram>
 #include <QtEndian>
+#include <QTimer>
 
 UdpServer::UdpServer()
 {
@@ -13,6 +14,17 @@ UdpServer::UdpServer()
         buffer_health[i] = -1;
     }
     status = 0;
+
+    QTimer::singleShot(3600000, this, &UdpServer::killRoom);
+}
+
+void UdpServer::killRoom()
+{
+    if (player_keepalive.isEmpty())
+    {
+        emit writeLog("Room killed", port);
+        emit killMe(port);
+    }
 }
 
 void UdpServer::setPort(int _port)
