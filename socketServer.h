@@ -37,7 +37,7 @@ private slots:
 private:
     void sendPlayers(int room_port);
     void createDiscord(QString room_name, QString game_name, bool is_public);
-    void writeLog(QString message, QString room_name, QString game_name);
+    void writeLog(QString message, QString room_name, QString game_name, int port);
     void announceDiscord(QString channel, QString message);
     QWebSocketServer *webSocketServer;
     QHash<int, QPair<QJsonObject, ServerThread*>> rooms;

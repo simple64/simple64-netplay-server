@@ -23,7 +23,7 @@ SocketServer::SocketServer(QString _region, QObject *parent)
     QDir AppPath(QCoreApplication::applicationDirPath());
     log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
-    writeLog("Server started", "None", "None");
+    writeLog("Server started", "None", "None", 0);
 }
 
 SocketServer::~SocketServer()
@@ -83,7 +83,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 if (!rooms.contains(port))
                 {
-                    writeLog("creating room", json.value("room_name").toString(), json.value("game_name").toString());
+                    writeLog("creating room", json.value("room_name").toString(), json.value("game_name").toString(), port);
 
                     ServerThread *serverThread = new ServerThread(port, this);
                     connect(serverThread, &ServerThread::writeLog, this, &SocketServer::receiveLog);
@@ -203,7 +203,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         room_port = json.value("port").toInt();
         emit setClientNumber(room_port, clients[room_port].size());
         rooms[room_port].first.insert("running", "true");
-        writeLog("starting game", rooms[room_port].first.value("room_name").toString(), rooms[room_port].first.value("game_name").toString());
+        writeLog("starting game", rooms[room_port].first.value("room_name").toString(), rooms[room_port].first.value("game_name").toString(), room_port);
         json_doc = QJsonDocument(room);
         for (i = 0; i < clients[room_port].size(); ++i)
             clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
@@ -270,7 +270,7 @@ void SocketServer::sendPlayers(int room_port)
 
 void SocketServer::closeUdpServer(int port)
 {
-    writeLog("deleting room", rooms[port].first.value("room_name").toString(), rooms[port].first.value("game_name").toString());
+    writeLog("deleting room", rooms[port].first.value("room_name").toString(), rooms[port].first.value("game_name").toString(), port);
 
     rooms.remove(port);
     clients.remove(port);
@@ -307,7 +307,7 @@ void SocketServer::socketDisconnected()
         client->deleteLater();
 }
 
-void SocketServer::writeLog(QString message, QString room_name, QString game_name)
+void SocketServer::writeLog(QString message, QString room_name, QString game_name, int port)
 {
     QTextStream out(log_file);
     QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
@@ -316,6 +316,8 @@ void SocketServer::writeLog(QString message, QString room_name, QString game_nam
     out << room_name;
     out << QStringLiteral(", game: ");
     out << game_name;
+    out << QStringLiteral(", port: ");
+    out << QString::number(port);
     out << QStringLiteral(", ");
     out << message;
     out << endl;
@@ -326,7 +328,7 @@ void SocketServer::desyncMessage(int port)
 {
     QString room_name = rooms[port].first.value("room_name").toString();
     QString game_name = rooms[port].first.value("game_name").toString();
-    writeLog("game desynced", room_name, game_name);
+    writeLog("game desynced", room_name, game_name, port);
     QString message = "Desync in netplay room running in " + region + ": **" + room_name + "** game: " + game_name;
     QString path = qEnvironmentVariable("M64P_DEV_CHANNEL");
     if (!path.isEmpty())
@@ -337,5 +339,5 @@ void SocketServer::receiveLog(QString message, int port)
 {
     QString room_name = rooms[port].first.value("room_name").toString();
     QString game_name = rooms[port].first.value("game_name").toString();
-    writeLog(message, room_name, game_name);
+    writeLog(message, room_name, game_name, port);
 }
