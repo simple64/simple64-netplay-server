@@ -208,6 +208,13 @@ void SocketServer::processBinaryMessage(QByteArray message)
         for (i = 0; i < clients[room_port].size(); ++i)
             clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
     }
+    else if (json.value("type").toString() == "get_motd")
+    {
+        room.insert("type", "send_motd");
+        room.insert("message", QStringLiteral("Have fun!"));
+        json_doc = QJsonDocument(room);
+        client->sendBinaryMessage(json_doc.toJson());
+    }
 }
 
 void SocketServer::createDiscord(QString room_name, QString game_name, bool is_public)
