@@ -1,5 +1,6 @@
 #include "udpServer.h"
-#include "xxh3.h"
+#define XXH_INLINE_ALL
+#include "xxhash.h"
 #include <QNetworkDatagram>
 #include <QtEndian>
 #include <QTimer>
