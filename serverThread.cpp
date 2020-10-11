@@ -31,9 +31,9 @@ void ServerThread::run()
     emit killServer(port);
 }
 
-void ServerThread::receiveLog(QString message, int port)
+void ServerThread::receiveLog(QString message, int _port)
 {
-    emit writeLog(message, port);
+    emit writeLog(message, _port);
 }
 
 void ServerThread::desync()
@@ -58,5 +58,8 @@ void ServerThread::getClientNumber(int _port, int size)
 void ServerThread::shouldKill()
 {
     if (registered == 0)
+    {
+        emit writeLog(QStringLiteral("Room Killed"), port);
         quit();
+    }
 }

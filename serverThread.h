@@ -15,7 +15,7 @@ signals:
     void writeLog(QString message, int port);
 private slots:
     void desync();
-    void receiveLog(QString message, int port);
+    void receiveLog(QString message, int _port);
     void player_registered(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void shouldKill();
 public slots:
