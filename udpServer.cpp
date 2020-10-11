@@ -96,18 +96,11 @@ void UdpServer::register_player(quint32 reg_id, quint8 playerNum, quint8 plugin)
 
 void UdpServer::reportBuffer()
 {
-    float total = 0.0;
-    float avg = 0.0;
     for (int i = 0; i < 4; ++i)
     {
         if (buffer_health[i] != -1)
-        {
-            total += 1.0;
-            avg += buffer_size[i];
-        }
+            emit writeLog("Player " + QString::number(i + 1) + " buffer size: " + QString::number(buffer_size[i]), port);
     }
-    avg /= total;
-    emit writeLog("Buffer size: " + QString::number(avg), port);
 }
 
 void UdpServer::readPendingDatagrams()
