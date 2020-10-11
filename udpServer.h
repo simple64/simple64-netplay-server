@@ -22,8 +22,6 @@ signals:
 public slots:
     void register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
     void disconnect_player(uint32_t reg_id);
-private slots:
-    void killRoom();
 private:
     void sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator);
     void checkIfExists(uint8_t playerNumber, uint32_t count);
