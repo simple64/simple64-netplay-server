@@ -6,7 +6,7 @@
 #include <QCoreApplication>
 #include <QDir>
 
-SocketServer::SocketServer(QString _region, QObject *parent)
+SocketServer::SocketServer(QString _region, int _timestamp, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
@@ -20,6 +20,7 @@ SocketServer::SocketServer(QString _region, QObject *parent)
     }
 
     region = _region;
+    timestamp = _timestamp;
     QDir AppPath(QCoreApplication::applicationDirPath());
     log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
@@ -317,9 +318,12 @@ void SocketServer::socketDisconnected()
 void SocketServer::writeLog(QString message, QString room_name, QString game_name, int port)
 {
     QTextStream out(log_file);
-    QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    out << currentDateTime;
-    out << QStringLiteral(": room: ");
+    if (timestamp)
+    {
+        QString currentDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+        out << currentDateTime << ": ";
+    }
+    out << QStringLiteral("room: ");
     out << room_name;
     out << QStringLiteral(", game: ");
     out << game_name;

@@ -18,7 +18,7 @@ class SocketServer : public QObject
     Q_OBJECT
 
 public:
-    explicit SocketServer(QString _region, QObject *parent = 0);
+    explicit SocketServer(QString _region, int _timestamp, QObject *parent = 0);
     ~SocketServer();
 
 signals:
@@ -43,6 +43,7 @@ private:
     QHash<int, QPair<QJsonObject, ServerThread*>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>
     QString region;
+    int timestamp;
     QFile *log_file;
     QUdpSocket broadcastSocket;
 };

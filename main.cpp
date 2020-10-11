@@ -9,8 +9,10 @@ int main(int argc, char *argv[])
     QCommandLineParser parser;
     parser.addHelpOption();
     QCommandLineOption name_opt("name", "Server name (required).");
+    QCommandLineOption timestamp_opt("timestamps", "Whether log should include timestamps.");
     name_opt.setValueName("name");
     parser.addOption(name_opt);
+    parser.addOption(timestamp_opt);
 
     parser.process(a);
 
@@ -23,7 +25,11 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    SocketServer socketServer(region);
+    int timestamp = 0;
+    if (parser.isSet(timestamp_opt))
+        timestamp = 1;
+
+    SocketServer socketServer(region, timestamp);
 
     return a.exec();
 }
