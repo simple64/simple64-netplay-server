@@ -3,6 +3,7 @@
 #include "xxhash.h"
 #include <QNetworkDatagram>
 #include <QtEndian>
+#include <QTimer>
 
 UdpServer::UdpServer()
 {
@@ -85,6 +86,21 @@ void UdpServer::register_player(quint32 reg_id, quint8 playerNum, quint8 plugin)
     player_keepalive[reg_id].second = playerNum;
     inputs[playerNum].insert(0, qMakePair(0, plugin));
     emit writeLog("Player " + QString::number(playerNum + 1) + " registered", port);
+
+    if (playerNum == 0)
+    {
+        QTimer::singleShot(300000, this, &UdpServer::reportBuffer);
+        QTimer::singleShot(600000, this, &UdpServer::reportBuffer);
+    }
+}
+
+void UdpServer::reportBuffer()
+{
+    float avg = 0.0;
+    for (int i = 0; i < 4; ++i)
+        avg += buffer_size[i];
+    avg /= 4.0;
+    emit writeLog("Buffer size: " + QString::number(avg), port);
 }
 
 void UdpServer::readPendingDatagrams()
