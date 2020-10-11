@@ -16,7 +16,7 @@ signals:
 private slots:
     void desync();
     void receiveLog(QString message, int _port);
-    void player_registered(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
+    void player_registered(quint32 reg_id, quint8 playerNum, quint8 plugin);
     void shouldKill();
 public slots:
     void getClientNumber(int _port, int size);

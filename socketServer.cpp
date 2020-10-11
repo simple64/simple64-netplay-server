@@ -149,7 +149,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     {
         int accepted = 0;
         room_port = json.value("port").toInt();
-        room = rooms[room_port].first;
+        room = rooms.value(room_port).first;
         if (!room.value("password").toString().isEmpty() &&
            (room.value("password").toString() != json.value("password").toString()))
         {
@@ -168,7 +168,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
             int player_num = 1;
             for (i = 0; i < clients[room_port].size(); ++i)
             {
-                if (clients[room_port][i].second.second == player_num)
+                if (clients.value(room_port).value(i).second.second == player_num)
                 {
                     ++player_num;
                     i = -1;
@@ -195,7 +195,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         room.insert("message", message);
         json_doc = QJsonDocument(room);
         for (i = 0; i < clients[room_port].size(); ++i)
-            clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
+            clients.value(room_port).value(i).first->sendBinaryMessage(json_doc.toJson());
     }
     else if (json.value("type").toString() == "start_game")
     {
@@ -203,10 +203,10 @@ void SocketServer::processBinaryMessage(QByteArray message)
         room_port = json.value("port").toInt();
         emit setClientNumber(room_port, clients[room_port].size());
         rooms[room_port].first.insert("running", "true");
-        writeLog("starting game", rooms[room_port].first.value("room_name").toString(), rooms[room_port].first.value("game_name").toString(), room_port);
+        writeLog("starting game", rooms.value(room_port).first.value("room_name").toString(), rooms.value(room_port).first.value("game_name").toString(), room_port);
         json_doc = QJsonDocument(room);
         for (i = 0; i < clients[room_port].size(); ++i)
-            clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
+            clients.value(room_port).value(i).first->sendBinaryMessage(json_doc.toJson());
     }
     else if (json.value("type").toString() == "get_motd")
     {
@@ -265,19 +265,19 @@ void SocketServer::sendPlayers(int room_port)
     room.insert("type", "room_players");
     for (i = 0; i < clients[room_port].size(); ++i)
     {
-        room.insert(QString::number(clients[room_port][i].second.second - 1), clients[room_port][i].second.first);
+        room.insert(QString::number(clients.value(room_port).value(i).second.second - 1), clients.value(room_port).value(i).second.first);
     }
     json_doc = QJsonDocument(room);
     for (i = 0; i < clients[room_port].size(); ++i)
     {
-        clients[room_port][i].first->sendBinaryMessage(json_doc.toJson());
+        clients.value(room_port).value(i).first->sendBinaryMessage(json_doc.toJson());
     }
 
 }
 
 void SocketServer::closeUdpServer(int port)
 {
-    writeLog("deleting room", rooms[port].first.value("room_name").toString(), rooms[port].first.value("game_name").toString(), port);
+    writeLog("deleting room", rooms.value(port).first.value("room_name").toString(), rooms.value(port).first.value("game_name").toString(), port);
 
     rooms.remove(port);
     clients.remove(port);
@@ -293,14 +293,14 @@ void SocketServer::socketDisconnected()
     {
         for (j = 0; j < iter.value().size(); ++j)
         {
-            if (iter.value()[j].first == client)
+            if (iter.value().value(j).first == client)
             {
                 iter.value().removeAt(j);
-                if (!rooms[iter.key()].first.contains("running"))
+                if (!rooms.value(iter.key()).first.contains("running"))
                     sendPlayers(iter.key());
             }
 
-            if (iter.value().isEmpty() && !rooms[iter.key()].first.contains("running")) //no more clients connected to room
+            if (iter.value().isEmpty() && !rooms.value(iter.key()).first.contains("running")) //no more clients connected to room
             {
                 should_delete = iter.key();
             }
@@ -308,7 +308,7 @@ void SocketServer::socketDisconnected()
     }
 
     if (should_delete)
-        rooms[should_delete].second->quit();
+        rooms.value(should_delete).second->quit();
 
     if (client)
         client->deleteLater();
@@ -333,8 +333,8 @@ void SocketServer::writeLog(QString message, QString room_name, QString game_nam
 
 void SocketServer::desyncMessage(int port)
 {
-    QString room_name = rooms[port].first.value("room_name").toString();
-    QString game_name = rooms[port].first.value("game_name").toString();
+    QString room_name = rooms.value(port).first.value("room_name").toString();
+    QString game_name = rooms.value(port).first.value("game_name").toString();
     writeLog("game desynced", room_name, game_name, port);
     QString message = "Desync in netplay room running in " + region + ": **" + room_name + "** game: " + game_name;
     QString path = qEnvironmentVariable("M64P_DEV_CHANNEL");
@@ -344,7 +344,7 @@ void SocketServer::desyncMessage(int port)
 
 void SocketServer::receiveLog(QString message, int port)
 {
-    QString room_name = rooms[port].first.value("room_name").toString();
-    QString game_name = rooms[port].first.value("game_name").toString();
+    QString room_name = rooms.value(port).first.value("room_name").toString();
+    QString game_name = rooms.value(port).first.value("game_name").toString();
     writeLog(message, room_name, game_name, port);
 }

@@ -20,22 +20,22 @@ signals:
     void writeLog(QString message, int port);
     void desynced();
 public slots:
-    void register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
-    void disconnect_player(uint32_t reg_id);
+    void register_player(quint32 reg_id, quint8 playerNum, quint8 plugin);
+    void disconnect_player(quint32 reg_id);
 private:
-    void sendInput(uint32_t count, QHostAddress address, int port, uint8_t playerNum, uint8_t spectator);
-    void checkIfExists(uint8_t playerNumber, uint32_t count);
+    void sendInput(quint32 count, QHostAddress address, int port, quint8 playerNum, quint8 spectator);
+    void checkIfExists(quint8 playerNumber, quint32 count);
     QUdpSocket udpSocket;
-    QHash<uint32_t, QPair<uint32_t, uint8_t>> inputs[4]; //<count, <BUTTONS, Plugin>>
-    QHash<uint32_t, uint64_t> sync_hash; //cp0 hashes
-    QHash<uint32_t, QPair<uint8_t, uint8_t>> player_keepalive; //reg_id, <keepalive, playernumber>
-    QList<QPair<uint32_t, uint8_t>> buttons[4];
-    uint32_t lead_count[4];
-    uint8_t buffer_size[4];
+    QHash<quint32, QPair<quint32, quint8>> inputs[4]; //<count, <BUTTONS, Plugin>>
+    QHash<quint32, quint64> sync_hash; //cp0 hashes
+    QHash<quint32, QPair<quint8, quint8>> player_keepalive; //reg_id, <keepalive, playernumber>
+    QList<QPair<quint32, quint8>> buttons[4];
+    quint32 lead_count[4];
+    quint8 buffer_size[4];
     int buffer_health[4];
     int timerId;
     int port;
-    uint8_t status;
+    quint8 status;
 };
 
 #endif

@@ -41,7 +41,7 @@ void ServerThread::desync()
     emit desynced(port);
 }
 
-void ServerThread::player_registered(uint32_t, uint8_t, uint8_t)
+void ServerThread::player_registered(quint32, quint8, quint8)
 {
     registered = 1;
 }

@@ -27,12 +27,12 @@ void TcpServer::onNewConnection()
     connect(clientH, &ClientHandler::playerDisconnect, this, &TcpServer::playerDisconnect);
 }
 
-void TcpServer::reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin)
+void TcpServer::reg_player(quint32 reg_id, quint8 playerNum, quint8 plugin)
 {
     emit register_player(reg_id, playerNum, plugin);
 }
 
-void TcpServer::playerDisconnect(uint32_t reg_id)
+void TcpServer::playerDisconnect(quint32 reg_id)
 {
     emit disconnect_player(reg_id);
 }
@@ -82,7 +82,7 @@ void ClientHandler::readData()
         {
             if (data.size() >= 4)
             {
-                filesize = qFromBigEndian<int32_t>(data.mid(0,4));
+                filesize = qFromBigEndian<qint32>(data.mid(0,4));
                 data = data.mid(4);
                 process = 1;
             }
@@ -133,10 +133,10 @@ void ClientHandler::readData()
         {
             if (data.size() >= 7)
             {
-                uint8_t playerNum = data.mid(0, 1).at(0);
-                uint8_t plugin = data.mid(1, 1).at(0);
-                uint8_t raw = data.mid(2, 1).at(0);
-                uint32_t reg_id = qFromBigEndian<uint32_t>(data.mid(3,4));
+                quint8 playerNum = data.mid(0, 1).at(0);
+                quint8 plugin = data.mid(1, 1).at(0);
+                quint8 raw = data.mid(2, 1).at(0);
+                quint32 reg_id = qFromBigEndian<quint32>(data.mid(3,4));
                 data = data.mid(7);
                 char response[2];
                 char buffer_target = 2;
@@ -153,7 +153,7 @@ void ClientHandler::readData()
                 }
                 else
                 {
-                    if (server->reg[playerNum].first == reg_id)
+                    if (server->reg.value(playerNum).first == reg_id)
                         response[0] = 1;
                     else
                         response[0] = 0;
@@ -181,7 +181,7 @@ void ClientHandler::readData()
         {
             if (data.size() >= 4)
             {
-                uint32_t reg_id = qFromBigEndian<uint32_t>(data.mid(0,4));
+                quint32 reg_id = qFromBigEndian<quint32>(data.mid(0,4));
                 emit playerDisconnect(reg_id);
                 data = data.mid(4);
                 request = 255;
@@ -241,9 +241,9 @@ void ClientHandler::sendReg()
         {
            if (server->reg.contains(i))
            {
-               qToBigEndian(server->reg[i].first, &player_data[0]);
-               player_data[4] = server->reg[i].second.first; //plugin
-               player_data[5] = server->reg[i].second.second; //raw
+               qToBigEndian(server->reg.value(i).first, &player_data[0]);
+               player_data[4] = server->reg.value(i).second.first; //plugin
+               player_data[5] = server->reg.value(i).second.second; //raw
            }
            else
            {

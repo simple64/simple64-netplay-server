@@ -15,17 +15,17 @@ public:
     QHash<QString, QByteArray> files;
     QByteArray settings;
     QByteArray gliden64_settings;
-    QHash<uint8_t, QPair<uint32_t, QPair<uint8_t, uint8_t>>> reg; //player number, <reg_id, <plugin, raw>>
+    QHash<quint8, QPair<quint32, QPair<quint8, quint8>>> reg; //player number, <reg_id, <plugin, raw>>
     int client_number;
 private slots:
-    void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
-    void playerDisconnect(uint32_t reg_id);
+    void reg_player(quint32 reg_id, quint8 playerNum, quint8 plugin);
+    void playerDisconnect(quint32 reg_id);
     void onNewConnection();
 public slots:
     void getClientNumber(int size);
 signals:
-    void register_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
-    void disconnect_player(uint32_t reg_id);
+    void register_player(quint32 reg_id, quint8 playerNum, quint8 plugin);
+    void disconnect_player(quint32 reg_id);
 };
 
 class ClientHandler : public QObject
@@ -40,14 +40,14 @@ private slots:
     void sendGliden64Settings();
     void sendReg();
 signals:
-    void reg_player(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
-    void playerDisconnect(uint32_t reg_id);
+    void reg_player(quint32 reg_id, quint8 playerNum, quint8 plugin);
+    void playerDisconnect(quint32 reg_id);
 private:
     QTcpSocket *socket;
     QByteArray data;
     QString filename;
-    uint8_t request;
-    int32_t filesize;
+    quint8 request;
+    qint32 filesize;
     TcpServer *server;
     QTimer fileTimer;
     QTimer settingTimer;
