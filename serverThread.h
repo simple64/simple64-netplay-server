@@ -16,10 +16,13 @@ signals:
 private slots:
     void desync();
     void receiveLog(QString message, int port);
+    void player_registered(uint32_t reg_id, uint8_t playerNum, uint8_t plugin);
+    void shouldKill();
 public slots:
     void getClientNumber(int _port, int size);
 private:
     int port;
+    int registered;
 };
 
 #endif

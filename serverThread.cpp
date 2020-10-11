@@ -5,6 +5,7 @@
 ServerThread::ServerThread(int _port, QObject *parent)
     : QThread(parent)
 {
+    registered = 0;
     port = _port;
 }
 
@@ -18,6 +19,7 @@ void ServerThread::run()
     connect(&udpServer, &UdpServer::killMe, this, &ServerThread::quit);
     connect(&udpServer, &UdpServer::desynced, this, &ServerThread::desync);
     connect(&tcpServer, &TcpServer::register_player, &udpServer, &UdpServer::register_player);
+    connect(&tcpServer, &TcpServer::register_player, this, &ServerThread::player_registered);
     connect(&tcpServer, &TcpServer::disconnect_player, &udpServer, &UdpServer::disconnect_player);
     connect(this, &ServerThread::sendClientNumber, &tcpServer, &TcpServer::getClientNumber);
 
@@ -39,8 +41,22 @@ void ServerThread::desync()
     emit desynced(port);
 }
 
+void ServerThread::player_registered(uint32_t, uint8_t, uint8_t)
+{
+    registered = 1;
+}
+
 void ServerThread::getClientNumber(int _port, int size)
 {
     if (_port == port)
+    {
+        QTimer::singleShot(300000, this, &ServerThread::shouldKill);
         emit sendClientNumber(size);
+    }
+}
+
+void ServerThread::shouldKill()
+{
+    if (registered == 0)
+        quit();
 }
