@@ -212,7 +212,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
     else if (json.value("type").toString() == "get_motd")
     {
         room.insert("type", "send_motd");
-        room.insert("message", QStringLiteral("Have fun!"));
+        room.insert("message", QStringLiteral("Join <a href=\"https://discord.gg/B5svWhR\">The Discord Server</a> for voice chat!"));
         json_doc = QJsonDocument(room);
         client->sendBinaryMessage(json_doc.toJson());
     }
