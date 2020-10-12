@@ -6,25 +6,26 @@
 #include <QCoreApplication>
 #include <QDir>
 
-SocketServer::SocketServer(QString _region, int _timestamp, QObject *parent)
+SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
     broadcastSocket.bind(45000, QUdpSocket::ShareAddress);
     connect(&broadcastSocket, &QUdpSocket::readyRead, this, &SocketServer::processBroadcast);
 
-    if (webSocketServer->listen(QHostAddress::Any, 45000))
+    if (webSocketServer->listen(QHostAddress::Any, _baseport))
     {
         connect(webSocketServer, &QWebSocketServer::newConnection, this, &SocketServer::onNewConnection);
         connect(webSocketServer, &QWebSocketServer::closed, this, &SocketServer::closed);
     }
 
+    baseport = _baseport;
     region = _region;
     timestamp = _timestamp;
     QDir AppPath(QCoreApplication::applicationDirPath());
     log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
-    writeLog("Server started", "None", "None", 0);
+    writeLog("Server started", "None", "None", baseport);
 }
 
 SocketServer::~SocketServer()
@@ -46,7 +47,7 @@ void SocketServer::processBroadcast()
             QList<QNetworkAddressEntry> addresses = inter.addressEntries();
             QHostAddress ip = addresses.at(0).ip();
             QJsonObject json;
-            json.insert(region, QStringLiteral("ws://") + ip.toString() + QStringLiteral(":45000"));
+            json.insert(region, QStringLiteral("ws://") + ip.toString() + QStringLiteral(":") + QString::number(baseport));
             QJsonDocument json_doc(json);
             broadcastSocket.writeDatagram(json_doc.toJson(), datagram.senderAddress(), datagram.senderPort());
         }
@@ -80,7 +81,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         else
         {
             int port;
-            for (port = 45001; port < 45011; ++port)
+            for (port = (baseport + 1); port < (baseport + 11); ++port)
             {
                 if (!rooms.contains(port))
                 {
@@ -107,7 +108,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 }
             }
 
-            if (port == 45011)
+            if (port == (baseport + 11))
             {
                 room.insert("type", "message");
                 room.insert("message", "Failed to create room");
