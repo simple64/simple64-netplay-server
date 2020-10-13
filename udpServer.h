@@ -38,6 +38,7 @@ private:
     int timerId;
     int port;
     quint8 status;
+    int buffer_target;
 };
 
 #endif

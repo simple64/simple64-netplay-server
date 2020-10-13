@@ -15,6 +15,7 @@ UdpServer::UdpServer()
         buffer_health[i] = -1;
     }
     status = 0;
+    buffer_target = 2;
 }
 
 void UdpServer::setPort(int _port)
@@ -164,9 +165,9 @@ void UdpServer::timerEvent(QTimerEvent *)
     {
         if (buffer_health[i] != -1)
         {
-            if (buffer_health[i] > 2 && buffer_size[i] > 0)
+            if (buffer_health[i] > buffer_target && buffer_size[i] > 0)
                 --buffer_size[i];
-            else if (buffer_health[i] < 2)
+            else if (buffer_health[i] < buffer_target)
                 ++buffer_size[i];
         }
     }
