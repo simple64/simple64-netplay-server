@@ -22,8 +22,6 @@ signals:
 public slots:
     void register_player(quint32 reg_id, quint8 playerNum, quint8 plugin);
     void disconnect_player(quint32 reg_id);
-private slots:
-    void reportBuffer();
 private:
     void sendInput(quint32 count, QHostAddress address, int port, quint8 playerNum, quint8 spectator);
     void checkIfExists(quint8 playerNumber, quint32 count);
