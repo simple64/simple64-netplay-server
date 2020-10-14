@@ -87,6 +87,8 @@ void UdpServer::register_player(quint32 reg_id, quint8 playerNum, quint8 plugin)
     player_keepalive[reg_id].second = playerNum;
     inputs[playerNum].insert(0, qMakePair(0, plugin));
     emit writeLog("Player " + QString::number(playerNum + 1) + " registered", port);
+    if (timerId == 0)
+        timerId = startTimer(500);
 }
 
 void UdpServer::readPendingDatagrams()
@@ -108,8 +110,6 @@ void UdpServer::readPendingDatagrams()
                 break;
             case 2: // request for player input data
                 player_keepalive[qFromBigEndian<quint32>(&incomingData.data()[2])].first = 0;
-                if (timerId == 0)
-                    timerId = startTimer(500);
 
                 count = qFromBigEndian<quint32>(&incomingData.data()[6]);
                 spectator = incomingData.at(10);
