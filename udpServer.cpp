@@ -15,7 +15,7 @@ UdpServer::UdpServer()
         buffer_health[i] = -1;
     }
     status = 0;
-    buffer_target = 2;
+    buffer_target = 1;
 }
 
 void UdpServer::setPort(int _port)
