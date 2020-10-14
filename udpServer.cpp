@@ -103,7 +103,7 @@ void UdpServer::readPendingDatagrams()
             case 0: // key info from client
                 count = qFromBigEndian<quint32>(&incomingData.data()[2]);
                 keys = qFromBigEndian<quint32>(&incomingData.data()[6]);
-                if (buttons[playerNum].size() < 2)
+                if (buttons[playerNum].size() == 0)
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
             case 2: // request for player input data
