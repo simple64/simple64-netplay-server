@@ -10,7 +10,7 @@ class TcpServer : public QTcpServer
 {
     Q_OBJECT
 public:
-    TcpServer(QObject *parent = 0);
+    TcpServer(char _buffer_target, QObject *parent = 0);
     void setPort(int port);
     QHash<QString, QByteArray> files;
     QByteArray settings;
@@ -26,13 +26,15 @@ public slots:
 signals:
     void register_player(quint32 reg_id, quint8 playerNum, quint8 plugin);
     void disconnect_player(quint32 reg_id);
+private:
+    char buffer_target;
 };
 
 class ClientHandler : public QObject
 {
     Q_OBJECT
 public:
-    ClientHandler(QTcpSocket *_socket, QObject *parent = 0);
+    ClientHandler(char _buffer_target, QTcpSocket *_socket, QObject *parent = 0);
 private slots:
     void readData();
     void sendFile();
@@ -53,6 +55,7 @@ private:
     QTimer settingTimer;
     QTimer gliden64_settingTimer;
     QTimer regTimer;
+    char buffer_target;
 };
 
 #endif

@@ -11,8 +11,9 @@ ServerThread::ServerThread(int _port, QObject *parent)
 
 void ServerThread::run()
 {
-    UdpServer udpServer;
-    TcpServer tcpServer;
+    char buffer_target = 2;
+    UdpServer udpServer(buffer_target);
+    TcpServer tcpServer(buffer_target);
     udpServer.setPort(port);
     tcpServer.setPort(port);
     connect(&udpServer, &UdpServer::writeLog, this, &ServerThread::receiveLog);

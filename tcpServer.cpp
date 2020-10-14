@@ -1,12 +1,13 @@
 #include "tcpServer.h"
 #include <QtEndian>
 
-TcpServer::TcpServer(QObject *parent)
+TcpServer::TcpServer(char _buffer_target, QObject *parent)
     : QTcpServer(parent)
 {
     client_number = 0;
     settings.clear();
     gliden64_settings.clear();
+    buffer_target = _buffer_target;
 }
 
 void TcpServer::getClientNumber(int size)
@@ -22,7 +23,7 @@ void TcpServer::setPort(int port)
 
 void TcpServer::onNewConnection()
 {
-    ClientHandler *clientH = new ClientHandler(nextPendingConnection(), this);
+    ClientHandler *clientH = new ClientHandler(buffer_target, nextPendingConnection(), this);
     connect(clientH, &ClientHandler::reg_player, this, &TcpServer::reg_player);
     connect(clientH, &ClientHandler::playerDisconnect, this, &TcpServer::playerDisconnect);
 }
@@ -37,7 +38,7 @@ void TcpServer::playerDisconnect(quint32 reg_id)
     emit disconnect_player(reg_id);
 }
 
-ClientHandler::ClientHandler(QTcpSocket *_socket, QObject *parent)
+ClientHandler::ClientHandler(char _buffer_target, QTcpSocket *_socket, QObject *parent)
     : QObject(parent)
 {
     server = (TcpServer*)parent;
@@ -48,6 +49,7 @@ ClientHandler::ClientHandler(QTcpSocket *_socket, QObject *parent)
     request = 255;
     filesize = 0;
     data.clear();
+    buffer_target = _buffer_target;
     connect(&fileTimer, &QTimer::timeout, this, &ClientHandler::sendFile);
     connect(&settingTimer, &QTimer::timeout, this, &ClientHandler::sendSettings);
     connect(&gliden64_settingTimer, &QTimer::timeout, this, &ClientHandler::sendGliden64Settings);
@@ -139,7 +141,6 @@ void ClientHandler::readData()
                 quint32 reg_id = qFromBigEndian<quint32>(data.mid(3,4));
                 data = data.mid(7);
                 char response[2];
-                char buffer_target = 2;
                 if (!server->reg.contains(playerNum))
                 {
                     if (playerNum > 0 && plugin == 2) //Only P1 can use mempak

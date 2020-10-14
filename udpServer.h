@@ -8,7 +8,7 @@ class UdpServer : public QObject
 {
     Q_OBJECT
 public:
-    UdpServer();
+    UdpServer(char _buffer_target);
     void readPendingDatagrams();
     int getPort();
     void setPort(int _port);
@@ -36,7 +36,7 @@ private:
     int timerId;
     int port;
     quint8 status;
-    int buffer_target;
+    char buffer_target;
 };
 
 #endif

@@ -5,7 +5,7 @@
 #include <QtEndian>
 #include <QTimer>
 
-UdpServer::UdpServer()
+UdpServer::UdpServer(char _buffer_target)
 {
     timerId = 0;
     for (int i = 0; i < 4; ++i)
@@ -15,7 +15,7 @@ UdpServer::UdpServer()
         buffer_health[i] = -1;
     }
     status = 0;
-    buffer_target = 2;
+    buffer_target = _buffer_target;
 }
 
 void UdpServer::setPort(int _port)
