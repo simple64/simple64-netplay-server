@@ -2,7 +2,7 @@
 
 ## Building
 ```
-git clone https://github.com/loganmc10/m64p-netplay-server.git
+git clone https://github.com/m64p/m64p-netplay-server.git
 cd m64p-netplay-server
 mkdir build
 cd build
