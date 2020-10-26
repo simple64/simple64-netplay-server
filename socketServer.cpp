@@ -152,6 +152,12 @@ void SocketServer::processBinaryMessage(QByteArray message)
         int accepted = 0;
         room_port = json.value("port").toInt();
         room = rooms.value(room_port).first;
+        int duplicate_name = 0;
+        for (i = 0; i < clients[room_port].size(); ++i)
+        {
+            if (json.value("player_name").toString() == clients.value(room_port).value(i).second.first)
+	            duplicate_name = 1;
+        }
         if (!room.value("password").toString().isEmpty() &&
            (room.value("password").toString() != json.value("password").toString()))
         {
@@ -164,6 +170,10 @@ void SocketServer::processBinaryMessage(QByteArray message)
         else if (clients[room_port].size() >= 4)
         {
             accepted = 3; //room is full
+        }
+        else if (duplicate_name)
+        {
+            accepted = 4; //duplicate player name
         }
         else //correct password
         {
