@@ -156,7 +156,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         for (i = 0; i < clients[room_port].size(); ++i)
         {
             if (json.value("player_name").toString() == clients.value(room_port).value(i).second.first)
-	            duplicate_name = 1;
+                duplicate_name = 1;
         }
         if (!room.value("password").toString().isEmpty() &&
            (room.value("password").toString() != json.value("password").toString()))
