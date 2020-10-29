@@ -275,7 +275,7 @@ void SocketServer::createDiscord(QString room_name, QString game_name, int port,
     QNetworkRequest request(QUrl("https://discord.com/api/v8/lobbies"));
     request.setRawHeader("Content-Type", "application/json");
     request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
-    request.setRawHeader("User-Agent", "m64p-netplay-server");
+    request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
     QJsonObject request_data;
     request_data.insert("application_id", "770838334015930398");
     request_data.insert("type", 1);
