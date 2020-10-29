@@ -305,6 +305,7 @@ void SocketServer::announceDiscord(QString channel, QString message)
     QUrl path = QUrl(channel);
     QNetworkRequest request(path);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setHeader(QNetworkRequest::UserAgentHeader, "m64pBot (m64p.github.io, 1)");
     QJsonObject json;
     json.insert("content", message);
     QNetworkAccessManager *nam = new QNetworkAccessManager(this);
