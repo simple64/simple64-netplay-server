@@ -2,7 +2,7 @@ language: shell
 jobs:
   include:
   - stage: build-linux
-    dist: bionic
+    dist: focal
     before_install:
     - sudo apt-get -qq update
     - sudo apt-get -y dist-upgrade
