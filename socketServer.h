@@ -18,7 +18,7 @@ class SocketServer : public QObject
     Q_OBJECT
 
 public:
-    explicit SocketServer(QString _region, int _timestamp, int _baseport, QObject *parent = 0);
+    explicit SocketServer(QString _region, int _timestamp, int _baseport, QString _discord, QObject *parent = 0);
     ~SocketServer();
 
 signals:
@@ -34,19 +34,22 @@ private slots:
     void deleteResponse(QNetworkReply *reply);
     void processBroadcast();
     void receiveLog(QString message, int port);
+    void createLobbyFinished(QNetworkReply *reply);
 private:
     void sendPlayers(int room_port);
-    void createDiscord(QString room_name, QString game_name, bool is_public);
+    void createDiscord(QString room_name, QString game_name, int port, bool is_public);
     void writeLog(QString message, QString room_name, QString game_name, int port);
     void announceDiscord(QString channel, QString message);
     QWebSocketServer *webSocketServer;
     QHash<int, QPair<QJsonObject, ServerThread*>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>
+    QHash<int, QPair<QString, QString>> discord;
     QString region;
     int timestamp;
     int baseport;
     QFile *log_file;
     QUdpSocket broadcastSocket;
+    QString discord_bot;
 };
 
 #endif

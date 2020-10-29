@@ -6,7 +6,7 @@
 #include <QCoreApplication>
 #include <QDir>
 
-SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, QObject *parent)
+SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, QString _discord, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
@@ -22,6 +22,8 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, QObje
     baseport = _baseport;
     region = _region;
     timestamp = _timestamp;
+    if (!_discord.isEmpty())
+        discord_bot = "Bot " + _discord;
     QDir AppPath(QCoreApplication::applicationDirPath());
     log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
@@ -103,7 +105,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     room.insert("player_name", json.value("player_name").toString());
                     clients[port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), 1)));
 
-                    createDiscord(json.value("room_name").toString(), json.value("game_name").toString(), json.value("password").toString().isEmpty());
+                    createDiscord(json.value("room_name").toString(), json.value("game_name").toString(), port, json.value("password").toString().isEmpty());
                     break;
                 }
             }
@@ -223,13 +225,25 @@ void SocketServer::processBinaryMessage(QByteArray message)
     else if (json.value("type").toString() == "get_motd")
     {
         room.insert("type", "send_motd");
-        room.insert("message", QStringLiteral("Join <a href=\"https://discord.gg/B5svWhR\">The Discord Server</a> for voice chat!"));
+        room.insert("message", QStringLiteral("Join <a href=\"https://discord.gg/B5svWhR\">The Discord Server</a> to find more players!"));
         json_doc = QJsonDocument(room);
         client->sendBinaryMessage(json_doc.toJson());
     }
+    else if (json.value("type").toString() == "get_discord_lobby")
+    {
+        int discord_port = json.value("port").toInt();
+        if (discord.contains(discord_port))
+        {
+            room.insert("type", "discord_lobby");
+            room.insert("id", discord.value(discord_port).first);
+            room.insert("secret", discord.value(discord_port).second);
+            json_doc = QJsonDocument(room);
+            client->sendBinaryMessage(json_doc.toJson());
+        }
+    }
 }
 
-void SocketServer::createDiscord(QString room_name, QString game_name, bool is_public)
+void SocketServer::createDiscord(QString room_name, QString game_name, int port, bool is_public)
 {
     QString type = is_public ? QStringLiteral("public") : QStringLiteral("private");
     QString message = "New " + type + " netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name;
@@ -250,6 +264,40 @@ void SocketServer::createDiscord(QString room_name, QString game_name, bool is_p
     path = qEnvironmentVariable("M64P_DEV_CHANNEL");
     if (!path.isEmpty())
         announceDiscord(path, message); //m64p discord dev channel
+
+    if (discord_bot.isEmpty())
+        return;
+
+    QNetworkAccessManager *createLobby = new QNetworkAccessManager(this);
+    connect(createLobby, &QNetworkAccessManager::finished,
+        this, &SocketServer::createLobbyFinished);
+
+    QNetworkRequest request(QUrl("https://discord.com/api/v8/lobbies"));
+    request.setRawHeader("Content-Type", "application/json");
+    request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
+    request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
+    QJsonObject request_data;
+    request_data.insert("application_id", "770838334015930398");
+    request_data.insert("type", 1);
+    QJsonObject metadata;
+    metadata.insert("port", QString::number(port));
+    request_data.insert("metadata", metadata);
+    createLobby->post(request, QJsonDocument(request_data).toJson());
+}
+
+void SocketServer::createLobbyFinished(QNetworkReply *reply)
+{
+    if (!reply->error())
+    {
+        QJsonObject json = QJsonDocument::fromJson(reply->readAll()).object();
+        if (json.contains("id") && json.contains("secret"))
+        {
+            int port = json.value("metadata").toObject().value("port").toString().toInt();
+            discord[port].first = json.value("id").toString();
+            discord[port].second = json.value("secret").toString();
+        }
+    }
+    reply->deleteLater();
 }
 
 void SocketServer::announceDiscord(QString channel, QString message)
@@ -290,6 +338,20 @@ void SocketServer::sendPlayers(int room_port)
 void SocketServer::closeUdpServer(int port)
 {
     writeLog("deleting room", rooms.value(port).first.value("room_name").toString(), rooms.value(port).first.value("game_name").toString(), port);
+
+    if (!discord_bot.isEmpty() && discord.contains(port))
+    {
+        QNetworkAccessManager *deleteLobby = new QNetworkAccessManager(this);
+        connect(deleteLobby, &QNetworkAccessManager::finished,
+            this, &SocketServer::deleteResponse);
+
+        QNetworkRequest request(QUrl("https://discord.com/api/v8/lobbies/" + discord.value(port).first));
+        request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
+        request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
+        deleteLobby->deleteResource(request);
+
+        discord.remove(port);
+    }
 
     rooms.remove(port);
     clients.remove(port);
