@@ -347,7 +347,7 @@ void SocketServer::closeUdpServer(int port)
 
         QNetworkRequest request(QUrl("https://discord.com/api/v8/lobbies/" + discord.value(port).first));
         request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
-        request.setRawHeader("User-Agent", "m64p-netplay-server");
+        request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
         deleteLobby->deleteResource(request);
 
         discord.remove(port);
