@@ -93,7 +93,7 @@ void UdpServer::register_player(quint32 reg_id, quint8 playerNum, quint8 plugin)
 
 void UdpServer::readPendingDatagrams()
 {
-    quint32 keys, count, vi_count;
+    quint32 keys, count, vi_count, regi_id;
     quint8 playerNum, spectator;
     while (udpSocket.hasPendingDatagrams())
     {
@@ -109,7 +109,9 @@ void UdpServer::readPendingDatagrams()
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
             case 2: // request for player input data
-                player_keepalive[qFromBigEndian<quint32>(&incomingData.data()[2])].first = 0;
+                regi_id = qFromBigEndian<quint32>(&incomingData.data()[2]);
+                if (player_keepalive.contains(regi_id))
+                    player_keepalive[regi_id].first = 0;
 
                 count = qFromBigEndian<quint32>(&incomingData.data()[6]);
                 spectator = incomingData.at(10);
