@@ -172,6 +172,9 @@ void UdpServer::timerEvent(QTimerEvent *)
 
 void UdpServer::disconnect_player(quint32 reg_id)
 {
+    if (!player_keepalive.contains(reg_id))
+        return;
+
     emit writeLog("Player " + QString::number(player_keepalive.value(reg_id).second + 1) + " disconnected", port);
 
     status |= (0x1 << (player_keepalive.value(reg_id).second + 1));
