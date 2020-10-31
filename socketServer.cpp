@@ -47,11 +47,22 @@ void SocketServer::processBroadcast()
         {
             QNetworkInterface inter = QNetworkInterface::interfaceFromIndex(datagram.interfaceIndex());
             QList<QNetworkAddressEntry> addresses = inter.addressEntries();
-            QHostAddress ip = addresses.at(0).ip();
-            QJsonObject json;
-            json.insert(region, QStringLiteral("ws://") + ip.toString() + QStringLiteral(":") + QString::number(baseport));
-            QJsonDocument json_doc(json);
-            broadcastSocket.writeDatagram(json_doc.toJson(), datagram.senderAddress(), datagram.senderPort());
+            QHostAddress ip;
+            for (int i = 0; i < addresses.size(); ++i)
+            {
+                if (addresses.at(i).ip().protocol() == QAbstractSocket::IPv4Protocol)
+                {
+                    ip = addresses.at(i).ip();
+                    break;
+                }
+            }
+            if (!ip.isNull())
+            {
+                QJsonObject json;
+                json.insert(region, QStringLiteral("ws://") + ip.toString() + QStringLiteral(":") + QString::number(baseport));
+                QJsonDocument json_doc(json);
+                broadcastSocket.writeDatagram(json_doc.toJson(), datagram.senderAddress(), datagram.senderPort());
+            }
         }
     }
 }
