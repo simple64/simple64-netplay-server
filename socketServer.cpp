@@ -98,7 +98,8 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 if (!rooms.contains(port))
                 {
-                    writeLog("creating room", json.value("room_name").toString(), json.value("game_name").toString(), port);
+                    int lle = json.contains("lle") && json.value("lle").toString() == "Yes";
+                    writeLog(QString("creating ") + (lle ? "LLE" : "HLE") + " room", json.value("room_name").toString(), json.value("game_name").toString(), port);
 
                     ServerThread *serverThread = new ServerThread(port, this);
                     connect(serverThread, &ServerThread::writeLog, this, &SocketServer::receiveLog);
