@@ -7,7 +7,7 @@ class ServerThread : public QThread
     Q_OBJECT
     void run() Q_DECL_OVERRIDE;
 public:
-    ServerThread(int _port, QObject *parent = 0);
+    ServerThread(int _port, QObject *parent = 0, bool useClientCount = false);
 signals:
     void killServer(int port);
     void desynced(int port);
@@ -23,6 +23,7 @@ public slots:
 private:
     int port;
     int registered;
+    bool useClientCount;
 };
 
 #endif

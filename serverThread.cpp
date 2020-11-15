@@ -2,17 +2,18 @@
 #include "udpServer.h"
 #include "tcpServer.h"
 
-ServerThread::ServerThread(int _port, QObject *parent)
+ServerThread::ServerThread(int _port, QObject *parent, bool _useClientCount)
     : QThread(parent)
 {
     registered = 0;
     port = _port;
+    useClientCount = _useClientCount;
 }
 
 void ServerThread::run()
 {
     char buffer_target = 2;
-    UdpServer udpServer(buffer_target);
+    UdpServer udpServer(buffer_target, useClientCount);
     TcpServer tcpServer(buffer_target);
     udpServer.setPort(port);
     tcpServer.setPort(port);

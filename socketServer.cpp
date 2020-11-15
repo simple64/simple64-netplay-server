@@ -101,7 +101,8 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     int lle = json.contains("lle") && json.value("lle").toString() == "Yes";
                     writeLog(QString("creating ") + (lle ? "LLE" : "HLE") + " room", json.value("room_name").toString(), json.value("game_name").toString(), port);
 
-                    ServerThread *serverThread = new ServerThread(port, this);
+                    bool useClientCount = json.contains("use_client_count") ? json.value("use_client_count").toBool() : false;
+                    ServerThread *serverThread = new ServerThread(port, this, useClientCount);
                     connect(serverThread, &ServerThread::writeLog, this, &SocketServer::receiveLog);
                     connect(serverThread, &ServerThread::killServer, this, &SocketServer::closeUdpServer);
                     connect(serverThread, &ServerThread::desynced, this, &SocketServer::desyncMessage);

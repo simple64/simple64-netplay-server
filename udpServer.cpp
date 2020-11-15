@@ -5,7 +5,7 @@
 #include <QtEndian>
 #include <QTimer>
 
-UdpServer::UdpServer(char _buffer_target)
+UdpServer::UdpServer(char _buffer_target, bool _useClientCount)
 {
     timerId = 0;
     for (int i = 0; i < 4; ++i)
@@ -16,6 +16,7 @@ UdpServer::UdpServer(char _buffer_target)
     }
     status = 0;
     buffer_target = _buffer_target;
+    useClientCount = _useClientCount;
 }
 
 void UdpServer::setPort(int _port)
@@ -39,7 +40,7 @@ int UdpServer::getPort()
 
 void UdpServer::checkIfExists(quint8 playerNumber, quint32 count)
 {
-    if (!inputs[playerNumber].contains(count)) //They are asking for a value we don't have
+    if (!useClientCount && !inputs[playerNumber].contains(count)) //They are asking for a value we don't have
     {
         if (!buttons[playerNumber].isEmpty())
             inputs[playerNumber].insert(count, buttons[playerNumber].takeFirst());
@@ -105,8 +106,11 @@ void UdpServer::readPendingDatagrams()
             case 0: // key info from client
                 count = qFromBigEndian<quint32>(&incomingData.data()[2]);
                 keys = qFromBigEndian<quint32>(&incomingData.data()[6]);
-                if (buttons[playerNum].size() == 0)
+                if (useClientCount) {
+                    inputs[playerNum].insert(count, qMakePair(keys, incomingData.at(10)));
+                } else if (buttons[playerNum].size() == 0) {
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
+                }
                 break;
             case 2: // request for player input data
                 regi_id = qFromBigEndian<quint32>(&incomingData.data()[2]);
