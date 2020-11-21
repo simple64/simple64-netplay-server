@@ -2,18 +2,18 @@
 #include "udpServer.h"
 #include "tcpServer.h"
 
-ServerThread::ServerThread(int _port, QObject *parent, bool _useClientCount)
+ServerThread::ServerThread(int _port, QObject *parent, int _p1InputDelay)
     : QThread(parent)
 {
     registered = 0;
     port = _port;
-    useClientCount = _useClientCount;
+    p1InputDelay = _p1InputDelay;
 }
 
 void ServerThread::run()
 {
     char buffer_target = 2;
-    UdpServer udpServer(buffer_target, useClientCount);
+    UdpServer udpServer(buffer_target);
     TcpServer tcpServer(buffer_target);
     udpServer.setPort(port);
     tcpServer.setPort(port);
@@ -24,6 +24,9 @@ void ServerThread::run()
     connect(&tcpServer, &TcpServer::register_player, this, &ServerThread::player_registered);
     connect(&tcpServer, &TcpServer::disconnect_player, &udpServer, &UdpServer::disconnect_player);
     connect(this, &ServerThread::sendClientNumber, &tcpServer, &TcpServer::getClientNumber);
+    connect(this, &ServerThread::inputDelayChanged, &udpServer, &UdpServer::setInputDelay);
+
+    udpServer.setInputDelay(0, p1InputDelay);
 
     exec();
 
@@ -41,6 +44,11 @@ void ServerThread::receiveLog(QString message, int _port)
 void ServerThread::desync()
 {
     emit desynced(port);
+}
+
+void ServerThread::setInputDelay(int playerNum, int inputDelay)
+{
+    emit inputDelayChanged(playerNum, inputDelay);
 }
 
 void ServerThread::player_registered(quint32, quint8, quint8)

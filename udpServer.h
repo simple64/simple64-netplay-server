@@ -8,11 +8,12 @@ class UdpServer : public QObject
 {
     Q_OBJECT
 public:
-    UdpServer(char _buffer_target, bool _useClientCount);
+    UdpServer(char _buffer_target);
     void readPendingDatagrams();
     int getPort();
     void setPort(int _port);
     void close();
+    void setInputDelay(int playerNum, int inputDelay);
 protected:
     void timerEvent(QTimerEvent *te) Q_DECL_OVERRIDE;
 signals:
@@ -33,11 +34,11 @@ private:
     quint32 lead_count[4];
     quint8 buffer_size[4];
     int buffer_health[4];
+    int input_delay[4];
     int timerId;
     int port;
     quint8 status;
     char buffer_target;
-    bool useClientCount;
 };
 
 #endif

@@ -5,7 +5,7 @@
 #include <QtEndian>
 #include <QTimer>
 
-UdpServer::UdpServer(char _buffer_target, bool _useClientCount)
+UdpServer::UdpServer(char _buffer_target)
 {
     timerId = 0;
     for (int i = 0; i < 4; ++i)
@@ -13,10 +13,10 @@ UdpServer::UdpServer(char _buffer_target, bool _useClientCount)
         lead_count[i] = 0;
         buffer_size[i] = 3;
         buffer_health[i] = -1;
+        input_delay[i] = -1;
     }
     status = 0;
     buffer_target = _buffer_target;
-    useClientCount = _useClientCount;
 }
 
 void UdpServer::setPort(int _port)
@@ -38,9 +38,14 @@ int UdpServer::getPort()
     return port;
 }
 
+void UdpServer::setInputDelay(int playerNum, int inputDelay)
+{
+    input_delay[playerNum] = inputDelay;
+}
+
 void UdpServer::checkIfExists(quint8 playerNumber, quint32 count)
 {
-    if (!useClientCount && !inputs[playerNumber].contains(count)) //They are asking for a value we don't have
+    if (input_delay[playerNumber] >= 0 && !inputs[playerNumber].contains(count)) //They are asking for a value we don't have
     {
         if (!buttons[playerNumber].isEmpty())
             inputs[playerNumber].insert(count, buttons[playerNumber].takeFirst());
@@ -106,8 +111,15 @@ void UdpServer::readPendingDatagrams()
             case 0: // key info from client
                 count = qFromBigEndian<quint32>(&incomingData.data()[2]);
                 keys = qFromBigEndian<quint32>(&incomingData.data()[6]);
-                if (useClientCount) {
-                    inputs[playerNum].insert(count, qMakePair(keys, incomingData.at(10)));
+                if (input_delay[playerNum] >= 0) {
+                    QPair<quint32, quint8> pair = qMakePair(keys, incomingData.at(10));
+                    inputs[playerNum].insert(count, pair);
+                    if (count == 0) {
+                        // duplicate first client frame to cover input delay
+                        for (int i = 0; i < input_delay[playerNum]; i++) {
+                            inputs[playerNum].insert(i, pair);
+                        }
+                    }
                 } else if (buttons[playerNum].size() == 0) {
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 }
