@@ -113,7 +113,7 @@ void UdpServer::readPendingDatagrams()
                 keys = qFromBigEndian<quint32>(&incomingData.data()[6]);
                 if (input_delay[playerNum] >= 0) {
                     QPair<quint32, quint8> pair = qMakePair(keys, incomingData.at(10));
-                    inputs[playerNum].insert(count, pair);
+                    inputs[playerNum].insert(count + input_delay[playerNum], pair);
                     if (count == 0) {
                         // duplicate first client frame to cover input delay
                         for (int i = 0; i < input_delay[playerNum]; i++) {
