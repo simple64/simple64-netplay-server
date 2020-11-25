@@ -26,7 +26,7 @@ public slots:
 private:
     void sendInput(quint32 count, QHostAddress address, int port, quint8 playerNum, quint8 spectator);
     bool checkIfExists(quint8 playerNumber, quint32 count);
-    void insertInput(int playerNum, int count, QPair<quint32, quint8> pair);
+    void insertInput(int playerNum, int count, QPair<quint32, quint8> *pair);
     QUdpSocket udpSocket;
     QHash<quint32, QPair<quint32, quint8>> inputs[4]; //<count, <BUTTONS, Plugin>>
     QHash<quint32, quint64> sync_hash; //cp0 hashes

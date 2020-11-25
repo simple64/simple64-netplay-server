@@ -119,7 +119,10 @@ void UdpServer::readPendingDatagrams()
                 count = qFromBigEndian<quint32>(&incomingData.data()[2]);
                 keys = qFromBigEndian<quint32>(&incomingData.data()[6]);
                 if (input_delay[playerNum] >= 0)
-                    insertInput(playerNum, count + input_delay[playerNum], qMakePair(keys, incomingData.at(10)));
+                {
+                    QPair<quint32, quint8> pair = qMakePair(keys, incomingData.at(10));
+                    insertInput(playerNum, count + input_delay[playerNum], &pair);
+                }
                 else if (buttons[playerNum].size() == 0)
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
                 break;
@@ -201,11 +204,11 @@ void UdpServer::disconnect_player(quint32 reg_id)
         emit killMe(port);
 }
 
-void UdpServer::insertInput(int playerNum, int count, QPair<quint32, quint8> pair)
+void UdpServer::insertInput(int playerNum, int count, QPair<quint32, quint8> *pair)
 {
     int previousCount = count - 1;
 
-    inputs[playerNum].insert(count, pair);
+    inputs[playerNum].insert(count, *pair);
 
     /* The recursion here covers two situations:
      *
