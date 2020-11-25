@@ -205,9 +205,8 @@ void SocketServer::processBinaryMessage(QByteArray message)
             }
             clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
 
-            if (json.contains("input_delay")) {
+            if (json.contains("input_delay"))
                 emit inputDelayChanged(player_num - 1, json.value("input_delay").toInt());
-            }
         }
         room.remove("password");
         room.insert("player_name", json.value("player_name").toString());
