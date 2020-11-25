@@ -43,9 +43,12 @@ void UdpServer::setInputDelay(int playerNum, int inputDelay)
     input_delay[playerNum] = inputDelay;
 }
 
-void UdpServer::checkIfExists(quint8 playerNumber, quint32 count)
+bool UdpServer::checkIfExists(quint8 playerNumber, quint32 count)
 {
-    if (input_delay[playerNumber] >= 0 && !inputs[playerNumber].contains(count)) //They are asking for a value we don't have
+    bool inputExists = inputs[playerNumber].contains(count);
+    inputs[playerNumber].remove(count - 5000);
+
+    if (input_delay[playerNumber] < 0 && !inputExists)
     {
         if (!buttons[playerNumber].isEmpty())
             inputs[playerNumber].insert(count, buttons[playerNumber].takeFirst());
@@ -54,8 +57,10 @@ void UdpServer::checkIfExists(quint8 playerNumber, quint32 count)
         else
             inputs[playerNumber].insert(count, qMakePair(0, 0/*Controller not present*/));
 
-        inputs[playerNumber].remove(count - 5000);
-    }
+        return true;
+    } else
+        // When using input delay, we must wait for inputs
+        return inputExists;
 }
 
 void UdpServer::sendInput(quint32 count, QHostAddress address, int port, quint8 playerNum, quint8 spectator)
@@ -73,7 +78,9 @@ void UdpServer::sendInput(quint32 count, QHostAddress address, int port, quint8 
     {
         qToBigEndian(count, &buffer[curr]);
         curr += 4;
-        checkIfExists(playerNum, count);
+        if (!checkIfExists(playerNum, count))
+            // we don't have an input - the client must wait.
+            return;
         qToBigEndian(inputs[playerNum].value(count).first, &buffer[curr]);
         curr += 4;
         buffer[curr] = inputs[playerNum].value(count).second;
@@ -111,18 +118,10 @@ void UdpServer::readPendingDatagrams()
             case 0: // key info from client
                 count = qFromBigEndian<quint32>(&incomingData.data()[2]);
                 keys = qFromBigEndian<quint32>(&incomingData.data()[6]);
-                if (input_delay[playerNum] >= 0) {
-                    QPair<quint32, quint8> pair = qMakePair(keys, incomingData.at(10));
-                    inputs[playerNum].insert(count + input_delay[playerNum], pair);
-                    if (count == 0) {
-                        // duplicate first client frame to cover input delay
-                        for (int i = 0; i < input_delay[playerNum]; i++) {
-                            inputs[playerNum].insert(i, pair);
-                        }
-                    }
-                } else if (buttons[playerNum].size() == 0) {
+                if (input_delay[playerNum] >= 0)
+                    insertInput(playerNum, count + input_delay[playerNum], qMakePair(keys, incomingData.at(10)));
+                else if (buttons[playerNum].size() == 0)
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
-                }
                 break;
             case 2: // request for player input data
                 regi_id = qFromBigEndian<quint32>(&incomingData.data()[2]);
@@ -200,4 +199,19 @@ void UdpServer::disconnect_player(quint32 reg_id)
 
     if (player_keepalive.isEmpty())
         emit killMe(port);
+}
+
+void UdpServer::insertInput(int playerNum, int count, QPair<quint32, quint8> pair)
+{
+    int previousCount = count - 1;
+
+    inputs[playerNum].insert(count, pair);
+
+    /* The recursion here covers two situations:
+     *
+     * 1. The count < inputDelay, so we need to populate the first frames
+     * 2. We lost a udp packet, or received them out of order.
+     */
+    if (previousCount == 0 || (previousCount > 0 && !inputs[playerNum].contains(previousCount)))
+        insertInput(playerNum, previousCount, pair);
 }
