@@ -41,8 +41,6 @@ int UdpServer::getPort()
 void UdpServer::setInputDelay(int playerNum, int inputDelay)
 {
     input_delay[playerNum] = inputDelay;
-    if (inputDelay < 3)
-        buffer_size[playerNum] = inputDelay;
 }
 
 bool UdpServer::checkIfExists(quint8 playerNumber, quint32 count)
@@ -83,8 +81,8 @@ void UdpServer::sendInput(quint32 count, QHostAddress address, int port, quint8 
         curr += 4;
         if (!checkIfExists(playerNum, count))
         {
+            // we don't have an input for this frame yet
             end = count - 1;
-            // we don't have an input - the client must wait.
             continue;
         }
         qToBigEndian(inputs[playerNum].value(count).first, &buffer[curr]);
