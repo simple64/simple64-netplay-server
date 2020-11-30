@@ -101,11 +101,14 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     int lle = json.contains("lle") && json.value("lle").toString() == "Yes";
                     writeLog(QString("creating ") + (lle ? "LLE" : "HLE") + " room", json.value("room_name").toString(), json.value("game_name").toString(), port);
 
-                    ServerThread *serverThread = new ServerThread(port, this);
+                    int p1InputDelay = json.contains("input_delay") ? json.value("input_delay").toInt() : -1;
+
+                    ServerThread *serverThread = new ServerThread(port, this, p1InputDelay);
                     connect(serverThread, &ServerThread::writeLog, this, &SocketServer::receiveLog);
                     connect(serverThread, &ServerThread::killServer, this, &SocketServer::closeUdpServer);
                     connect(serverThread, &ServerThread::desynced, this, &SocketServer::desyncMessage);
                     connect(serverThread, &ServerThread::finished, serverThread, &ServerThread::deleteLater);
+                    connect(this, &SocketServer::inputDelayChanged, serverThread, &ServerThread::setInputDelay);
                     connect(this, &SocketServer::setClientNumber, serverThread, &ServerThread::getClientNumber);
                     serverThread->start();
                     room = json;
@@ -201,6 +204,9 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 }
             }
             clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
+
+            if (json.contains("input_delay"))
+                emit inputDelayChanged(player_num - 1, json.value("input_delay").toInt());
         }
         room.remove("password");
         room.insert("player_name", json.value("player_name").toString());
