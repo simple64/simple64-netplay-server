@@ -1,5 +1,25 @@
 # m64p-netplay-server
 
+## Dependencies
+
+m64p-netplay-server requires qt@>=5.10
+
+### Ubuntu
+
+Qt 5.10 is most easily available on Ubuntu 20+. On older versions of Ubuntu, the `qt5-default` package will install an older version.
+
+```sh
+sudo apt install build-essential qt5-default libqt5websockets5-dev
+```
+
+### Fedora
+
+For Fedora, replace the `qmake` command with `qmake-qt5`.
+
+```sh
+sudo dnf install git-all qt5-qtbase qt5-qtbase-devel qt5-qtwebsockets
+```
+
 ## Building
 ```
 git clone https://github.com/m64p/m64p-netplay-server.git
