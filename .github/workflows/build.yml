@@ -27,6 +27,7 @@ jobs:
           install: >-
             make
             mingw-w64-x86_64-qt5
+            mingw-w64-x86_64-gcc
       - name: Run build script
         run: |
           mkdir build
