@@ -40,6 +40,8 @@ private:
     int port;
     quint8 status;
     char buffer_target;
+    QHostAddress sender_address[4];
+    int sender_port[4];
 };
 
 #endif
