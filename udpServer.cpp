@@ -14,6 +14,8 @@ UdpServer::UdpServer(char _buffer_target)
         buffer_size[i] = 3;
         buffer_health[i] = -1;
         input_delay[i] = -1;
+        sender_address[i] = QHostAddress();
+        sender_port[i] = 0;
     }
     status = 0;
     buffer_target = _buffer_target;
@@ -111,7 +113,7 @@ void UdpServer::register_player(quint32 reg_id, quint8 playerNum, quint8 plugin)
 void UdpServer::readPendingDatagrams()
 {
     quint32 keys, count, vi_count, regi_id;
-    quint8 playerNum, spectator;
+    quint8 playerNum, spectator, i;
     while (udpSocket.hasPendingDatagrams())
     {
         QNetworkDatagram datagram = udpSocket.receiveDatagram();
@@ -120,6 +122,8 @@ void UdpServer::readPendingDatagrams()
         switch (incomingData.at(0))
         {
             case 0: // key info from client
+                sender_address[playerNum] = datagram.senderAddress();
+                sender_port[playerNum] = datagram.senderPort();
                 count = qFromBigEndian<quint32>(&incomingData.data()[2]);
                 keys = qFromBigEndian<quint32>(&incomingData.data()[6]);
                 if (input_delay[playerNum] >= 0)
@@ -129,6 +133,12 @@ void UdpServer::readPendingDatagrams()
                 }
                 else if (buttons[playerNum].size() == 0)
                     buttons[playerNum].append(qMakePair(keys, incomingData.at(10)));
+
+                for (i = 0; i < 4; ++i)
+                {
+                    if (sender_port[i])
+                        sendInput(count, sender_address[i], sender_port[i], playerNum, 1);
+                }
                 break;
             case 2: // request for player input data
                 regi_id = qFromBigEndian<quint32>(&incomingData.data()[2]);
