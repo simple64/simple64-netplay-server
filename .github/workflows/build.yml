@@ -41,7 +41,7 @@ jobs:
           msys2 -c 'make'
       - name: Put in folder
         run: |
-          cd release
+          cd build/release
           mkdir m64p-netplay-server
           cd m64p-netplay-server
           cp ../m64p-netplay-server.exe .
