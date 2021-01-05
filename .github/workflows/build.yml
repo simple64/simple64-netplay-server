@@ -17,6 +17,11 @@ jobs:
           cd build
           qmake ..
           make
+      - name: Upload file
+        uses: actions/upload-artifact@v2
+        with:
+          name: m64p-netplay-server
+          path: build/m64p-netplay-server
   build-windows:
     runs-on: windows-latest
     steps:
@@ -34,3 +39,26 @@ jobs:
           cd build
           msys2 -c 'qmake ..'
           msys2 -c 'make'
+      - name: Put in folder
+        run: |
+          cd release
+          mkdir m64p-netplay-server
+          cd m64p-netplay-server
+          cp ../m64p-netplay-server.exe .
+          msys2 -c 'windeployqt.exe m64p-netplay-server.exe'
+          msys2 -c 'cp /mingw64/bin/libstdc++-6.dll .'
+          msys2 -c 'cp /mingw64/bin/libgcc_s_seh-1.dll .'
+          msys2 -c 'cp /mingw64/bin/libwinpthread-1.dll .'
+          msys2 -c 'cp /mingw64/bin/zlib1.dll .'
+          msys2 -c 'cp /mingw64/bin/libicuuc68.dll .'
+          msys2 -c 'cp /mingw64/bin/libpcre2-16-0.dll .'
+          msys2 -c 'cp /mingw64/bin/libzstd.dll .'
+          msys2 -c 'cp /mingw64/bin/libdouble-conversion.dll .'
+          msys2 -c 'cp /mingw64/bin/libicudt68.dll .'
+          msys2 -c 'cp /mingw64/bin/libicuin68.dll .'
+          msys2 -c 'cp /mingw64/bin/libpcre2-16-0.dll .'
+      - name: Upload folder
+        uses: actions/upload-artifact@v2
+        with:
+          name: m64p-netplay-server
+          path: build/release/m64p-netplay-server
