@@ -20,7 +20,7 @@ jobs:
       - name: Upload file
         uses: actions/upload-artifact@v2
         with:
-          name: m64p-netplay-server
+          name: m64p-netplay-server-linux
           path: build/m64p-netplay-server
   build-windows:
     runs-on: windows-latest
@@ -60,5 +60,5 @@ jobs:
       - name: Upload folder
         uses: actions/upload-artifact@v2
         with:
-          name: m64p-netplay-server
+          name: m64p-netplay-server-win
           path: build/release/m64p-netplay-server
