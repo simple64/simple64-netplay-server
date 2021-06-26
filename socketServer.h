@@ -51,6 +51,7 @@ private:
     QFile *log_file;
     QUdpSocket broadcastSocket;
     QString discord_bot;
+    QStringList ban_strings;
 };
 
 #endif

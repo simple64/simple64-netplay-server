@@ -28,6 +28,14 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, QStri
     log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
     writeLog("Server started", "None", "None", baseport);
+    QFile ban_list(AppPath.absoluteFilePath("ban_list.txt"));
+    if (ban_list.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QTextStream in(&ban_list);
+        while (!in.atEnd())
+            ban_strings.append(in.readLine());
+        ban_list.close();
+    }
 }
 
 SocketServer::~SocketServer()
@@ -70,7 +78,16 @@ void SocketServer::processBroadcast()
 void SocketServer::onNewConnection()
 {
     QWebSocket *socket = webSocketServer->nextPendingConnection();
-
+    QString client_ip = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
+    for (int i = 0; i < ban_strings.size(); ++i)
+    {
+        if (client_ip == ban_strings.at(i))
+        {
+            socket->close();
+            socket->deleteLater();
+            return;
+        }
+    }
     connect(socket, &QWebSocket::binaryMessageReceived, this, &SocketServer::processBinaryMessage);
     connect(socket, &QWebSocket::disconnected, this, &SocketServer::socketDisconnected);
 }
@@ -98,8 +115,9 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 if (!rooms.contains(port))
                 {
+                    QString client_ip = QHostAddress(client->peerAddress().toIPv4Address()).toString();
                     int lle = json.contains("lle") && json.value("lle").toString() == "Yes";
-                    writeLog(QString("creating ") + (lle ? "LLE" : "HLE") + " room", json.value("room_name").toString(), json.value("game_name").toString(), port);
+                    writeLog(QString("creating ") + (lle ? "LLE" : "HLE") + " room: " + client_ip, json.value("room_name").toString(), json.value("game_name").toString(), port);
 
                     int p1InputDelay = json.contains("input_delay") ? json.value("input_delay").toInt() : -1;
 
