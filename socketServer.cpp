@@ -83,6 +83,7 @@ void SocketServer::onNewConnection()
     {
         if (client_ip == ban_strings.at(i))
         {
+            writeLog("Blocked banned IP: " + client_ip, "None", "None", baseport);
             socket->close();
             socket->deleteLater();
             return;
