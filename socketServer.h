@@ -18,7 +18,7 @@ class SocketServer : public QObject
     Q_OBJECT
 
 public:
-    explicit SocketServer(QString _region, int _timestamp, int _baseport, QString _discord, QObject *parent = 0);
+    explicit SocketServer(QString _region, int _timestamp, int _baseport, int _broadcast, QString _discord, QObject *parent = 0);
     ~SocketServer();
 
 signals:
@@ -48,6 +48,7 @@ private:
     QString region;
     int timestamp;
     int baseport;
+    int broadcast;
     QFile *log_file;
     QUdpSocket broadcastSocket;
     QString discord_bot;

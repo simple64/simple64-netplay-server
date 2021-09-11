@@ -23,7 +23,7 @@ UdpServer::UdpServer(char _buffer_target)
 
 void UdpServer::setPort(int _port)
 {
-    udpSocket.bind(QHostAddress::Any, _port);
+    udpSocket.bind(QHostAddress::AnyIPv4, _port);
     port = _port;
 
     connect(&udpSocket, &QUdpSocket::readyRead,

@@ -6,14 +6,18 @@
 #include <QCoreApplication>
 #include <QDir>
 
-SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, QString _discord, QObject *parent)
+SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _broadcast, QString _discord, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
-    broadcastSocket.bind(45000, QUdpSocket::ShareAddress);
-    connect(&broadcastSocket, &QUdpSocket::readyRead, this, &SocketServer::processBroadcast);
+    broadcast = _broadcast;
+    if (broadcast)
+    {
+        broadcastSocket.bind(45000, QUdpSocket::ShareAddress);
+        connect(&broadcastSocket, &QUdpSocket::readyRead, this, &SocketServer::processBroadcast);
+    }
 
-    if (webSocketServer->listen(QHostAddress::Any, _baseport))
+    if (webSocketServer->listen(QHostAddress::AnyIPv4, _baseport))
     {
         connect(webSocketServer, &QWebSocketServer::newConnection, this, &SocketServer::onNewConnection);
         connect(webSocketServer, &QWebSocketServer::closed, this, &SocketServer::closed);
@@ -42,7 +46,8 @@ SocketServer::~SocketServer()
 {
     log_file->close();
     webSocketServer->close();
-    broadcastSocket.close();
+    if (broadcast)
+        broadcastSocket.close();
 }
 
 void SocketServer::processBroadcast()

@@ -17,7 +17,7 @@ void TcpServer::getClientNumber(int size)
 
 void TcpServer::setPort(int port)
 {
-    listen(QHostAddress::Any, port);
+    listen(QHostAddress::AnyIPv4, port);
     connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 }
 
