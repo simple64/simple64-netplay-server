@@ -50,7 +50,7 @@ jobs:
           msys2 -c 'cp /mingw64/bin/libgcc_s_seh-1.dll .'
           msys2 -c 'cp /mingw64/bin/libwinpthread-1.dll .'
           msys2 -c 'cp /mingw64/bin/zlib1.dll .'
-          msys2 -c 'cp /mingw64/bin/libicuuc68.dll .'
+          msys2 -c 'cp /mingw64/bin/libicuuc69.dll .'
           msys2 -c 'cp /mingw64/bin/libpcre2-16-0.dll .'
           msys2 -c 'cp /mingw64/bin/libzstd.dll .'
           msys2 -c 'cp /mingw64/bin/libdouble-conversion.dll .'
