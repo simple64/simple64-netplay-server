@@ -23,6 +23,7 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
         connect(webSocketServer, &QWebSocketServer::closed, this, &SocketServer::closed);
     }
 
+    dev_channel = qEnvironmentVariable("M64P_DEV_CHANNEL");
     baseport = _baseport;
     region = _region;
     timestamp = _timestamp;
@@ -39,6 +40,16 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
         while (!in.atEnd())
             ban_strings.append(in.readLine());
         ban_list.close();
+    }
+    char env_var[80] = "M64P_CHANNEL_";
+    QString path;
+    for (int i = 0; i < 10; ++i)
+    {
+        env_var[13] = '0' + i;
+        env_var[14] = '\0';
+        path = qEnvironmentVariable(env_var);
+        if (!path.isEmpty())
+            discord_channels.append(path);
     }
 }
 
@@ -289,23 +300,15 @@ void SocketServer::createDiscord(QString room_name, QString game_name, int port,
 {
     QString type = is_public ? QStringLiteral("public") : QStringLiteral("private");
     QString message = "New " + type + " netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name;
-    QString path;
     //Annouce room
     if (is_public)
     {
-        char env_var[80] = "M64P_CHANNEL_";
-        for (int i = 0; i < 10; ++i)
-        {
-            env_var[13] = '0' + i;
-            env_var[14] = '\0';
-            path = qEnvironmentVariable(env_var);
-            if (!path.isEmpty())
-                announceDiscord(path, message);
-        }
+        for (int i = 0; i < discord_channels.size(); ++i)
+            announceDiscord(discord_channels.at(i), message);
     }
-    path = qEnvironmentVariable("M64P_DEV_CHANNEL");
-    if (!path.isEmpty())
-        announceDiscord(path, message); //m64p discord dev channel
+
+    if (!dev_channel.isEmpty())
+        announceDiscord(dev_channel, message); //m64p discord dev channel
 
     if (discord_bot.isEmpty())
         return;
@@ -457,9 +460,8 @@ void SocketServer::desyncMessage(int port)
     QString game_name = rooms.value(port).first.value("game_name").toString();
     writeLog("game desynced", room_name, game_name, port);
     QString message = "Desync in netplay room running in " + region + ": **" + room_name + "** game: " + game_name;
-    QString path = qEnvironmentVariable("M64P_DEV_CHANNEL");
-    if (!path.isEmpty())
-        announceDiscord(path, message); //m64p discord dev channel
+    if (!dev_channel.isEmpty())
+        announceDiscord(dev_channel, message); //m64p discord dev channel
 }
 
 void SocketServer::receiveLog(QString message, int port)

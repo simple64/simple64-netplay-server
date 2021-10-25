@@ -46,6 +46,7 @@ private:
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>
     QHash<int, QPair<QString, QString>> discord;
     QString region;
+    QString dev_channel;
     int timestamp;
     int baseport;
     int broadcast;
@@ -53,6 +54,7 @@ private:
     QUdpSocket broadcastSocket;
     QString discord_bot;
     QStringList ban_strings;
+    QStringList discord_channels;
 };
 
 #endif
