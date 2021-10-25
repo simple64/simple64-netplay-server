@@ -41,6 +41,7 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
             ban_strings.append(in.readLine());
         ban_list.close();
     }
+    discord_channels.clear();
     char env_var[80] = "M64P_CHANNEL_";
     QString path;
     for (int i = 0; i < 10; ++i)
