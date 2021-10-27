@@ -1,6 +1,8 @@
 #include "tcpServer.h"
 #include <QtEndian>
 
+#define SETTINGS_SIZE 24
+
 TcpServer::TcpServer(char _buffer_target, QObject *parent)
     : QTcpServer(parent)
 {
@@ -113,10 +115,10 @@ void ClientHandler::readData()
         }
         if (request == 3) //get settings from P1
         {
-            if (data.size() >= 20)
+            if (data.size() >= SETTINGS_SIZE)
             {
-                server->settings = data.mid(0, 20);
-                data = data.mid(20);
+                server->settings = data.mid(0, SETTINGS_SIZE);
+                data = data.mid(SETTINGS_SIZE);
                 request = 255;
                 process = 1;
             }
