@@ -27,7 +27,7 @@ jobs:
           name: m64p-netplay-server-linux
           path: build/m64p-netplay-server
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v2
       - uses: msys2/setup-msys2@v2
