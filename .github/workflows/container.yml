@@ -10,7 +10,7 @@ env:
   REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
 
 jobs:
-  build-toolbox:
+  build-container:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
