@@ -9,12 +9,18 @@ env:
   REGISTRY_USER: loganmc10
   IMAGE_REGISTRY: quay.io
   REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+  PYTHON_VERSION: "3.9"
 
 jobs:
   build-container:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Log in to Quay.io
         uses: redhat-actions/podman-login@v1
@@ -25,6 +31,10 @@ jobs:
 
       - name: Run podman
         run: |
-          podman build . --tag quay.io/m64p/m64p-netplay-server:latest
+          pip install requests
+          export M64P_VERSION=$(python3 ../scripts/get_release_version.py)
+          sed -i "s~LATEST_VERSION~$M64P_VERSION~g" Containerfile
+          podman build . --tag quay.io/m64p/m64p-netplay-server:latest --tag quay.io/m64p/m64p-netplay-server:$M64P_VERSION
           podman push quay.io/m64p/m64p-netplay-server:latest
+          podman push quay.io/m64p/m64p-netplay-server:$M64P_VERSION
         working-directory: container
