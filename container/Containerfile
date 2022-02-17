@@ -7,4 +7,4 @@ RUN dnf -y update && \
     dnf clean all -y && \
     rm /m64p-netplay-server-linux.zip && \
     chmod +x /m64p-netplay-server
-CMD ["/m64p-netplay-server"]
+ENTRYPOINT ["/m64p-netplay-server"]
