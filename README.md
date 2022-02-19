@@ -1,8 +1,12 @@
 # m64p-netplay-server
 
-## Dependencies
+## Container
 
-m64p-netplay-server requires qt@>=5.10
+```
+podman pull quay.io/m64p/m64p-netplay-server:latest
+```
+
+## Building
 
 ### Ubuntu
 
@@ -20,7 +24,7 @@ For Fedora, replace the `qmake` command with `qmake-qt5`.
 sudo dnf install git-all qt5-qtbase qt5-qtbase-devel qt5-qtwebsockets
 ```
 
-## Building
+### Compiling
 ```
 git clone https://github.com/m64p/m64p-netplay-server.git
 cd m64p-netplay-server
