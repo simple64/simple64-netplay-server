@@ -9,18 +9,18 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-20.04
+    container: quay.io/centos/centos:stream8
     steps:
       - uses: actions/checkout@v2
       - name: Update and install packages
         run: |
-          sudo apt-get -qq update
-          sudo ACCEPT_EULA=Y apt-get -y dist-upgrade
-          sudo apt-get -y install build-essential qt5-default libqt5websockets5-dev
+          sudo dnf -y update
+          sudo dnf -y install qt5-qtwebsockets-devel
       - name: Run build script
         run: |
           mkdir build
           cd build
-          qmake ..
+          qmake-qt5 ..
           make
       - name: Upload file
         uses: actions/upload-artifact@v2
