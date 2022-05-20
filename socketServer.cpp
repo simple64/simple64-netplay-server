@@ -318,7 +318,7 @@ void SocketServer::createDiscord(QString room_name, QString game_name, int port,
     connect(createLobby, &QNetworkAccessManager::finished,
         this, &SocketServer::createLobbyFinished);
 
-    QNetworkRequest request(QUrl("https://discord.com/api/v8/lobbies"));
+    QNetworkRequest request(QUrl("https://discord.com/api/v10/lobbies"));
     request.setRawHeader("Content-Type", "application/json");
     request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
     request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
@@ -392,7 +392,7 @@ void SocketServer::closeUdpServer(int port)
         connect(deleteLobby, &QNetworkAccessManager::finished,
             this, &SocketServer::deleteResponse);
 
-        QNetworkRequest request(QUrl("https://discord.com/api/v8/lobbies/" + discord.value(port).first));
+        QNetworkRequest request(QUrl("https://discord.com/api/v10/lobbies/" + discord.value(port).first));
         request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
         request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
         deleteLobby->deleteResource(request);
