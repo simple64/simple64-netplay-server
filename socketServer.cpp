@@ -110,13 +110,10 @@ void SocketServer::processBinaryMessage(QByteArray message)
     {
         client_ip = json.value("IP").toString();
     }
-    for (int i = 0; i < ban_strings.size(); ++i)
+    if (ban_strings.contains(client_ip))
     {
-        if (client_ip == ban_strings.at(i))
-        {
-            writeLog("Blocked banned IP: " + client_ip, "None", "None", baseport);
-            return;
-        }
+        writeLog("Blocked banned IP: " + client_ip, "None", "None", baseport);
+        return;
     }
     QJsonObject room;
     if (json.value("type").toString() == "create_room")
