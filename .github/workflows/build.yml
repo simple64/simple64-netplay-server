@@ -63,6 +63,8 @@ jobs:
           msys2 -c 'cp /mingw64/bin/libdouble-conversion.dll .'
           msys2 -c 'cp /mingw64/bin/libicudt69.dll .'
           msys2 -c 'cp /mingw64/bin/libicuin69.dll .'
+          msys2 -c 'cp /mingw64/bin/libbrotlidec.dll .'
+          msys2 -c 'cp /mingw64/bin/libb2-1.dll .'
       - name: Upload folder
         uses: actions/upload-artifact@v2
         with:
