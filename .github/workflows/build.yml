@@ -53,7 +53,7 @@ jobs:
           mkdir m64p-netplay-server
           cd m64p-netplay-server
           cp ../m64p-netplay-server.exe .
-          msys2 -c 'windeployqt.exe m64p-netplay-server.exe'
+          msys2 -c 'windeployqt-qt6.exe m64p-netplay-server.exe'
           msys2 -c 'cp /mingw64/bin/libstdc++-6.dll .'
           msys2 -c 'cp /mingw64/bin/libgcc_s_seh-1.dll .'
           msys2 -c 'cp /mingw64/bin/libwinpthread-1.dll .'
