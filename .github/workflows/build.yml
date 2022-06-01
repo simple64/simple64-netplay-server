@@ -15,12 +15,12 @@ jobs:
       - name: Update and install packages
         run: |
           dnf -y update
-          dnf -y install qt5-qtwebsockets-devel
+          dnf -y install qt6-qtwebsockets-devel
       - name: Run build script
         run: |
           mkdir build
           cd build
-          qmake-qt5 ..
+          qmake ..
           make
       - name: Upload file
         uses: actions/upload-artifact@v2
@@ -36,7 +36,7 @@ jobs:
           update: true
           install: >-
             make
-            mingw-w64-x86_64-qt5
+            mingw-w64-x86_64-qt6
             mingw-w64-x86_64-gcc
       - name: Run build script
         run: |
