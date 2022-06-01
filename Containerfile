@@ -7,5 +7,6 @@ RUN dnf -y install git wget unzip && \
 
 FROM quay.io/centos/centos:stream9
 COPY --from=build /m64p-netplay-server /m64p-netplay-server
-RUN dnf -y update && dnf install -y qt5-qtwebsockets && dnf clean all -y
+RUN dnf -y install dnf-plugins-core && dnf -y config-manager --set-enabled crb && dnf -y install epel-release epel-next-release && \
+    dnf -y update && dnf install -y qt6-qtwebsockets && dnf clean all -y
 ENTRYPOINT ["/m64p-netplay-server"]
