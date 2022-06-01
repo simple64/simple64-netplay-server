@@ -38,7 +38,7 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
     {
         QTextStream in(&ban_list);
         while (!in.atEnd())
-            ban_strings.append(in.readLine());
+            ban_strings.append(in.readLine().split(' ').at(0));
         ban_list.close();
     }
     discord_channels.clear();
