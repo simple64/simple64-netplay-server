@@ -45,7 +45,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          msys2 -c 'qmake ..'
+          msys2 -c 'qmake-qt6 ..'
           msys2 -c 'make'
       - name: Put in folder
         run: |
