@@ -60,11 +60,9 @@ jobs:
           msys2 -c 'cp /mingw64/bin/zlib1.dll .'
           msys2 -c 'cp /mingw64/bin/libicuuc69.dll .'
           msys2 -c 'cp /mingw64/bin/libpcre2-16-0.dll .'
-          msys2 -c 'cp /mingw64/bin/libzstd.dll .'
           msys2 -c 'cp /mingw64/bin/libdouble-conversion.dll .'
           msys2 -c 'cp /mingw64/bin/libicudt69.dll .'
           msys2 -c 'cp /mingw64/bin/libicuin69.dll .'
-          msys2 -c 'cp /mingw64/bin/libpcre2-16-0.dll .'
       - name: Upload folder
         uses: actions/upload-artifact@v2
         with:
