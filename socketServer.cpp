@@ -95,17 +95,6 @@ void SocketServer::processBroadcast()
 void SocketServer::onNewConnection()
 {
     QWebSocket *socket = webSocketServer->nextPendingConnection();
-    QString client_ip = QHostAddress(socket->peerAddress().toIPv4Address()).toString();
-    for (int i = 0; i < ban_strings.size(); ++i)
-    {
-        if (client_ip == ban_strings.at(i))
-        {
-            writeLog("Blocked banned IP: " + client_ip, "None", "None", baseport);
-            socket->close();
-            socket->deleteLater();
-            return;
-        }
-    }
     connect(socket, &QWebSocket::binaryMessageReceived, this, &SocketServer::processBinaryMessage);
     connect(socket, &QWebSocket::disconnected, this, &SocketServer::socketDisconnected);
 }
@@ -116,6 +105,19 @@ void SocketServer::processBinaryMessage(QByteArray message)
     QWebSocket *client = qobject_cast<QWebSocket *>(sender());
     QJsonDocument json_doc = QJsonDocument::fromJson(message);
     QJsonObject json = json_doc.object();
+    QString client_ip;
+    if (json.contains("IP"))
+    {
+        client_ip = json.value("IP").toString();
+    }
+    for (int i = 0; i < ban_strings.size(); ++i)
+    {
+        if (client_ip == ban_strings.at(i))
+        {
+            writeLog("Blocked banned IP: " + client_ip, "None", "None", baseport);
+            return;
+        }
+    }
     QJsonObject room;
     if (json.value("type").toString() == "create_room")
     {
@@ -133,9 +135,8 @@ void SocketServer::processBinaryMessage(QByteArray message)
             {
                 if (!rooms.contains(port))
                 {
-                    QString client_ip = QHostAddress(client->peerAddress().toIPv4Address()).toString();
                     int lle = json.contains("lle") && json.value("lle").toString() == "Yes";
-                    writeLog(QString("creating ") + (lle ? "LLE" : "HLE") + " room: " + client_ip, json.value("room_name").toString(), json.value("game_name").toString(), port);
+                    writeLog(QString("creating ") + (lle ? "LLE" : "HLE") + " room, IP: " + client_ip + ", player: " + json.value("player_name").toString(), json.value("room_name").toString(), json.value("game_name").toString(), port);
 
                     int p1InputDelay = json.contains("input_delay") ? json.value("input_delay").toInt() : -1;
 
@@ -150,6 +151,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                     room = json;
                     room.remove("type");
                     room.remove("player_name");
+                    room.remove("IP");
                     room.insert("port", port);
                     rooms[port] = qMakePair(room, serverThread);
                     room.insert("type", "send_room_create");
@@ -240,6 +242,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
                 }
             }
             clients[room_port].append(qMakePair(client, qMakePair(json.value("player_name").toString(), player_num)));
+            writeLog(QString("player joining room: ") + json.value("player_name").toString() + ", number: " + QString::number(player_num) + ", IP: " + client_ip, json.value("room_name").toString(), json.value("game_name").toString(), room_port);
 
             if (json.contains("input_delay"))
                 emit inputDelayChanged(player_num - 1, json.value("input_delay").toInt());
