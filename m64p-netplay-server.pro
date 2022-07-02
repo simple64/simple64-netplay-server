@@ -1,7 +1,7 @@
 QT -= gui
 QT += network websockets
 
-CONFIG += optimize_full console
+CONFIG += console
 CONFIG -= app_bundle
 
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00
@@ -18,6 +18,18 @@ HEADERS += \
         tcpServer.h \
         serverThread.h \
         socketServer.h
+
+!win32 {
+CONFIG += ltcg
+}
+
+QMAKE_CXXFLAGS_RELEASE -= -O2
+QMAKE_CXXFLAGS_RELEASE += -O3 -march=x86-64-v3
+QMAKE_CFLAGS_RELEASE -= -O2
+QMAKE_CFLAGS_RELEASE += -O3 -march=x86-64-v3
+QMAKE_LFLAGS_RELEASE -= -O2
+QMAKE_LFLAGS_RELEASE -= -Wl,-O1
+QMAKE_LFLAGS_RELEASE += -O3 -march=x86-64-v3
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
