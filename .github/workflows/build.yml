@@ -26,7 +26,7 @@ jobs:
           qmake ..
           make
       - name: Upload file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: m64p-netplay-server-linux
           path: build/m64p-netplay-server
@@ -67,7 +67,7 @@ jobs:
           msys2 -c 'cp /mingw64/bin/libbrotlicommon.dll .'
           msys2 -c 'cp /mingw64/bin/libb2-1.dll .'
       - name: Upload folder
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: m64p-netplay-server-win
           path: build/release/m64p-netplay-server
