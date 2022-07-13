@@ -1,7 +1,7 @@
 #include "tcpServer.h"
 #include <QtEndian>
 
-#define SETTINGS_SIZE 24
+#define SETTINGS_SIZE 28
 
 TcpServer::TcpServer(char _buffer_target, QObject *parent)
     : QTcpServer(parent)

@@ -11,7 +11,7 @@
 #include <QTimer>
 #include <QUdpSocket>
 
-#define NETPLAY_VER 9
+#define NETPLAY_VER 10
 
 class SocketServer : public QObject
 {
