@@ -9,16 +9,13 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-20.04
-    container: quay.io/centos/centos:stream9
+    container: registry.fedoraproject.org/fedora-minimal:latest
     steps:
       - uses: actions/checkout@v3
       - name: Update and install packages
         run: |
-          dnf -y install dnf-plugins-core
-          dnf -y config-manager --set-enabled crb
-          dnf -y install epel-release epel-next-release
-          dnf -y update
-          dnf -y install qt6-qtwebsockets-devel
+          microdnf -y update
+          microdnf -y install qt6-qtwebsockets-devel
       - name: Run build script
         run: |
           mkdir build
