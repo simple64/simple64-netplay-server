@@ -4,7 +4,7 @@ QT += network websockets
 CONFIG += console
 CONFIG -= app_bundle
 
-DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x050F00
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x0602ff
 
 SOURCES += \
         main.cpp \
