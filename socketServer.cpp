@@ -9,7 +9,7 @@
 SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _broadcast, QString _discord, QObject *parent)
     : QObject(parent)
 {
-    webSocketServer = new QWebSocketServer(QStringLiteral("m64p Netplay Server"), QWebSocketServer::NonSecureMode, this);
+    webSocketServer = new QWebSocketServer(QStringLiteral("simple64 Netplay Server"), QWebSocketServer::NonSecureMode, this);
     broadcast = _broadcast;
     if (broadcast)
     {
@@ -23,14 +23,14 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
         connect(webSocketServer, &QWebSocketServer::closed, this, &SocketServer::closed);
     }
 
-    dev_channel = qEnvironmentVariable("M64P_DEV_CHANNEL");
+    dev_channel = qEnvironmentVariable("SIMPLE64_DEV_CHANNEL");
     baseport = _baseport;
     region = _region;
     timestamp = _timestamp;
     if (!_discord.isEmpty())
         discord_bot = "Bot " + _discord;
     QDir AppPath(QCoreApplication::applicationDirPath());
-    log_file = new QFile(AppPath.absoluteFilePath("m64p_server_log.txt"), this);
+    log_file = new QFile(AppPath.absoluteFilePath("simple64_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
     writeLog("Server started", "None", "None", baseport);
     QFile ban_list(AppPath.absoluteFilePath("ban_list.txt"));
@@ -42,7 +42,7 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
         ban_list.close();
     }
     discord_channels.clear();
-    char env_var[80] = "M64P_CHANNEL_";
+    char env_var[80] = "SIMPLE64_CHANNEL_";
     QString path;
     for (int i = 0; i < 10; ++i)
     {
@@ -121,7 +121,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         if (json.value("netplay_version").toInt() != NETPLAY_VER)
         {
             room.insert("type", "message");
-            room.insert("message", "client and server not at same version. Visit <a href=\"https://m64p.github.io\">here</a> to update");
+            room.insert("message", "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update");
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toJson());
         }
@@ -175,7 +175,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
         if (json.value("netplay_version").toInt() != NETPLAY_VER)
         {
             room.insert("type", "message");
-            room.insert("message", "client and server not at same version. Visit <a href=\"https://m64p.github.io\">here</a> to update");
+            room.insert("message", "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update");
             json_doc = QJsonDocument(room);
             client->sendBinaryMessage(json_doc.toJson());
         }
@@ -309,7 +309,7 @@ void SocketServer::createDiscord(QString room_name, QString game_name, int port,
     }
 
     if (!dev_channel.isEmpty())
-        announceDiscord(dev_channel, message); //m64p discord dev channel
+        announceDiscord(dev_channel, message); //simple64 discord dev channel
 
     if (discord_bot.isEmpty())
         return;
@@ -321,7 +321,7 @@ void SocketServer::createDiscord(QString room_name, QString game_name, int port,
     QNetworkRequest request(QUrl("https://discord.com/api/v10/lobbies"));
     request.setRawHeader("Content-Type", "application/json");
     request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
-    request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
+    request.setRawHeader("User-Agent", "simple64Bot (simple64.github.io, 1)");
     QJsonObject request_data;
     request_data.insert("application_id", "770838334015930398");
     request_data.insert("type", 1);
@@ -351,7 +351,7 @@ void SocketServer::announceDiscord(QString channel, QString message)
     QUrl path = QUrl(channel);
     QNetworkRequest request(path);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setHeader(QNetworkRequest::UserAgentHeader, "m64pBot (m64p.github.io, 1)");
+    request.setHeader(QNetworkRequest::UserAgentHeader, "simple64Bot (simple64.github.io, 1)");
     QJsonObject json;
     json.insert("content", message);
     QNetworkAccessManager *nam = new QNetworkAccessManager(this);
@@ -394,7 +394,7 @@ void SocketServer::closeUdpServer(int port)
 
         QNetworkRequest request(QUrl("https://discord.com/api/v10/lobbies/" + discord.value(port).first));
         request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
-        request.setRawHeader("User-Agent", "m64pBot (m64p.github.io, 1)");
+        request.setRawHeader("User-Agent", "simple64Bot (simple64.github.io, 1)");
         deleteLobby->deleteResource(request);
 
         discord.remove(port);
@@ -462,7 +462,7 @@ void SocketServer::desyncMessage(int port)
     writeLog("game desynced", room_name, game_name, port);
     QString message = "Desync in netplay room running in " + region + ": **" + room_name + "** game: " + game_name;
     if (!dev_channel.isEmpty())
-        announceDiscord(dev_channel, message); //m64p discord dev channel
+        announceDiscord(dev_channel, message); //simple64 discord dev channel
 }
 
 void SocketServer::receiveLog(QString message, int port)

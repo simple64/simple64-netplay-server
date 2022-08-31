@@ -25,8 +25,8 @@ jobs:
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
-          name: m64p-netplay-server-linux
-          path: build/m64p-netplay-server
+          name: simple64-netplay-server-linux
+          path: build/simple64-netplay-server
   build-windows:
     runs-on: windows-2022
     steps:
@@ -47,10 +47,10 @@ jobs:
       - name: Put in folder
         run: |
           cd build/release
-          mkdir m64p-netplay-server
-          cd m64p-netplay-server
-          cp ../m64p-netplay-server.exe .
-          msys2 -c 'windeployqt-qt6.exe m64p-netplay-server.exe'
+          mkdir simple64-netplay-server
+          cd simple64-netplay-server
+          cp ../simple64-netplay-server.exe .
+          msys2 -c 'windeployqt-qt6.exe simple64-netplay-server.exe'
           msys2 -c 'cp /mingw64/bin/libstdc++-6.dll .'
           msys2 -c 'cp /mingw64/bin/libgcc_s_seh-1.dll .'
           msys2 -c 'cp /mingw64/bin/libwinpthread-1.dll .'
@@ -66,5 +66,5 @@ jobs:
       - name: Upload folder
         uses: actions/upload-artifact@v3
         with:
-          name: m64p-netplay-server-win
-          path: build/release/m64p-netplay-server
+          name: simple64-netplay-server-win
+          path: build/release/simple64-netplay-server

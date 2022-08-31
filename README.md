@@ -1,9 +1,9 @@
-# m64p-netplay-server
+# simple64-netplay-server
 
 ## Container
 
 ```
-podman pull quay.io/m64p/m64p-netplay-server:latest
+podman pull quay.io/simple64/simple64-netplay-server:latest
 ```
 
 ## Building
@@ -26,8 +26,8 @@ sudo dnf install git-all qt5-qtbase qt5-qtbase-devel qt5-qtwebsockets
 
 ### Compiling
 ```
-git clone https://github.com/m64p/m64p-netplay-server.git
-cd m64p-netplay-server
+git clone https://github.com/simple64/simple64-netplay-server.git
+cd simple64-netplay-server
 mkdir build
 cd build
 qmake ..
@@ -36,8 +36,8 @@ make -j4
 
 ## Running
 ```
-cd m64p-netplay-server/build
-./m64p-netplay-server --name "Server Name"
+cd simple64-netplay-server/build
+./simple64-netplay-server --name "Server Name"
 ```
 
 ## Playing locally
