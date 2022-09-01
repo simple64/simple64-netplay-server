@@ -46,8 +46,8 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
     QString path;
     for (int i = 0; i < 10; ++i)
     {
-        env_var[13] = '0' + i;
-        env_var[14] = '\0';
+        env_var[17] = '0' + i;
+        env_var[18] = '\0';
         path = qEnvironmentVariable(env_var);
         if (!path.isEmpty())
             discord_channels.append(path);
