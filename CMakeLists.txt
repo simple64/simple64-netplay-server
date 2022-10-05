@@ -5,16 +5,11 @@ project(simple64-netplay-server LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# check for INTERPROCEDURAL_OPTIMIZATION support
-if((${CMAKE_VERSION} VERSION_EQUAL 3.9) OR (${CMAKE_VERSION} VERSION_GREATER 3.9))
-    cmake_policy(SET CMP0069 NEW)
-
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT ENABLE_IPO)
-    if(ENABLE_IPO)
-        message("Interprocedural optimizations enabled")
-    endif(ENABLE_IPO)
-endif()
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ENABLE_IPO)
+if(ENABLE_IPO)
+    message("Interprocedural optimizations enabled")
+endif(ENABLE_IPO)
 
 if(ENABLE_IPO AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
