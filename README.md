@@ -30,8 +30,8 @@ git clone https://github.com/simple64/simple64-netplay-server.git
 cd simple64-netplay-server
 mkdir build
 cd build
-qmake ..
-make -j4
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
+VERBOSE=1 cmake --build .
 ```
 
 ## Running

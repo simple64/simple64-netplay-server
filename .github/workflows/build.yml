@@ -14,14 +14,14 @@ jobs:
       - name: Update and install packages
         run: |
           microdnf -y update
-          microdnf -y install qt6-qtwebsockets-devel git
+          microdnf -y install qt6-qtwebsockets-devel git ninja-build cmake
       - uses: actions/checkout@v3
       - name: Run build script
         run: |
           mkdir build
           cd build
-          qmake ..
-          make
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
+          VERBOSE=1 cmake --build .
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
@@ -35,15 +35,15 @@ jobs:
         with:
           update: true
           install: >-
-            make
+            mingw-w64-x86_64-cmake
             mingw-w64-x86_64-qt6
             mingw-w64-x86_64-gcc
       - name: Run build script
         run: |
           mkdir build
           cd build
-          msys2 -c 'qmake-qt6 ..'
-          msys2 -c 'make'
+          msys2 -c 'cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..'
+          msys2 -c 'VERBOSE=1 cmake --build .'
       - name: Put in folder
         run: |
           cd build/release
