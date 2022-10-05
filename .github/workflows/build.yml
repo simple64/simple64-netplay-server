@@ -46,7 +46,7 @@ jobs:
           msys2 -c 'VERBOSE=1 cmake --build .'
       - name: Put in folder
         run: |
-          cd build/release
+          cd build
           mkdir simple64-netplay-server
           cd simple64-netplay-server
           cp ../simple64-netplay-server.exe .
