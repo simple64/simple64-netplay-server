@@ -300,7 +300,7 @@ void SocketServer::processBinaryMessage(QByteArray message)
 void SocketServer::createDiscord(QString room_name, QString game_name, int port, bool is_public)
 {
     QString type = is_public ? QStringLiteral("public") : QStringLiteral("private");
-    QString message = "New " + type + " netplay room running in " + region + ": **" + room_name + "** has been created! Come play " + game_name;
+    QString message = "New " + type + " netplay room running in " + region + " has been created! Come play " + game_name;
     //Annouce room
     if (is_public)
     {
