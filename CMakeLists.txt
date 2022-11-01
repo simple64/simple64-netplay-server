@@ -31,6 +31,6 @@ add_executable(simple64-netplay-server
 set_property(TARGET simple64-netplay-server PROPERTY C_VISIBILITY_PRESET hidden)
 set_property(TARGET simple64-netplay-server PROPERTY CXX_VISIBILITY_PRESET hidden)
 set_property(TARGET simple64-netplay-server PROPERTY VISIBILITY_INLINES_HIDDEN ON)
-target_compile_options(simple64-netplay-server PRIVATE -march=x86-64-v3 -fno-semantic-interposition)
-target_link_options(simple64-netplay-server PRIVATE -march=x86-64-v3 -fno-semantic-interposition -Wl,-Bsymbolic -Wl,-Bsymbolic-functions)
+target_compile_options(simple64-netplay-server PRIVATE -march=x86-64-v3 -Ofast)
+target_link_options(simple64-netplay-server PRIVATE -march=x86-64-v3 -Ofast -Wl,-Bsymbolic -Wl,-Bsymbolic-functions)
 target_link_libraries(simple64-netplay-server PRIVATE Qt6::Network Qt6::WebSockets)
