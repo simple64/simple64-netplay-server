@@ -9,7 +9,7 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora-minimal:36
+    container: registry.fedoraproject.org/fedora-minimal:37
     steps:
       - name: Update and install packages
         run: |
