@@ -67,6 +67,7 @@ jobs:
 
       - name: Run build script
         run: |
+          sudo apt-get install -y ninja-build
           mkdir build
           cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
