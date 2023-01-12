@@ -43,7 +43,7 @@ jobs:
       - name: Setup OS
         run: |
           dnf -y update
-          dnf -y install pkgconf-pkg-config which cmake ninja-build make qt6-qtwebsockets-devel hidapi-devel zlib-devel libpng-devel SDL2_net-devel git
+          dnf -y install qt6-qtwebsockets-devel git ninja-build cmake
 
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -71,9 +71,12 @@ jobs:
       #   If the Autobuild fails above, remove it and uncomment the following three lines.
       #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
-      - run: |
-          git config --global --add safe.directory /__w/simple64/simple64-netplay-server
-          ./build.sh nozip
+      - name: Run build script
+        run: |
+          mkdir build
+          cd build
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
+          VERBOSE=1 cmake --build .
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
