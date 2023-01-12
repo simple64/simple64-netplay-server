@@ -24,7 +24,6 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:latest
     permissions:
       actions: read
       contents: read
@@ -40,12 +39,6 @@ jobs:
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
     steps:
-      - name: Setup OS
-        run: |
-          dnf -y update
-          dnf -y install qt6-qtwebsockets-devel git ninja-build cmake
-          git config --global --add safe.directory /__w/simple64-netplay-server/simple64-netplay-server
-
       - name: Checkout repository
         uses: actions/checkout@v3
 
