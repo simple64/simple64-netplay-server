@@ -44,6 +44,7 @@ jobs:
         run: |
           dnf -y update
           dnf -y install qt6-qtwebsockets-devel git ninja-build cmake
+          git config --global --add safe.directory /__w/simple64-netplay-server/simple64-netplay-server
 
       - name: Checkout repository
         uses: actions/checkout@v3
