@@ -44,7 +44,6 @@ jobs:
         run: |
           dnf -y update
           dnf -y install pkgconf-pkg-config which cmake ninja-build make qt6-qtwebsockets-devel hidapi-devel zlib-devel libpng-devel SDL2_net-devel git
-          git config --global --add safe.directory /__w/simple64/simple64-netplay-server
 
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -73,6 +72,7 @@ jobs:
       #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
       - run: |
+          git config --global --add safe.directory /__w/simple64/simple64-netplay-server
           ./build.sh nozip
 
       - name: Perform CodeQL Analysis
