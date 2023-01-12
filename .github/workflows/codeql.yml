@@ -67,7 +67,7 @@ jobs:
 
       - name: Run build script
         run: |
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build libqt6websockets6-dev
           mkdir build
           cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
