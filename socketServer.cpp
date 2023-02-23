@@ -6,7 +6,7 @@
 #include <QCoreApplication>
 #include <QDir>
 
-SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _broadcast, QString _discord, QObject *parent)
+SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _broadcast, QObject *parent)
     : QObject(parent)
 {
     webSocketServer = new QWebSocketServer(QStringLiteral("simple64 Netplay Server"), QWebSocketServer::NonSecureMode, this);
@@ -27,8 +27,6 @@ SocketServer::SocketServer(QString _region, int _timestamp, int _baseport, int _
     baseport = _baseport;
     region = _region;
     timestamp = _timestamp;
-    if (!_discord.isEmpty())
-        discord_bot = "Bot " + _discord;
     QDir AppPath(QCoreApplication::applicationDirPath());
     log_file = new QFile(AppPath.absoluteFilePath("simple64_server_log.txt"), this);
     log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
@@ -283,18 +281,6 @@ void SocketServer::processBinaryMessage(QByteArray message)
         json_doc = QJsonDocument(room);
         client->sendBinaryMessage(json_doc.toJson());
     }
-    else if (json.value("type").toString() == "get_discord_lobby")
-    {
-        int discord_port = json.value("port").toInt();
-        if (discord.contains(discord_port))
-        {
-            room.insert("type", "discord_lobby");
-            room.insert("id", discord.value(discord_port).first);
-            room.insert("secret", discord.value(discord_port).second);
-            json_doc = QJsonDocument(room);
-            client->sendBinaryMessage(json_doc.toJson());
-        }
-    }
 }
 
 void SocketServer::createDiscord(QString room_name, QString game_name, int port, bool is_public)
@@ -310,40 +296,6 @@ void SocketServer::createDiscord(QString room_name, QString game_name, int port,
 
     if (!dev_channel.isEmpty())
         announceDiscord(dev_channel, message); //simple64 discord dev channel
-
-    if (discord_bot.isEmpty())
-        return;
-
-    QNetworkAccessManager *createLobby = new QNetworkAccessManager(this);
-    connect(createLobby, &QNetworkAccessManager::finished,
-        this, &SocketServer::createLobbyFinished);
-
-    QNetworkRequest request(QUrl("https://discord.com/api/v10/lobbies"));
-    request.setRawHeader("Content-Type", "application/json");
-    request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
-    request.setRawHeader("User-Agent", "simple64Bot (simple64.github.io, 1)");
-    QJsonObject request_data;
-    request_data.insert("application_id", "770838334015930398");
-    request_data.insert("type", 1);
-    QJsonObject metadata;
-    metadata.insert("port", QString::number(port));
-    request_data.insert("metadata", metadata);
-    createLobby->post(request, QJsonDocument(request_data).toJson());
-}
-
-void SocketServer::createLobbyFinished(QNetworkReply *reply)
-{
-    if (!reply->error())
-    {
-        QJsonObject json = QJsonDocument::fromJson(reply->readAll()).object();
-        if (json.contains("id") && json.contains("secret"))
-        {
-            int port = json.value("metadata").toObject().value("port").toString().toInt();
-            discord[port].first = json.value("id").toString();
-            discord[port].second = json.value("secret").toString();
-        }
-    }
-    reply->deleteLater();
 }
 
 void SocketServer::announceDiscord(QString channel, QString message)
@@ -385,20 +337,6 @@ void SocketServer::sendPlayers(int room_port)
 void SocketServer::closeUdpServer(int port)
 {
     writeLog("deleting room", rooms.value(port).first.value("room_name").toString(), rooms.value(port).first.value("game_name").toString(), port);
-
-    if (!discord_bot.isEmpty() && discord.contains(port))
-    {
-        QNetworkAccessManager *deleteLobby = new QNetworkAccessManager(this);
-        connect(deleteLobby, &QNetworkAccessManager::finished,
-            this, &SocketServer::deleteResponse);
-
-        QNetworkRequest request(QUrl("https://discord.com/api/v10/lobbies/" + discord.value(port).first));
-        request.setRawHeader("Authorization", discord_bot.toLocal8Bit());
-        request.setRawHeader("User-Agent", "simple64Bot (simple64.github.io, 1)");
-        deleteLobby->deleteResource(request);
-
-        discord.remove(port);
-    }
 
     rooms.remove(port);
     clients.remove(port);

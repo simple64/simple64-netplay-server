@@ -11,16 +11,13 @@ int main(int argc, char *argv[])
     QCommandLineOption name_opt("name", "Server name (required).");
     QCommandLineOption port_opt("baseport", "Base port. Defaults to 45000.");
     QCommandLineOption broadcast_opt("disable-broadcast", "Disable LAN broadcast.");
-    QCommandLineOption discord_opt("discord", "Discord bot token (optional).");
     QCommandLineOption timestamp_opt("timestamps", "Whether log should include timestamps.");
     name_opt.setValueName("name");
     port_opt.setValueName("baseport");
-    discord_opt.setValueName("discord");
     parser.addOption(name_opt);
     parser.addOption(port_opt);
     parser.addOption(broadcast_opt);
     parser.addOption(timestamp_opt);
-    parser.addOption(discord_opt);
 
     parser.process(a);
 
@@ -45,11 +42,7 @@ int main(int argc, char *argv[])
     if (parser.isSet(broadcast_opt))
         broadcast = 0;
 
-    QString discord;
-    if (parser.isSet(discord_opt))
-        discord = parser.value("discord");
-
-    SocketServer socketServer(region, timestamp, port, broadcast, discord);
+    SocketServer socketServer(region, timestamp, port, broadcast);
 
     return a.exec();
 }

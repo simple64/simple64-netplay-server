@@ -11,14 +11,14 @@
 #include <QTimer>
 #include <QUdpSocket>
 
-#define NETPLAY_VER 10
+#define NETPLAY_VER 11
 
 class SocketServer : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit SocketServer(QString _region, int _timestamp, int _baseport, int _broadcast, QString _discord, QObject *parent = 0);
+    explicit SocketServer(QString _region, int _timestamp, int _baseport, int _broadcast, QObject *parent = 0);
     ~SocketServer();
 
 signals:
@@ -35,7 +35,6 @@ private slots:
     void deleteResponse(QNetworkReply *reply);
     void processBroadcast();
     void receiveLog(QString message, int port);
-    void createLobbyFinished(QNetworkReply *reply);
 private:
     void sendPlayers(int room_port);
     void createDiscord(QString room_name, QString game_name, int port, bool is_public);
@@ -44,7 +43,6 @@ private:
     QWebSocketServer *webSocketServer;
     QHash<int, QPair<QJsonObject, ServerThread*>> rooms;
     QHash<int, QList<QPair<QWebSocket*, QPair<QString, int>>>> clients; //int = udp port, qlist<client socket, <client name, player num>>
-    QHash<int, QPair<QString, QString>> discord;
     QString region;
     QString dev_channel;
     int timestamp;
@@ -52,7 +50,6 @@ private:
     int broadcast;
     QFile *log_file;
     QUdpSocket broadcastSocket;
-    QString discord_bot;
     QStringList ban_strings;
     QStringList discord_channels;
 };
