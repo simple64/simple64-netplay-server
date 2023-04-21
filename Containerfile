@@ -7,5 +7,5 @@ RUN microdnf -y install git wget unzip && \
 
 FROM registry.fedoraproject.org/fedora-minimal:38
 COPY --from=build /simple64-netplay-server /simple64-netplay-server
-RUN microdnf -y update && microdnf install -y qt6-qtwebsockets && microdnf clean all -y
+RUN microdnf -y upgrade && microdnf install -y qt6-qtwebsockets && microdnf clean all -y
 ENTRYPOINT ["/simple64-netplay-server"]
