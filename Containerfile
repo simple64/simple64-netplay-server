@@ -1,11 +1,19 @@
-FROM registry.fedoraproject.org/fedora-minimal:38 AS build
-COPY .git .
-RUN microdnf -y install git wget unzip && \
-    wget https://github.com/simple64/simple64-netplay-server/releases/download/$(git describe --tags --abbrev=0)/simple64-netplay-server-linux.zip && \
-    unzip /simple64-netplay-server-linux.zip && \
-    chmod +x /simple64-netplay-server
+FROM quay.io/centos/centos:stream9 AS build
+COPY . .
+RUN dnf -y install dnf-plugins-core && \
+    dnf config-manager --set-enabled crb && \
+    dnf -y install epel-release epel-next-release && \
+    dnf -y update && \
+    dnf -y install cmake ninja-build qt6-qtwebsockets-devel && \
+    mkdir build && \
+    cd build && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release .. && \
+    VERBOSE=1 cmake --build .
 
-FROM registry.fedoraproject.org/fedora-minimal:38
-COPY --from=build /simple64-netplay-server /simple64-netplay-server
-RUN microdnf -y upgrade && microdnf install -y qt6-qtwebsockets && microdnf clean all -y
+FROM quay.io/centos/centos:stream9-minimal
+COPY --from=build build/simple64-netplay-server /simple64-netplay-server
+RUN microdnf install epel-release epel-next-release && \
+    microdnf -y upgrade && \
+    microdnf install -y qt6-qtwebsockets && \
+    microdnf clean all -y
 ENTRYPOINT ["/simple64-netplay-server"]
