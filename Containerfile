@@ -12,7 +12,7 @@ RUN dnf -y install dnf-plugins-core && \
 
 FROM quay.io/centos/centos:stream9-minimal
 COPY --from=build build/simple64-netplay-server /simple64-netplay-server
-RUN microdnf install epel-release epel-next-release && \
+RUN microdnf -y install epel-release epel-next-release && \
     microdnf -y upgrade && \
     microdnf install -y qt6-qtwebsockets && \
     microdnf clean all -y
