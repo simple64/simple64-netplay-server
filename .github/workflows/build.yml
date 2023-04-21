@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Update and install packages
         run: |
-          microdnf -y update
+          microdnf -y upgrade
           microdnf -y install qt6-qtwebsockets-devel git ninja-build cmake
       - uses: actions/checkout@v3
       - name: Run build script
