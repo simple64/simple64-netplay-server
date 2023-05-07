@@ -2,17 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 project(simple64-netplay-server LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ENABLE_IPO)
-if(ENABLE_IPO)
-    message("Interprocedural optimizations enabled")
-endif(ENABLE_IPO)
 
-if(ENABLE_IPO AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
+if(ENABLE_IPO AND (NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+    message("Interprocedural optimizations enabled")
 endif()
 
 add_definitions(-DQT_DISABLE_DEPRECATED_BEFORE=0x0602ff)
