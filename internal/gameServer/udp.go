@@ -152,11 +152,10 @@ func (g *GameServer) watchUDP() {
 	for {
 		buf := make([]byte, 1024)
 		_, addr, err := g.UdpListener.ReadFromUDP(buf)
-		if err != nil {
-			g.Logger.Info("closing UDP server", "message", err.Error())
-			if err := g.UdpListener.Close(); err != nil {
-				g.Logger.Error(err, "error closing UdpListener")
-			}
+		if err != nil && !g.isConnClosed(err) {
+			g.Logger.Error(err, "error from UdpListener")
+			continue
+		} else if g.isConnClosed(err) {
 			return
 		}
 		g.processUDP(addr, buf)
@@ -165,6 +164,10 @@ func (g *GameServer) watchUDP() {
 
 func (g *GameServer) manageBuffer() {
 	for {
+		if !g.Running {
+			g.Logger.Info("done managing buffers")
+			return
+		}
 		for i := 0; i < 4; i++ {
 			if g.GameData.BufferHealth[i] != -1 {
 				if g.GameData.BufferHealth[i] > BUFFER_TARGET && g.GameData.BufferSize[i] > 0 {
@@ -184,10 +187,11 @@ func (g *GameServer) managePlayers() {
 	for {
 		playersActive := false // used to check if anyone is still around
 		var i byte
+		if len(g.GameData.Inputs[0]) == 0 { // wait for game to start
+			time.Sleep(time.Second)
+			continue
+		}
 		for i = 0; i < 4; i++ {
-			if g.GameData.BufferHealth[i] == -1 {
-				continue
-			}
 			_, ok := g.Registrations[i]
 			if ok {
 				if g.GameData.PlayerAlive[i] {
@@ -203,12 +207,7 @@ func (g *GameServer) managePlayers() {
 		}
 		if !playersActive {
 			g.Logger.Info("no more players, closing room")
-			if err := g.UdpListener.Close(); err != nil {
-				g.Logger.Error(err, "error closing UdpListener")
-			}
-			if err := g.TcpListener.Close(); err != nil {
-				g.Logger.Error(err, "error closing TcpListener")
-			}
+			g.closeServers()
 			g.Running = false
 			return
 		}

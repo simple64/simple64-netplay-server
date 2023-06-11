@@ -90,7 +90,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 	for {
 		length, err := conn.Read(incomingBuffer)
 		if err == io.EOF {
-			g.Logger.Info("TCP connection closed", "address", conn.RemoteAddr().String())
+			g.Logger.Info("Remote side closed TCP connection", "address", conn.RemoteAddr().String())
 			return
 		}
 		if err != nil {
@@ -230,11 +230,16 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				g.Logger.Info("player disconected TCP", "id", regId)
 				var i byte
 				for i = 0; i < 4; i++ {
-					if g.Registrations[i].RegId == regId {
-						g.GameData.Status |= (0x1 << (i + 1))
-						delete(g.Registrations, i)
+					v, ok := g.Registrations[i]
+					if ok {
+						if v.RegId == regId {
+							g.GameData.PlayerAlive[i] = false
+							g.GameData.Status |= (0x1 << (i + 1))
+							delete(g.Registrations, i)
+						}
 					}
 				}
+				g.closeServers()
 				tcpData.Request = REQUEST_NONE
 				process = true
 			}
@@ -245,11 +250,10 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 func (g *GameServer) watchTCP() {
 	for {
 		conn, err := g.TcpListener.AcceptTCP()
-		if err != nil {
-			g.Logger.Info("closing TCP server", "message", err.Error())
-			if err := g.TcpListener.Close(); err != nil {
-				g.Logger.Error(err, "error closing TcpListener")
-			}
+		if err != nil && !g.isConnClosed(err) {
+			g.Logger.Error(err, "error from TcpListener")
+			continue
+		} else if g.isConnClosed(err) {
 			return
 		}
 		g.Logger.Info("received TCP connection", "address", conn.RemoteAddr().String())

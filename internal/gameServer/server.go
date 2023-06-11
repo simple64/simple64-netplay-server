@@ -2,6 +2,7 @@ package gameserver
 
 import (
 	"net"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/net/websocket"
@@ -44,4 +45,24 @@ func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameNam
 		return port
 	}
 	return g.createUDPServer()
+}
+
+func (g *GameServer) closeServers() {
+	if err := g.UdpListener.Close(); err != nil && !g.isConnClosed(err) {
+		g.Logger.Error(err, "error closing UdpListener")
+	} else if err == nil {
+		g.Logger.Info("TCP server closed")
+	}
+	if err := g.TcpListener.Close(); err != nil && !g.isConnClosed(err) {
+		g.Logger.Error(err, "error closing TcpListener")
+	} else if err == nil {
+		g.Logger.Info("UDP server closed")
+	}
+}
+
+func (g *GameServer) isConnClosed(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "use of closed network connection")
 }
