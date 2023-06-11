@@ -185,7 +185,7 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 				}
 			} else {
 				g := gameserver.GameServer{}
-				sendMessage.Port = g.CreateTCPServer(s.BasePort, s.Logger)
+				sendMessage.Port = g.CreateNetworkServers(s.BasePort, s.Logger)
 				if sendMessage.Port == 0 {
 					sendMessage.Type = "message"
 					sendMessage.Message = "Failed to create room"
