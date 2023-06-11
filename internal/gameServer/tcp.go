@@ -227,12 +227,12 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					g.Logger.Error(err, "TCP error")
 				}
 				regId := binary.BigEndian.Uint32(regIdBytes)
-				g.Logger.Info("player disconected TCP", "id", regId)
 				var i byte
 				for i = 0; i < 4; i++ {
 					v, ok := g.Registrations[i]
 					if ok {
 						if v.RegId == regId {
+							g.Logger.Info("player disconnected TCP", "regID", regId, "player", i)
 							g.GameData.PlayerAlive[i] = false
 							g.GameData.Status |= (0x1 << (i + 1))
 							delete(g.Registrations, i)
