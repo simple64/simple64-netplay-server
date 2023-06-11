@@ -21,6 +21,7 @@ type GameData struct {
 	PendingInputs   [][]uint32
 	PendingPlugin   [][]byte
 	SyncHash        map[uint32]uint64
+	PlayerAlive     []bool
 }
 
 const (
@@ -113,9 +114,20 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 			}
 		}
 	} else if buf[0] == PLAYER_INPUT_REQUEST {
+		regId := binary.BigEndian.Uint32(buf[2:])
+		var i byte
+		for i = 0; i < 4; i++ {
+			v, ok := g.Registrations[i]
+			if ok {
+				if v.RegId == regId {
+					g.GameData.PlayerAlive[i] = true
+				}
+			}
+		}
 		count := binary.BigEndian.Uint32(buf[6:])
 		spectator := buf[10]
 		if ((count - g.GameData.LeadCount[playerNumber]) < (math.MaxUint32 / 2)) && spectator == 0 {
+			// this player is the leader
 			g.GameData.BufferHealth[playerNumber] = int32(buf[11])
 			g.GameData.LeadCount[playerNumber] = count
 		}
@@ -138,12 +150,12 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 }
 
 func (g *GameServer) watchUDP() {
-	defer g.UdpListener.Close()
 	for {
 		buf := make([]byte, 1024)
 		_, addr, err := g.UdpListener.ReadFromUDP(buf)
 		if err != nil {
-			g.Logger.Error(err, "error reading UDP packet")
+			defer g.UdpListener.Close()
+			g.Logger.Info("closing UDP server")
 			return
 		}
 		g.processUDP(addr, buf)
@@ -151,18 +163,42 @@ func (g *GameServer) watchUDP() {
 }
 
 func (g *GameServer) manageBuffer() {
-	for i := 0; i < 4; i++ {
-		if g.GameData.BufferHealth[i] != -1 {
-			if g.GameData.BufferHealth[i] > BUFFER_TARGET && g.GameData.BufferSize[i] > 0 {
-				g.GameData.BufferSize[i] -= 1
-				g.Logger.Info("reducing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
-			} else if g.GameData.BufferHealth[i] < BUFFER_TARGET {
-				g.GameData.BufferSize[i] += 1
-				g.Logger.Info("increasing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
+	for {
+		for i := 0; i < 4; i++ {
+			if g.GameData.BufferHealth[i] != -1 {
+				if g.GameData.BufferHealth[i] > BUFFER_TARGET && g.GameData.BufferSize[i] > 0 {
+					g.GameData.BufferSize[i] -= 1
+					g.Logger.Info("reducing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
+				} else if g.GameData.BufferHealth[i] < BUFFER_TARGET {
+					g.GameData.BufferSize[i] += 1
+					g.Logger.Info("increasing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
+				}
 			}
 		}
+
+		playersActive := false // used to check if anyone is still around
+		var i byte
+		for i = 0; i < 4; i++ {
+			_, ok := g.Registrations[i]
+			if ok {
+				if g.GameData.PlayerAlive[i] {
+					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegId)
+					playersActive = true
+				} else {
+					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegId)
+					g.GameData.Status |= (0x1 << (i + 1))
+				}
+			}
+			g.GameData.PlayerAlive[i] = false
+		}
+		if !playersActive {
+			g.Logger.Info("no more players, closing room")
+			defer g.UdpListener.Close()
+			defer g.TcpListener.Close()
+			return
+		}
+		time.Sleep(time.Second * 5)
 	}
-	time.Sleep(time.Second * 5)
 }
 
 func (g *GameServer) createUDPServer() int {
@@ -189,8 +225,8 @@ func (g *GameServer) createUDPServer() int {
 	g.GameData.PendingInputs = make([][]uint32, 4)
 	g.GameData.PendingPlugin = make([][]byte, 4)
 	g.GameData.SyncHash = make(map[uint32]uint64)
+	g.GameData.PlayerAlive = make([]bool, 4)
 
 	go g.watchUDP()
-	go g.manageBuffer()
 	return g.Port
 }

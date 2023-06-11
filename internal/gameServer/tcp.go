@@ -85,6 +85,7 @@ func (g *GameServer) tcpSendReg(tcpData *TCPData, conn *net.TCPConn) {
 	if err != nil {
 		g.Logger.Error(err, "failed to send registration data")
 	}
+	go g.manageBuffer()
 }
 
 func (g *GameServer) processTCP(conn *net.TCPConn) {
@@ -200,6 +201,9 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					}
 					response[0] = 1
 					g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "bufferLeft", tcpData.Buffer.Len())
+					g.GameData.Inputs[playerNumber][0] = 0 // register initial input data
+					g.GameData.Plugin[playerNumber][0] = plugin
+					g.GameData.PlayerAlive[playerNumber] = true
 				} else {
 					g.Logger.Info("player already registered", "registration", g.Registrations[playerNumber], "bufferLeft", tcpData.Buffer.Len())
 					if g.Registrations[playerNumber].RegId == regId {
@@ -227,8 +231,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					g.Logger.Error(err, "TCP error")
 				}
 				regId := binary.BigEndian.Uint32(regIdBytes)
-				// TODO: handle disconnect
-				g.Logger.Info("player disconected", "id", regId)
+				g.Logger.Info("player disconected TCP", "id", regId)
 				tcpData.Request = REQUEST_NONE
 				process = true
 			}
@@ -237,11 +240,11 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 }
 
 func (g *GameServer) watchTCP() {
-	defer g.TcpListener.Close()
 	for {
 		conn, err := g.TcpListener.AcceptTCP()
 		if err != nil {
-			g.Logger.Error(err, "TCP error")
+			defer g.TcpListener.Close()
+			g.Logger.Info("closing TCP server")
 			return
 		}
 		g.Logger.Info("received TCP connection", "address", conn.RemoteAddr().String())

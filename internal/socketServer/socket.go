@@ -373,22 +373,22 @@ func (s *SocketServer) processBroadcast(udpServer *net.UDPConn, addr *net.UDPAdd
 }
 
 func (s *SocketServer) runBroadcastServer() {
-	udpServer, err := net.ListenUDP("udp", &net.UDPAddr{Port: 45000})
+	broadcastServer, err := net.ListenUDP("udp", &net.UDPAddr{Port: 45000})
 	if err != nil {
 		s.Logger.Error(err, "could not listen for broadcasts")
 		return
 	}
-	defer udpServer.Close()
+	defer broadcastServer.Close()
 
 	s.Logger.Info("listening for broadcasts")
 	for {
 		buf := make([]byte, 1024)
-		_, addr, err := udpServer.ReadFromUDP(buf)
+		_, addr, err := broadcastServer.ReadFromUDP(buf)
 		if err != nil {
 			s.Logger.Error(err, "error reading broadcast packet")
 			continue
 		}
-		s.processBroadcast(udpServer, addr, buf)
+		s.processBroadcast(broadcastServer, addr, buf)
 	}
 }
 
