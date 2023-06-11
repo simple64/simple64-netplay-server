@@ -2,6 +2,7 @@ package gameserver
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math"
 	"net"
 
@@ -27,6 +28,8 @@ const (
 	PLAYER_INPUT_REQUEST = 2
 	CP0_INFO             = 4
 )
+
+const STATUS_DESYNC = 1
 
 func (g *GameServer) checkIfExists(playerNumber byte, count uint32) bool {
 	_, inputExists := g.GameData.Inputs[playerNumber][count]
@@ -125,8 +128,8 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 				}
 				g.GameData.SyncHash[viCount] = xxhash.Sum64(buf[5:133])
 			} else if g.GameData.SyncHash[viCount] != xxhash.Sum64(buf[5:133]) {
-				g.GameData.Status |= 1
-				// TODO: notify about desync
+				g.GameData.Status |= STATUS_DESYNC
+				g.Logger.Error(fmt.Errorf("desync"), "game has desynced")
 			}
 		}
 	}
