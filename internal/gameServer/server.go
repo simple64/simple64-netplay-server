@@ -31,7 +31,6 @@ type GameServer struct {
 	Players       map[string]Client
 	ClientSha     string
 	GameData      GameData
-	TCPState      map[string]*TCPData
 	TCPFiles      map[string][]byte
 	TCPSettings   []byte
 	HasSettings   bool

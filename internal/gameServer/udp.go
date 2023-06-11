@@ -84,6 +84,7 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 		buffer[currentByte] = g.GameData.Plugin[playerNumber][count]
 		currentByte += 1
 		count += 1
+		_, ok = g.GameData.Inputs[playerNumber][count] // check if input exists for this count
 	}
 	buffer[4] = uint8(count - start) //number of counts in packet
 	if currentByte > 5 {
@@ -137,12 +138,12 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 }
 
 func (g *GameServer) watchUDP() {
+	defer g.UdpListener.Close()
 	for {
 		buf := make([]byte, 1024)
 		_, addr, err := g.UdpListener.ReadFromUDP(buf)
 		if err != nil {
 			g.Logger.Error(err, "error reading UDP packet")
-			defer g.UdpListener.Close()
 			return
 		}
 		g.processUDP(addr, buf)
@@ -154,8 +155,10 @@ func (g *GameServer) manageBuffer() {
 		if g.GameData.BufferHealth[i] != -1 {
 			if g.GameData.BufferHealth[i] > BUFFER_TARGET && g.GameData.BufferSize[i] > 0 {
 				g.GameData.BufferSize[i] -= 1
+				g.Logger.Info("reducing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
 			} else if g.GameData.BufferHealth[i] < BUFFER_TARGET {
 				g.GameData.BufferSize[i] += 1
+				g.Logger.Info("increasing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
 			}
 		}
 	}
