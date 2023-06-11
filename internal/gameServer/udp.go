@@ -97,6 +97,7 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 	playerNumber := buf[1]
 	g.GameData.PlayerAddresses[playerNumber] = addr
+	g.Logger.Info("received udp data", "type", buf[0])
 	if buf[0] == KEY_INFO_CLIENT {
 		count := binary.BigEndian.Uint32(buf[2:])
 		keys := binary.BigEndian.Uint32(buf[6:])

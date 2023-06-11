@@ -3,6 +3,7 @@ package gameserver
 import (
 	"bytes"
 	"encoding/binary"
+	"io"
 	"net"
 	"time"
 )
@@ -43,7 +44,6 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
 			g.Logger.Info("sent file", "filename", tcpData.Filename, "filesize", tcpData.Filesize)
 			tcpData.Filename = ""
 			tcpData.Filesize = 0
-			tcpData.Request = REQUEST_NONE
 		}
 	}
 }
@@ -57,7 +57,6 @@ func (g *GameServer) tcpSendSettings(tcpData *TCPData, conn *net.TCPConn) {
 				g.Logger.Error(err, "could not write settings")
 			}
 			g.Logger.Info("sent settings")
-			tcpData.Request = REQUEST_NONE
 		}
 	}
 }
@@ -82,21 +81,25 @@ func (g *GameServer) tcpSendReg(tcpData *TCPData, conn *net.TCPConn) {
 		}
 	}
 	g.Logger.Info("sent registration data")
-	conn.Write(registrations)
-	tcpData.Request = REQUEST_NONE
+	_, err := conn.Write(registrations)
+	if err != nil {
+		g.Logger.Error(err, "failed to send registration data")
+	}
 }
 
-func (g *GameServer) processTCP(conn *net.TCPConn) {
+func (g *GameServer) processTCP(conn *net.TCPConn) error {
 	_, ok := g.TCPState[conn.RemoteAddr().String()]
 	if !ok {
 		g.TCPState[conn.RemoteAddr().String()] = &TCPData{Request: REQUEST_NONE}
 	}
 	tcpData := g.TCPState[conn.RemoteAddr().String()]
-	length, err := tcpData.Buffer.ReadFrom(conn)
+	incomingBuffer := make([]byte, 1024)
+	length, err := conn.Read(incomingBuffer)
 	if err != nil {
-		g.Logger.Error(err, "could not read TCP data")
+		return err
 	}
-	g.Logger.Info("received TCP data", "length", length)
+	tcpData.Buffer.Write(incomingBuffer[:length])
+	g.Logger.Info("received TCP data", "length", length, "bufferLeft", tcpData.Buffer.Len())
 	process := true
 	for process {
 		process = false
@@ -104,9 +107,9 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			if tcpData.Buffer.Len() > 0 {
 				tcpData.Request, err = tcpData.Buffer.ReadByte()
 				if err != nil {
-					g.Logger.Error(err, "could not read request")
+					return err
 				}
-				g.Logger.Info("set request type", "request", tcpData.Request)
+				g.Logger.Info("set request type", "request", tcpData.Request, "bufferLeft", tcpData.Buffer.Len())
 				process = true
 			}
 		}
@@ -114,15 +117,11 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 		nullIndex := bytes.IndexByte(data, 0)
 		if (tcpData.Request == REQUEST_SEND_SAVE || tcpData.Request == REQUEST_RECEIVE_SAVE) && (nullIndex != -1 && tcpData.Filename == "") { // get file name
 			filenameBytes, err := tcpData.Buffer.ReadBytes(0)
-			tcpData.Filename = string(filenameBytes)
+			tcpData.Filename = string(filenameBytes[:len(filenameBytes)-1])
 			if err != nil {
-				g.Logger.Error(err, "could not read filename")
+				return err
 			}
-			_, err = tcpData.Buffer.ReadByte() // skip the \0
-			if err != nil {
-				g.Logger.Error(err, "error reading byte")
-			}
-			g.Logger.Info("set filename", "filename", tcpData.Filename)
+			g.Logger.Info("set filename", "filename", tcpData.Filename, "bufferLeft", tcpData.Buffer.Len())
 			process = true
 		}
 		if tcpData.Filename != "" && tcpData.Request == REQUEST_SEND_SAVE && tcpData.Filesize == 0 { // get file size from sender
@@ -130,10 +129,10 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				filesizeBytes := make([]byte, 4)
 				_, err = tcpData.Buffer.Read(filesizeBytes)
 				if err != nil {
-					g.Logger.Error(err, "could not read filesize")
+					return err
 				}
 				tcpData.Filesize = binary.BigEndian.Uint32(filesizeBytes)
-				g.Logger.Info("set filesize", "filesize", tcpData.Filesize)
+				g.Logger.Info("set filesize", "filesize", tcpData.Filesize, "bufferLeft", tcpData.Buffer.Len())
 				process = true
 			}
 		}
@@ -142,7 +141,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				g.TCPFiles[tcpData.Filename] = make([]byte, tcpData.Filesize)
 				_, err = tcpData.Buffer.Read(g.TCPFiles[tcpData.Filename])
 				if err != nil {
-					g.Logger.Error(err, "could not read file")
+					return err
 				}
 				g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize)
 				tcpData.Filename = ""
@@ -153,14 +152,15 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 		}
 		if tcpData.Filename != "" && tcpData.Request == REQUEST_RECEIVE_SAVE { // send requested file
 			go g.tcpSendFile(tcpData, conn)
+			tcpData.Request = REQUEST_NONE
 		}
 		if tcpData.Request == REQUEST_SEND_SETTINGS { // get settings from P1
 			if tcpData.Buffer.Len() >= SETTINGS_SIZE {
 				_, err = tcpData.Buffer.Read(g.TCPSettings)
 				if err != nil {
-					g.Logger.Error(err, "could not read settings")
+					return err
 				}
-				g.Logger.Info("read settings via TCP")
+				g.Logger.Info("read settings via TCP", "bufferLeft", tcpData.Buffer.Len())
 				g.HasSettings = true
 				tcpData.Request = REQUEST_NONE
 				process = true
@@ -168,24 +168,25 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 		}
 		if tcpData.Request == REQUEST_RECEIVE_SETTINGS { // send settings to P2-4
 			go g.tcpSendSettings(tcpData, conn)
+			tcpData.Request = REQUEST_NONE
 		}
 		if tcpData.Request == REQUEST_REGISTER_PLAYER && tcpData.Buffer.Len() >= 7 { // register player
 			playerNumber, err := tcpData.Buffer.ReadByte()
 			if err != nil {
-				g.Logger.Error(err, "error reading playerNumber")
+				return err
 			}
 			plugin, err := tcpData.Buffer.ReadByte()
 			if err != nil {
-				g.Logger.Error(err, "error reading plugin")
+				return err
 			}
 			raw, err := tcpData.Buffer.ReadByte()
 			if err != nil {
-				g.Logger.Error(err, "error reading raw")
+				return err
 			}
 			regIdBytes := make([]byte, 4)
 			_, err = tcpData.Buffer.Read(regIdBytes)
 			if err != nil {
-				g.Logger.Error(err, "could not read regId")
+				return err
 			}
 			regId := binary.BigEndian.Uint32(regIdBytes)
 
@@ -201,9 +202,9 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					Raw:    raw,
 				}
 				response[0] = 1
-				g.Logger.Info("registered player", "registration", g.Registrations[playerNumber])
+				g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "bufferLeft", tcpData.Buffer.Len())
 			} else {
-				g.Logger.Info("player already registered", "registration", g.Registrations[playerNumber])
+				g.Logger.Info("player already registered", "registration", g.Registrations[playerNumber], "bufferLeft", tcpData.Buffer.Len())
 				if g.Registrations[playerNumber].RegId == regId {
 					response[0] = 1
 				} else {
@@ -211,18 +212,22 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				}
 			}
 			response[1] = BUFFER_TARGET
-			conn.Write(response)
+			_, err = conn.Write(response)
+			if err != nil {
+				return err
+			}
 			tcpData.Request = REQUEST_NONE
 			process = true
 		}
 		if tcpData.Request == REQUEST_GET_REGISTRATION { // send registration
 			go g.tcpSendReg(tcpData, conn)
+			tcpData.Request = REQUEST_NONE
 		}
 		if tcpData.Request == REQUEST_DISCONNECT_NOTICE && tcpData.Buffer.Len() >= 4 { // disconnect notice
 			regIdBytes := make([]byte, 4)
 			_, err = tcpData.Buffer.Read(regIdBytes)
 			if err != nil {
-				g.Logger.Error(err, "could not read regId")
+				return err
 			}
 			regId := binary.BigEndian.Uint32(regIdBytes)
 			// TODO: handle disconnect
@@ -231,6 +236,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			process = true
 		}
 	}
+	return nil
 }
 
 func (g *GameServer) watchTCP() {
@@ -241,7 +247,15 @@ func (g *GameServer) watchTCP() {
 			defer g.TcpListener.Close()
 			return
 		}
-		g.processTCP(conn)
+		g.Logger.Info("received TCP connection")
+		for err == nil {
+			err = g.processTCP(conn)
+		}
+		if err == io.EOF {
+			g.Logger.Info("TCP connection closed")
+		} else if err != nil {
+			g.Logger.Error(err, "tcp error")
+		}
 	}
 }
 
