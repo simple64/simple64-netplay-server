@@ -3,6 +3,7 @@ module github.com/simple64/simple64-netplay-server
 go 1.20
 
 require (
+	github.com/cespare/xxhash v1.1.0
 	github.com/go-logr/zapr v1.2.4
 	github.com/hashicorp/go-retryablehttp v0.7.4
 	go.uber.org/zap v1.24.0

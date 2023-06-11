@@ -337,24 +337,23 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 }
 
 // this function figures out what is our outgoing IP address
-func (s *SocketServer) GetOutboundIP(dest string) net.IP {
-	conn, err := net.Dial("udp", dest)
+func (s *SocketServer) getOutboundIP(dest *net.UDPAddr) net.IP {
+	conn, err := net.DialUDP("udp", nil, dest)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
 	return localAddr.IP
 }
 
-func (s *SocketServer) ProcessBroadcast(udpServer net.PacketConn, addr net.Addr, buf []byte) {
+func (s *SocketServer) processBroadcast(udpServer *net.UDPConn, addr *net.UDPAddr, buf []byte) {
 	if buf[0] == 1 {
 		s.Logger.Info(fmt.Sprintf("received broadcast from %s on %s", addr.String(), udpServer.LocalAddr().String()))
 		// send back the address of the WebSocket server
 		response := map[string]string{
-			s.Name: fmt.Sprintf("ws://%s:%d", s.GetOutboundIP(addr.String()), s.BasePort),
+			s.Name: fmt.Sprintf("ws://%s:%d", s.getOutboundIP(addr), s.BasePort),
 		}
 		jsonData, err := json.Marshal(response)
 		if err != nil {
@@ -370,8 +369,8 @@ func (s *SocketServer) ProcessBroadcast(udpServer net.PacketConn, addr net.Addr,
 	}
 }
 
-func (s *SocketServer) RunBroadcastServer() {
-	udpServer, err := net.ListenPacket("udp", ":45000")
+func (s *SocketServer) runBroadcastServer() {
+	udpServer, err := net.ListenUDP("udp", &net.UDPAddr{Port: 45000})
 	if err != nil {
 		s.Logger.Error(err, "could not listen for broadcasts")
 		return
@@ -381,19 +380,19 @@ func (s *SocketServer) RunBroadcastServer() {
 	s.Logger.Info("listening for broadcasts")
 	for {
 		buf := make([]byte, 1024)
-		_, addr, err := udpServer.ReadFrom(buf)
+		_, addr, err := udpServer.ReadFromUDP(buf)
 		if err != nil {
 			s.Logger.Error(err, "error reading broadcast packet")
 			continue
 		}
-		go s.ProcessBroadcast(udpServer, addr, buf)
+		go s.processBroadcast(udpServer, addr, buf)
 	}
 }
 
 func (s *SocketServer) RunSocketServer() error {
 	s.GameServers = make(map[string]*gameserver.GameServer)
 	if !s.DisableBroadcast {
-		go s.RunBroadcastServer()
+		go s.runBroadcastServer()
 	}
 
 	server := websocket.Server{
