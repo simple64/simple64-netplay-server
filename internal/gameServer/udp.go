@@ -16,10 +16,10 @@ type GameData struct {
 	Status          byte
 	BufferSize      []uint32
 	BufferHealth    []int32
-	Inputs          map[byte]map[uint32]uint32
-	Plugin          map[byte]map[uint32]byte
-	PendingInputs   map[byte][]uint32
-	PendingPlugin   map[byte][]byte
+	Inputs          []map[uint32]uint32
+	Plugin          []map[uint32]byte
+	PendingInputs   [][]uint32
+	PendingPlugin   [][]byte
 	SyncHash        map[uint32]uint64
 }
 
@@ -97,7 +97,6 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 	playerNumber := buf[1]
 	g.GameData.PlayerAddresses[playerNumber] = addr
-	g.Logger.Info("received udp data", "type", buf[0])
 	if buf[0] == KEY_INFO_CLIENT {
 		count := binary.BigEndian.Uint32(buf[2:])
 		keys := binary.BigEndian.Uint32(buf[6:])
@@ -176,10 +175,16 @@ func (g *GameServer) createUDPServer() int {
 	g.GameData.LeadCount = make([]uint32, 4)
 	g.GameData.BufferSize = []uint32{3, 3, 3, 3}
 	g.GameData.BufferHealth = []int32{-1, -1, -1, -1}
-	g.GameData.Inputs = make(map[byte]map[uint32]uint32)
-	g.GameData.Plugin = make(map[byte]map[uint32]byte)
-	g.GameData.PendingInputs = make(map[byte][]uint32)
-	g.GameData.PendingPlugin = make(map[byte][]byte)
+	g.GameData.Inputs = make([]map[uint32]uint32, 4)
+	for i := 0; i < 4; i++ {
+		g.GameData.Inputs[i] = make(map[uint32]uint32)
+	}
+	g.GameData.Plugin = make([]map[uint32]byte, 4)
+	for i := 0; i < 4; i++ {
+		g.GameData.Plugin[i] = make(map[uint32]byte)
+	}
+	g.GameData.PendingInputs = make([][]uint32, 4)
+	g.GameData.PendingPlugin = make([][]byte, 4)
 	g.GameData.SyncHash = make(map[uint32]uint64)
 
 	go g.watchUDP()
