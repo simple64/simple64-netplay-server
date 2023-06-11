@@ -3,6 +3,7 @@ package gameserver
 import (
 	"net"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/net/websocket"
@@ -36,6 +37,7 @@ type GameServer struct {
 	TCPSettings   []byte
 	HasSettings   bool
 	Registrations map[byte]*Registration
+	StartTime     time.Time
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameName string, logger logr.Logger) int {

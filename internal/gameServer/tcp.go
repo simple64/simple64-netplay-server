@@ -239,7 +239,6 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 						}
 					}
 				}
-				g.closeServers()
 				tcpData.Request = REQUEST_NONE
 				process = true
 			}

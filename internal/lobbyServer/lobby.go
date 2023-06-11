@@ -332,6 +332,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
 				g.Running = true
+				g.StartTime = time.Now()
+				g.Logger.Info("starting game", "time", g.StartTime)
 				go s.watchGameServer(roomName, g)
 				sendMessage.Port = g.Port
 				for _, v := range g.Players {
