@@ -89,7 +89,10 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			if err != nil {
 				g.Logger.Error(err, "could not read filename")
 			}
-			tcpData.Buffer.ReadByte() // skip the \0
+			_, err = tcpData.Buffer.ReadByte() // skip the \0
+			if err != nil {
+				g.Logger.Error(err, "error reading byte")
+			}
 			process = true
 		}
 		if tcpData.Filename != "" && tcpData.Request == REQUEST_SEND_SAVE && tcpData.Filesize == 0 { // get file size from sender
