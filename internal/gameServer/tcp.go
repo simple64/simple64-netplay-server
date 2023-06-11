@@ -228,6 +228,13 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				}
 				regId := binary.BigEndian.Uint32(regIdBytes)
 				g.Logger.Info("player disconected TCP", "id", regId)
+				var i byte
+				for i = 0; i < 4; i++ {
+					if g.Registrations[i].RegId == regId {
+						g.GameData.Status |= (0x1 << (i + 1))
+						delete(g.Registrations, i)
+					}
+				}
 				tcpData.Request = REQUEST_NONE
 				process = true
 			}

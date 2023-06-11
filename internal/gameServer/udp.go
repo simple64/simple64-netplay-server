@@ -176,15 +176,18 @@ func (g *GameServer) manageBuffer() {
 				}
 			}
 		}
+		time.Sleep(time.Second * 5)
+	}
+}
 
-		if g.GameData.BufferHealth[0] == -1 {
-			g.Logger.Info("waiting for game to start")
-			time.Sleep(time.Second * 5)
-			continue
-		}
+func (g *GameServer) managePlayers() {
+	for {
 		playersActive := false // used to check if anyone is still around
 		var i byte
 		for i = 0; i < 4; i++ {
+			if g.GameData.BufferHealth[i] == -1 {
+				continue
+			}
 			_, ok := g.Registrations[i]
 			if ok {
 				if g.GameData.PlayerAlive[i] {
@@ -209,7 +212,7 @@ func (g *GameServer) manageBuffer() {
 			g.Running = false
 			return
 		}
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 40)
 	}
 }
 
@@ -240,6 +243,7 @@ func (g *GameServer) createUDPServer() int {
 	g.GameData.PlayerAlive = make([]bool, 4)
 
 	go g.manageBuffer()
+	go g.managePlayers()
 	go g.watchUDP()
 	return g.Port
 }
