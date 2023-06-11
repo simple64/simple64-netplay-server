@@ -187,6 +187,7 @@ func (g *GameServer) manageBuffer() {
 				} else {
 					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegId)
 					g.GameData.Status |= (0x1 << (i + 1))
+					delete(g.Registrations, i)
 				}
 			}
 			g.GameData.PlayerAlive[i] = false

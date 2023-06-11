@@ -318,11 +318,13 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 		} else if receivedMessage.Type == "start_game" {
 			sendMessage.Type = "begin_game"
 			_, g := s.findGameServer(receivedMessage.Port)
+			g.Running = true
 			if g != nil {
 				sendMessage.Port = g.Port
-				g.Running = true
-				if err := s.sendData(ws, sendMessage); err != nil {
-					s.Logger.Error(err, "failed to send message", "message", sendMessage)
+				for _, v := range g.Players {
+					if err := s.sendData(v.Socket, sendMessage); err != nil {
+						s.Logger.Error(err, "failed to send message", "message", sendMessage)
+					}
 				}
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)

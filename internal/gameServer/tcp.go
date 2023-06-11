@@ -41,7 +41,7 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
 			if err != nil {
 				g.Logger.Error(err, "could not write file")
 			}
-			g.Logger.Info("sent file", "filename", tcpData.Filename, "filesize", tcpData.Filesize)
+			g.Logger.Info("sent file", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
 			tcpData.Filename = ""
 			tcpData.Filesize = 0
 		}
@@ -56,7 +56,7 @@ func (g *GameServer) tcpSendSettings(tcpData *TCPData, conn *net.TCPConn) {
 			if err != nil {
 				g.Logger.Error(err, "could not write settings")
 			}
-			g.Logger.Info("sent settings")
+			g.Logger.Info("sent settings", "address", conn.RemoteAddr().String())
 		}
 	}
 }
@@ -80,7 +80,7 @@ func (g *GameServer) tcpSendReg(tcpData *TCPData, conn *net.TCPConn) {
 			current += 6
 		}
 	}
-	g.Logger.Info("sent registration data")
+	g.Logger.Info("sent registration data", "address", conn.RemoteAddr().String())
 	_, err := conn.Write(registrations)
 	if err != nil {
 		g.Logger.Error(err, "failed to send registration data")
@@ -141,7 +141,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					if err != nil {
 						g.Logger.Error(err, "TCP error")
 					}
-					g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize)
+					g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
 					tcpData.Filename = ""
 					tcpData.Filesize = 0
 					tcpData.Request = REQUEST_NONE
@@ -158,7 +158,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					if err != nil {
 						g.Logger.Error(err, "TCP error")
 					}
-					g.Logger.Info("read settings via TCP", "bufferLeft", tcpData.Buffer.Len())
+					g.Logger.Info("read settings via TCP", "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
 					g.HasSettings = true
 					tcpData.Request = REQUEST_NONE
 					process = true
@@ -200,12 +200,12 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 						Raw:    raw,
 					}
 					response[0] = 1
-					g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "bufferLeft", tcpData.Buffer.Len())
+					g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
 					g.GameData.Inputs[playerNumber][0] = 0 // register initial input data
 					g.GameData.Plugin[playerNumber][0] = plugin
 					g.GameData.PlayerAlive[playerNumber] = true
 				} else {
-					g.Logger.Info("player already registered", "registration", g.Registrations[playerNumber], "bufferLeft", tcpData.Buffer.Len())
+					g.Logger.Info("player already registered", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
 					if g.Registrations[playerNumber].RegId == regId {
 						response[0] = 1
 					} else {
