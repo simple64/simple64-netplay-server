@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"time"
 
 	"github.com/cespare/xxhash"
 )
@@ -141,10 +142,24 @@ func (g *GameServer) watchUDP() {
 		_, addr, err := g.UdpListener.ReadFromUDP(buf)
 		if err != nil {
 			g.Logger.Error(err, "error reading UDP packet")
-			continue
+			defer g.UdpListener.Close()
+			return
 		}
 		g.processUDP(addr, buf)
 	}
+}
+
+func (g *GameServer) manageBuffer() {
+	for i := 0; i < 4; i++ {
+		if g.GameData.BufferHealth[i] != -1 {
+			if g.GameData.BufferHealth[i] > BUFFER_TARGET && g.GameData.BufferSize[i] > 0 {
+				g.GameData.BufferSize[i] -= 1
+			} else if g.GameData.BufferHealth[i] < BUFFER_TARGET {
+				g.GameData.BufferSize[i] += 1
+			}
+		}
+	}
+	time.Sleep(time.Second * 5)
 }
 
 func (g *GameServer) createUDPServer() int {
@@ -154,13 +169,12 @@ func (g *GameServer) createUDPServer() int {
 		g.Logger.Error(err, "failed to create UDP server")
 		return 0
 	}
-	defer g.UdpListener.Close()
 	g.Logger.Info("Created UDP server", "port", g.Port)
 
 	g.GameData.PlayerAddresses = make([]*net.UDPAddr, 4)
 	g.GameData.LeadCount = make([]uint32, 4)
 	g.GameData.BufferSize = []uint32{3, 3, 3, 3}
-	g.GameData.BufferHealth = []int32{-1, -1. - 1, -1}
+	g.GameData.BufferHealth = []int32{-1, -1, -1, -1}
 	g.GameData.Inputs = make(map[byte]map[uint32]uint32)
 	g.GameData.Plugin = make(map[byte]map[uint32]byte)
 	g.GameData.PendingInputs = make(map[byte][]uint32)
@@ -168,5 +182,6 @@ func (g *GameServer) createUDPServer() int {
 	g.GameData.SyncHash = make(map[uint32]uint64)
 
 	go g.watchUDP()
+	go g.manageBuffer()
 	return g.Port
 }

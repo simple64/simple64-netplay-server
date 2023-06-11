@@ -152,16 +152,18 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 		if err != nil {
 			if err == io.EOF {
 				for i, v := range s.GameServers {
-					for k, w := range v.Players {
-						if w.Socket == ws {
-							s.Logger.Info("Player has left", "player", k, "room", i)
-							delete(v.Players, k)
-							s.updatePlayers(v)
+					if !v.Running {
+						for k, w := range v.Players {
+							if w.Socket == ws {
+								s.Logger.Info("Player has left", "player", k, "room", i)
+								delete(v.Players, k)
+								s.updatePlayers(v)
+							}
 						}
-					}
-					if len(v.Players) == 0 {
-						s.Logger.Info("No more players in room, deleting", "room", i)
-						delete(s.GameServers, i)
+						if len(v.Players) == 0 {
+							s.Logger.Info("No more players in room, deleting", "room", i)
+							delete(s.GameServers, i)
+						}
 					}
 				}
 				s.Logger.Info("closed WS connection", "address", ws.Request().RemoteAddr)
@@ -185,7 +187,7 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 				}
 			} else {
 				g := gameserver.GameServer{}
-				sendMessage.Port = g.CreateNetworkServers(s.BasePort, receivedMessage.RoomName, s.Logger)
+				sendMessage.Port = g.CreateNetworkServers(s.BasePort, receivedMessage.RoomName, receivedMessage.GameName, s.Logger)
 				if sendMessage.Port == 0 {
 					sendMessage.Type = "message"
 					sendMessage.Message = "Failed to create room"
@@ -317,6 +319,7 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 			sendMessage.Type = "begin_game"
 			_, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
+				sendMessage.Port = g.Port
 				g.Running = true
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage)
