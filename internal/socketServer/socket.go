@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-logr/logr"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
@@ -138,6 +139,17 @@ func (s *SocketServer) announceDiscord(g *gameserver.GameServer) {
 	devChannel := os.Getenv("SIMPLE64_DEV_CHANNEL")
 	if devChannel != "" {
 		s.publishDiscord(message, devChannel)
+	}
+}
+
+func (s *SocketServer) watchGameServer(name string, g *gameserver.GameServer) {
+	for {
+		if !g.Running {
+			s.Logger.Info("game server deleted", "name", name, "port", g.Port)
+			delete(s.GameServers, name)
+			return
+		}
+		time.Sleep(time.Second * 5)
 	}
 }
 
@@ -317,9 +329,10 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == "start_game" {
 			sendMessage.Type = "begin_game"
-			_, g := s.findGameServer(receivedMessage.Port)
-			g.Running = true
+			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
+				g.Running = true
+				go s.watchGameServer(roomName, g)
 				sendMessage.Port = g.Port
 				for _, v := range g.Players {
 					if err := s.sendData(v.Socket, sendMessage); err != nil {

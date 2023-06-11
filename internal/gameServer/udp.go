@@ -196,6 +196,7 @@ func (g *GameServer) manageBuffer() {
 			g.Logger.Info("no more players, closing room")
 			defer g.UdpListener.Close()
 			defer g.TcpListener.Close()
+			g.Running = false
 			return
 		}
 		time.Sleep(time.Second * 5)
