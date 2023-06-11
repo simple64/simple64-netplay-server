@@ -7,8 +7,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/go-logr/logr"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	gameserver "github.com/simple64/simple64-netplay-server/internal/gameServer"
 	"golang.org/x/net/websocket"
 )
@@ -60,6 +62,7 @@ func (s *SocketServer) sendData(ws *websocket.Conn, message SocketMessage) error
 	return websocket.Message.Send(ws, binaryData)
 }
 
+// this function finds the GameServer pointer based on the port number
 func (s *SocketServer) findGameServer(port int) (string, *gameserver.GameServer) {
 	for i, v := range s.GameServers {
 		if v.Port == port {
@@ -87,10 +90,54 @@ func (s *SocketServer) updatePlayers(g *gameserver.GameServer) {
 		}
 	}
 
+	// send the updated player list to all connected players
 	for _, v := range g.Players {
 		if err := s.sendData(v.Socket, sendMessage); err != nil {
 			s.Logger.Error(err, "failed to send message", "message", sendMessage)
 		}
+	}
+}
+
+func (s *SocketServer) publishDiscord(message string, channel string) {
+	body := map[string]string{
+		"content": message,
+	}
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		s.Logger.Error(err, "could not read body")
+		return
+	}
+	httpClient := retryablehttp.NewClient()
+	httpClient.Logger = nil
+	httpRequest, err := retryablehttp.NewRequest(http.MethodPost, channel, bodyJson)
+	if err != nil {
+		s.Logger.Error(err, "could not create request")
+	}
+	httpRequest.Header.Set("Content-Type", "application/json")
+	httpRequest.Header.Set("User-Agent", "simple64Bot (simple64.github.io, 1)")
+	_, err = httpClient.Do(httpRequest)
+	if err != nil {
+		s.Logger.Error(err, "could not send request")
+	}
+}
+
+func (s *SocketServer) announceDiscord(g *gameserver.GameServer) {
+	roomType := "public"
+	if g.Password != "" {
+		roomType = "private"
+	}
+
+	message := fmt.Sprintf("New %s netplay room running in %s has been created! Come play %s", roomType, s.Name, g.GameName)
+	for i := 0; i < 10; i++ {
+		channel := os.Getenv(fmt.Sprintf("SIMPLE64_CHANNEL_0%d", i))
+		if channel != "" {
+			s.publishDiscord(message, channel)
+		}
+	}
+
+	devChannel := os.Getenv("SIMPLE64_DEV_CHANNEL")
+	if devChannel != "" {
+		s.publishDiscord(message, devChannel)
 	}
 }
 
@@ -166,6 +213,7 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 					if err := s.sendData(ws, sendMessage); err != nil {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage)
 					}
+					s.announceDiscord(&g)
 				}
 			}
 		} else if receivedMessage.Type == "get_rooms" {
@@ -188,6 +236,7 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 					}
 					sendMessage.RoomName = i
 					sendMessage.MD5 = v.MD5
+					sendMessage.Port = v.Port
 					sendMessage.GameName = v.GameName
 					if err := s.sendData(ws, sendMessage); err != nil {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage)
@@ -234,33 +283,46 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 					s.Logger.Info("new player joining room", "player", g.Players[receivedMessage.PlayerName], "room", roomName)
 				}
 			} else {
-				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "port", receivedMessage.Port)
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
 			}
 			sendMessage.PlayerName = receivedMessage.PlayerName
 			sendMessage.Accept = accepted
 			sendMessage.RoomName = roomName
 			sendMessage.GameName = g.GameName
+			sendMessage.Port = g.Port
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage)
 			}
 		} else if receivedMessage.Type == "request_players" {
 			_, g := s.findGameServer(receivedMessage.Port)
-			s.updatePlayers(g)
+			if g != nil {
+				s.updatePlayers(g)
+			} else {
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
+			}
 		} else if receivedMessage.Type == "chat_message" {
 			sendMessage.Type = "chat_update"
 			sendMessage.Message = fmt.Sprintf("%s: %s", receivedMessage.PlayerName, receivedMessage.Message)
 			_, g := s.findGameServer(receivedMessage.Port)
-			for _, v := range g.Players {
-				if err := s.sendData(v.Socket, sendMessage); err != nil {
-					s.Logger.Error(err, "failed to send message", "message", sendMessage)
+			if g != nil {
+				for _, v := range g.Players {
+					if err := s.sendData(v.Socket, sendMessage); err != nil {
+						s.Logger.Error(err, "failed to send message", "message", sendMessage)
+					}
 				}
+			} else {
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
 			}
 		} else if receivedMessage.Type == "start_game" {
 			sendMessage.Type = "begin_game"
 			_, g := s.findGameServer(receivedMessage.Port)
-			g.Running = true
-			if err := s.sendData(ws, sendMessage); err != nil {
-				s.Logger.Error(err, "failed to send message", "message", sendMessage)
+			if g != nil {
+				g.Running = true
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage)
+				}
+			} else {
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
 			}
 		} else if receivedMessage.Type == "get_motd" {
 			sendMessage.Type = "send_motd"
@@ -269,11 +331,12 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage)
 			}
 		} else {
-			s.Logger.Error(fmt.Errorf("invalid type"), "not a valid type", "type", receivedMessage.Type)
+			s.Logger.Error(fmt.Errorf("invalid type"), "not a valid type", "message", receivedMessage)
 		}
 	}
 }
 
+// this function figures out what is our outgoing IP address
 func (s *SocketServer) GetOutboundIP(dest string) net.IP {
 	conn, err := net.Dial("udp", dest)
 	if err != nil {
@@ -289,6 +352,7 @@ func (s *SocketServer) GetOutboundIP(dest string) net.IP {
 func (s *SocketServer) ProcessBroadcast(udpServer net.PacketConn, addr net.Addr, buf []byte) {
 	if buf[0] == 1 {
 		s.Logger.Info(fmt.Sprintf("received broadcast from %s on %s", addr.String(), udpServer.LocalAddr().String()))
+		// send back the address of the WebSocket server
 		response := map[string]string{
 			s.Name: fmt.Sprintf("ws://%s:%d", s.GetOutboundIP(addr.String()), s.BasePort),
 		}

@@ -7,9 +7,11 @@ import (
 	"github.com/go-logr/logr"
 )
 
+const MAX_GAMES = 20
+
 func (g *GameServer) CreateTCPServer(basePort int, logger logr.Logger) int {
 	var err error
-	for i := 0; i < 20; i++ {
+	for i := 0; i < MAX_GAMES; i++ {
 		g.TcpListener, err = net.Listen("tcp", fmt.Sprintf(":%d", basePort+i))
 		if err == nil {
 			defer g.TcpListener.Close()
