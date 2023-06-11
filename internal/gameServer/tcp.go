@@ -82,7 +82,6 @@ func (g *GameServer) tcpSendReg(tcpData *TCPData, conn *net.TCPConn) {
 	if err != nil {
 		g.Logger.Error(err, "failed to send registration data")
 	}
-	go g.manageBuffer()
 }
 
 func (g *GameServer) processTCP(conn *net.TCPConn) {

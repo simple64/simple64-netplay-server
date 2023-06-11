@@ -127,7 +127,6 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		count := binary.BigEndian.Uint32(buf[6:])
 		spectator := buf[10]
 		if ((count - g.GameData.LeadCount[playerNumber]) < (math.MaxUint32 / 2)) && spectator == 0 {
-			// this player is the leader
 			g.GameData.BufferHealth[playerNumber] = int32(buf[11])
 			g.GameData.LeadCount[playerNumber] = count
 		}
@@ -176,6 +175,11 @@ func (g *GameServer) manageBuffer() {
 			}
 		}
 
+		if g.GameData.BufferHealth[0] == -1 {
+			g.Logger.Info("waiting for game to start")
+			time.Sleep(time.Second * 5)
+			continue
+		}
 		playersActive := false // used to check if anyone is still around
 		var i byte
 		for i = 0; i < 4; i++ {
@@ -229,6 +233,7 @@ func (g *GameServer) createUDPServer() int {
 	g.GameData.SyncHash = make(map[uint32]uint64)
 	g.GameData.PlayerAlive = make([]bool, 4)
 
+	go g.manageBuffer()
 	go g.watchUDP()
 	return g.Port
 }
