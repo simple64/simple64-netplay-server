@@ -18,7 +18,7 @@ jobs:
 
       - name: Run build script
         run: |
-          CGO_ENABLED=0 go build -a -o simple64-netplay-server main.go
+          go build -a -o simple64-netplay-server main.go
 
       - name: Upload folder
         uses: actions/upload-artifact@v3
