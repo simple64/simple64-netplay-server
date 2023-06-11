@@ -385,7 +385,7 @@ func (s *SocketServer) runBroadcastServer() {
 			s.Logger.Error(err, "error reading broadcast packet")
 			continue
 		}
-		go s.processBroadcast(udpServer, addr, buf)
+		s.processBroadcast(udpServer, addr, buf)
 	}
 }
 

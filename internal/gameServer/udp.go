@@ -140,7 +140,7 @@ func (g *GameServer) watchUDP() {
 			g.Logger.Error(err, "error reading UDP packet")
 			continue
 		}
-		go g.processUDP(addr, buf)
+		g.processUDP(addr, buf)
 	}
 }
 

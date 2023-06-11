@@ -25,7 +25,10 @@ type GameServer struct {
 	Players     map[string]Client
 	ClientSha   string
 	GameData    GameData
-	TCPData     TCPData
+	TCPState    map[string]*TCPData
+	TCPFiles    map[string][]byte
+	TCPSettings []byte
+	HasSettings bool
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, logger logr.Logger) int {
