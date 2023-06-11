@@ -32,11 +32,13 @@ const (
 )
 
 const STATUS_DESYNC = 1
+const DISCONNECT_TIMEOUT_S = 40
+const INPUT_DATA_MAX uint32 = 5000
 
 func (g *GameServer) checkIfExists(playerNumber byte, count uint32) bool {
 	_, inputExists := g.GameData.Inputs[playerNumber][count]
-	delete(g.GameData.Inputs[playerNumber], count-5000)
-	delete(g.GameData.Plugin[playerNumber], count-5000)
+	delete(g.GameData.Inputs[playerNumber], count-INPUT_DATA_MAX) // no need to keep old input data
+	delete(g.GameData.Plugin[playerNumber], count-INPUT_DATA_MAX) // no need to keep old input data
 	if !inputExists {
 		_, hasLastInput := g.GameData.Inputs[playerNumber][count-1]
 		if len(g.GameData.PendingInputs[playerNumber]) > 0 {
@@ -136,7 +138,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 			viCount := binary.BigEndian.Uint32(buf[1:])
 			_, ok := g.GameData.SyncHash[viCount]
 			if !ok {
-				if len(g.GameData.SyncHash) > 500 {
+				if len(g.GameData.SyncHash) > 500 { // no need to keep old sync hashes
 					g.GameData.SyncHash = make(map[uint32]uint64)
 				}
 				g.GameData.SyncHash[viCount] = xxhash.Sum64(buf[5:133])
@@ -188,7 +190,7 @@ func (g *GameServer) managePlayers() {
 		playersActive := false // used to check if anyone is still around
 		var i byte
 		if len(g.GameData.Inputs[0]) == 0 { // wait for game to start
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * DISCONNECT_TIMEOUT_S)
 			continue
 		}
 		for i = 0; i < 4; i++ {
@@ -211,7 +213,7 @@ func (g *GameServer) managePlayers() {
 			g.Running = false
 			return
 		}
-		time.Sleep(time.Second * 40)
+		time.Sleep(time.Second * DISCONNECT_TIMEOUT_S)
 	}
 }
 
