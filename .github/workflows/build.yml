@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - go
   pull_request:
 
 jobs:
@@ -24,3 +25,16 @@ jobs:
         with:
           name: simple64-netplay-server-win
           path: simple64-netplay-server
+  lint-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
+          cache: false
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: --timeout=10m
