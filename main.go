@@ -18,7 +18,7 @@ func main() {
 	}
 	logger := zapr.NewLogger(zapLog)
 
-	name := flag.String("name", "", "Server name (required)")
+	name := flag.String("name", "local-server", "Server name")
 	basePort := flag.Int("baseport", 45000, "Base port")
 	disableBroadcast := flag.Bool("disable-broadcast", false, "Disable LAN broadcast")
 	flag.Parse()
