@@ -49,16 +49,13 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
 }
 func (g *GameServer) tcpSendSettings(tcpData *TCPData, conn *net.TCPConn) {
 	for !g.HasSettings {
-		if !g.HasSettings {
-			time.Sleep(time.Second)
-		} else {
-			_, err := conn.Write(g.TCPSettings)
-			if err != nil {
-				g.Logger.Error(err, "could not write settings")
-			}
-			g.Logger.Info("sent settings", "address", conn.RemoteAddr().String())
-		}
+		time.Sleep(time.Second)
 	}
+	_, err := conn.Write(g.TCPSettings)
+	if err != nil {
+		g.Logger.Error(err, "could not write settings")
+	}
+	g.Logger.Info("sent settings", "address", conn.RemoteAddr().String())
 }
 
 func (g *GameServer) tcpSendReg(tcpData *TCPData, conn *net.TCPConn) {
