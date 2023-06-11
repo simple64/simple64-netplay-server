@@ -1,54 +1,23 @@
-# C++ objects and libs
-*.slo
-*.lo
-*.o
-*.a
-*.la
-*.lai
-*.so
-*.so.*
+# If you prefer the allow list template instead of the deny list, see community template:
+# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+#
+# Binaries for programs and plugins
+*.exe
+*.exe~
 *.dll
+*.so
 *.dylib
 
-# Qt-es
-object_script.*.Release
-object_script.*.Debug
-*_plugin_import.cpp
-/.qmake.cache
-/.qmake.stash
-*.pro.user
-*.pro.user.*
-*.qbs.user
-*.qbs.user.*
-*.moc
-moc_*.cpp
-moc_*.h
-qrc_*.cpp
-ui_*.h
-*.qmlc
-*.jsc
-Makefile*
-*build-*
-*.qm
-*.prl
+# Test binary, built with `go test -c`
+*.test
 
-# Qt unit tests
-target_wrapper.*
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
 
-# QtCreator
-*.autosave
+# Dependency directories (remove the comment below to include it)
+# vendor/
 
-# QtCreator Qml
-*.qmlproject.user
-*.qmlproject.user.*
+# Go workspace file
+go.work
 
-# QtCreator CMake
-CMakeLists.txt.user*
-
-# QtCreator 4.8< compilation database 
-compile_commands.json
-
-# QtCreator local machine specific files for imported projects
-*creator.user*
-
-build/
+simple64-netplay-server

@@ -1,19 +1,17 @@
-FROM quay.io/centos/centos:stream9 AS build
-COPY . .
-RUN dnf -y install dnf-plugins-core && \
-    dnf config-manager --set-enabled crb && \
-    dnf -y install epel-release epel-next-release && \
-    dnf -y update && \
-    dnf -y install cmake ninja-build qt6-qtwebsockets-devel && \
-    mkdir build && \
-    cd build && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release .. && \
-    VERBOSE=1 cmake --build .
+FROM golang:1.20 as builder
+WORKDIR /workspace
 
-FROM quay.io/centos/centos:stream9-minimal
-COPY --from=build build/simple64-netplay-server /simple64-netplay-server
-RUN microdnf -y install epel-release epel-next-release && \
-    microdnf -y upgrade && \
-    microdnf install -y qt6-qtwebsockets && \
-    microdnf clean all -y
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+COPY main.go main.go
+COPY internal/ internal/
+
+RUN CGO_ENABLED=0 go build -a -o simple64-netplay-server main.go
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+WORKDIR /
+
+COPY --from=builder /workspace/simple64-netplay-server .
+
 ENTRYPOINT ["/simple64-netplay-server"]
