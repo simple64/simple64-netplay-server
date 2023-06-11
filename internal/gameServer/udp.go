@@ -153,8 +153,10 @@ func (g *GameServer) watchUDP() {
 		buf := make([]byte, 1024)
 		_, addr, err := g.UdpListener.ReadFromUDP(buf)
 		if err != nil {
-			defer g.UdpListener.Close()
-			g.Logger.Info("closing UDP server")
+			g.Logger.Info("closing UDP server", "message", err.Error())
+			if err := g.UdpListener.Close(); err != nil {
+				g.Logger.Error(err, "error closing UdpListener")
+			}
 			return
 		}
 		g.processUDP(addr, buf)
@@ -198,8 +200,12 @@ func (g *GameServer) manageBuffer() {
 		}
 		if !playersActive {
 			g.Logger.Info("no more players, closing room")
-			defer g.UdpListener.Close()
-			defer g.TcpListener.Close()
+			if err := g.UdpListener.Close(); err != nil {
+				g.Logger.Error(err, "error closing UdpListener")
+			}
+			if err := g.TcpListener.Close(); err != nil {
+				g.Logger.Error(err, "error closing TcpListener")
+			}
 			g.Running = false
 			return
 		}

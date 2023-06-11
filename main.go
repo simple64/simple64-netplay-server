@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
-	socketserver "github.com/simple64/simple64-netplay-server/internal/socketServer"
+	lobbyserver "github.com/simple64/simple64-netplay-server/internal/lobbyServer"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := socketserver.SocketServer{
+	s := lobbyserver.LobbyServer{
 		Logger:           logger,
 		Name:             *name,
 		BasePort:         *basePort,

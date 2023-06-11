@@ -1,4 +1,4 @@
-package socketserver
+package lobbyserver
 
 import (
 	"encoding/json"
@@ -23,7 +23,7 @@ const (
 	DUPLICATE_NAME   = 4
 )
 
-type SocketServer struct {
+type LobbyServer struct {
 	Logger           logr.Logger
 	Name             string
 	BasePort         int
@@ -54,7 +54,7 @@ type SocketMessage struct {
 
 const NETPLAY_VER = 11
 
-func (s *SocketServer) sendData(ws *websocket.Conn, message SocketMessage) error {
+func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	binaryData, err := json.Marshal(message)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (s *SocketServer) sendData(ws *websocket.Conn, message SocketMessage) error
 }
 
 // this function finds the GameServer pointer based on the port number
-func (s *SocketServer) findGameServer(port int) (string, *gameserver.GameServer) {
+func (s *LobbyServer) findGameServer(port int) (string, *gameserver.GameServer) {
 	for i, v := range s.GameServers {
 		if v.Port == port {
 			return i, v
@@ -73,7 +73,7 @@ func (s *SocketServer) findGameServer(port int) (string, *gameserver.GameServer)
 	return "", nil
 }
 
-func (s *SocketServer) updatePlayers(g *gameserver.GameServer) {
+func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 	if g == nil {
 		return
 	}
@@ -99,7 +99,7 @@ func (s *SocketServer) updatePlayers(g *gameserver.GameServer) {
 	}
 }
 
-func (s *SocketServer) publishDiscord(message string, channel string) {
+func (s *LobbyServer) publishDiscord(message string, channel string) {
 	body := map[string]string{
 		"content": message,
 	}
@@ -122,7 +122,7 @@ func (s *SocketServer) publishDiscord(message string, channel string) {
 	}
 }
 
-func (s *SocketServer) announceDiscord(g *gameserver.GameServer) {
+func (s *LobbyServer) announceDiscord(g *gameserver.GameServer) {
 	roomType := "public"
 	if g.Password != "" {
 		roomType = "private"
@@ -142,7 +142,7 @@ func (s *SocketServer) announceDiscord(g *gameserver.GameServer) {
 	}
 }
 
-func (s *SocketServer) watchGameServer(name string, g *gameserver.GameServer) {
+func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 	for {
 		if !g.Running {
 			s.Logger.Info("game server deleted", "name", name, "port", g.Port)
@@ -153,7 +153,7 @@ func (s *SocketServer) watchGameServer(name string, g *gameserver.GameServer) {
 	}
 }
 
-func (s *SocketServer) wsHandler(ws *websocket.Conn) {
+func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 	defer ws.Close()
 
 	s.Logger.Info("new WS connection", "address", ws.Request().RemoteAddr)
@@ -355,7 +355,7 @@ func (s *SocketServer) wsHandler(ws *websocket.Conn) {
 }
 
 // this function figures out what is our outgoing IP address
-func (s *SocketServer) getOutboundIP(dest *net.UDPAddr) net.IP {
+func (s *LobbyServer) getOutboundIP(dest *net.UDPAddr) net.IP {
 	conn, err := net.DialUDP("udp", nil, dest)
 	if err != nil {
 		log.Fatal(err)
@@ -366,7 +366,7 @@ func (s *SocketServer) getOutboundIP(dest *net.UDPAddr) net.IP {
 	return localAddr.IP
 }
 
-func (s *SocketServer) processBroadcast(udpServer *net.UDPConn, addr *net.UDPAddr, buf []byte) {
+func (s *LobbyServer) processBroadcast(udpServer *net.UDPConn, addr *net.UDPAddr, buf []byte) {
 	if buf[0] == 1 {
 		s.Logger.Info(fmt.Sprintf("received broadcast from %s on %s", addr.String(), udpServer.LocalAddr().String()))
 		// send back the address of the WebSocket server
@@ -387,7 +387,7 @@ func (s *SocketServer) processBroadcast(udpServer *net.UDPConn, addr *net.UDPAdd
 	}
 }
 
-func (s *SocketServer) runBroadcastServer() {
+func (s *LobbyServer) runBroadcastServer() {
 	broadcastServer, err := net.ListenUDP("udp", &net.UDPAddr{Port: 45000})
 	if err != nil {
 		s.Logger.Error(err, "could not listen for broadcasts")
@@ -407,7 +407,7 @@ func (s *SocketServer) runBroadcastServer() {
 	}
 }
 
-func (s *SocketServer) RunSocketServer() error {
+func (s *LobbyServer) RunSocketServer() error {
 	s.GameServers = make(map[string]*gameserver.GameServer)
 	if !s.DisableBroadcast {
 		go s.runBroadcastServer()

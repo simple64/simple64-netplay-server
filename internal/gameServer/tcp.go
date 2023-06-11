@@ -239,8 +239,10 @@ func (g *GameServer) watchTCP() {
 	for {
 		conn, err := g.TcpListener.AcceptTCP()
 		if err != nil {
-			defer g.TcpListener.Close()
-			g.Logger.Info("closing TCP server")
+			g.Logger.Info("closing TCP server", "message", err.Error())
+			if err := g.TcpListener.Close(); err != nil {
+				g.Logger.Error(err, "error closing TcpListener")
+			}
 			return
 		}
 		g.Logger.Info("received TCP connection", "address", conn.RemoteAddr().String())
