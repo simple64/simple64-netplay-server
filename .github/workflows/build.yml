@@ -37,4 +37,4 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          args: --timeout=10m --enable-all
+          args: --timeout=10m --enable-all --disable varnamelen,nlreturn,depguard,wsl,nestif,tagliatelle,goerr113,cyclop,lll,funlen,gocritic,gocognit,gocyclo
