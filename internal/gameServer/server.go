@@ -16,7 +16,7 @@ type Client struct {
 }
 
 type Registration struct {
-	RegId  uint32
+	RegID  uint32
 	Plugin byte
 	Raw    byte
 }
@@ -24,8 +24,8 @@ type Registration struct {
 type GameServer struct {
 	Logger        logr.Logger
 	Port          int
-	TcpListener   *net.TCPListener
-	UdpListener   *net.UDPConn
+	TCPListener   *net.TCPListener
+	UDPListener   *net.UDPConn
 	Password      string
 	Running       bool
 	MD5           string
@@ -50,12 +50,12 @@ func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameNam
 }
 
 func (g *GameServer) closeServers() {
-	if err := g.UdpListener.Close(); err != nil && !g.isConnClosed(err) {
+	if err := g.UDPListener.Close(); err != nil && !g.isConnClosed(err) {
 		g.Logger.Error(err, "error closing UdpListener")
 	} else if err == nil {
 		g.Logger.Info("TCP server closed")
 	}
-	if err := g.TcpListener.Close(); err != nil && !g.isConnClosed(err) {
+	if err := g.TCPListener.Close(); err != nil && !g.isConnClosed(err) {
 		g.Logger.Error(err, "error closing TcpListener")
 	} else if err == nil {
 		g.Logger.Info("UDP server closed")

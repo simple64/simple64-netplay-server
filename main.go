@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const DefaultBasePort = 45000
+
 func main() {
 	zapLog, err := zap.NewProduction()
 	if err != nil {
@@ -19,7 +21,7 @@ func main() {
 	logger := zapr.NewLogger(zapLog)
 
 	name := flag.String("name", "local-server", "Server name")
-	basePort := flag.Int("baseport", 45000, "Base port")
+	basePort := flag.Int("baseport", DefaultBasePort, "Base port")
 	disableBroadcast := flag.Bool("disable-broadcast", false, "Disable LAN broadcast")
 	flag.Parse()
 	if *name == "" {
@@ -33,7 +35,7 @@ func main() {
 		BasePort:         *basePort,
 		DisableBroadcast: *disableBroadcast,
 	}
-	if err := s.RunSocketServer(); err != nil {
+	if err := s.RunSocketServer(DefaultBasePort); err != nil {
 		logger.Error(err, "could not run socket server")
 	}
 }
