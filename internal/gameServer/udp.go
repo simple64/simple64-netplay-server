@@ -18,8 +18,8 @@ type GameData struct {
 	BufferHealth    []int32
 	Inputs          []map[uint32]uint32
 	Plugin          []map[uint32]byte
-	PendingInputs   [][]uint32
-	PendingPlugin   [][]byte
+	PendingInput    []uint32
+	PendingPlugin   []byte
 	SyncHash        map[uint32]uint64
 	PlayerAlive     []bool
 }
@@ -35,32 +35,14 @@ const STATUS_DESYNC = 1
 const DISCONNECT_TIMEOUT_S = 40
 const INPUT_DATA_MAX uint32 = 5000
 
-func (g *GameServer) checkIfExists(playerNumber byte, count uint32) bool {
+func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 	_, inputExists := g.GameData.Inputs[playerNumber][count]
 	delete(g.GameData.Inputs[playerNumber], count-INPUT_DATA_MAX) // no need to keep old input data
 	delete(g.GameData.Plugin[playerNumber], count-INPUT_DATA_MAX) // no need to keep old input data
 	if !inputExists {
-		_, hasLastInput := g.GameData.Inputs[playerNumber][count-1]
-		if len(g.GameData.PendingInputs[playerNumber]) > 0 {
-			// pop the first item from the PendingInputs list
-			var pendingInput uint32
-			pendingInput, g.GameData.PendingInputs[playerNumber] = g.GameData.PendingInputs[playerNumber][0], g.GameData.PendingInputs[playerNumber][1:]
-			g.GameData.Inputs[playerNumber][count] = pendingInput
-			// pop the first item from the PendingPlugin list
-			var pendingPlugin byte
-			pendingPlugin, g.GameData.PendingPlugin[playerNumber] = g.GameData.PendingPlugin[playerNumber][0], g.GameData.PendingPlugin[playerNumber][1:]
-			g.GameData.Plugin[playerNumber][count] = pendingPlugin
-		} else if hasLastInput {
-			// duplicate last input
-			g.GameData.Inputs[playerNumber][count] = g.GameData.Inputs[playerNumber][count-1]
-			g.GameData.Plugin[playerNumber][count] = g.GameData.Plugin[playerNumber][count-1]
-		} else {
-			g.GameData.Inputs[playerNumber][count] = 0 // Controller not present
-			g.GameData.Plugin[playerNumber][count] = 0 // Controller not present
-		}
-		return true
+		g.GameData.Inputs[playerNumber][count] = g.GameData.PendingInput[playerNumber]
+		g.GameData.Plugin[playerNumber][count] = g.GameData.PendingPlugin[playerNumber]
 	}
-	return inputExists
 }
 
 func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool) {
@@ -77,11 +59,7 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 	for (currentByte < 500) && ((!spectator && countLag == 0 && (count-end) > (math.MaxUint32/2)) || ok) {
 		binary.BigEndian.PutUint32(buffer[currentByte:], count)
 		currentByte += 4
-		if !g.checkIfExists(playerNumber, count) {
-			// we don't have an input for this frame yet
-			end = count - 1
-			continue
-		}
+		g.fillInput(playerNumber, count)
 		binary.BigEndian.PutUint32(buffer[currentByte:], g.GameData.Inputs[playerNumber][count])
 		currentByte += 4
 		buffer[currentByte] = g.GameData.Plugin[playerNumber][count]
@@ -103,13 +81,10 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 	g.GameData.PlayerAddresses[playerNumber] = addr
 	if buf[0] == KEY_INFO_CLIENT {
 		count := binary.BigEndian.Uint32(buf[2:])
-		keys := binary.BigEndian.Uint32(buf[6:])
-		plugin := buf[10]
 
-		if len(g.GameData.PendingInputs[playerNumber]) == 0 {
-			g.GameData.PendingInputs[playerNumber] = append(g.GameData.PendingInputs[playerNumber], keys)
-			g.GameData.PendingPlugin[playerNumber] = append(g.GameData.PendingPlugin[playerNumber], plugin)
-		}
+		g.GameData.PendingInput[playerNumber] = binary.BigEndian.Uint32(buf[6:])
+		g.GameData.PendingPlugin[playerNumber] = buf[10]
+
 		for i := 0; i < 4; i++ {
 			if g.GameData.PlayerAddresses[i] != nil {
 				g.sendUDPInput(count, g.GameData.PlayerAddresses[i], playerNumber, true)
@@ -164,7 +139,7 @@ func (g *GameServer) watchUDP() {
 	}
 }
 
-func (g *GameServer) manageBuffer() {
+func (g *GameServer) ManageBuffer() {
 	for {
 		if !g.Running {
 			g.Logger.Info("done managing buffers")
@@ -185,14 +160,14 @@ func (g *GameServer) manageBuffer() {
 	}
 }
 
-func (g *GameServer) managePlayers() {
+func (g *GameServer) ManagePlayers() {
 	for {
-		playersActive := false // used to check if anyone is still around
-		var i byte
 		if len(g.GameData.Inputs[0]) == 0 { // wait for game to start
 			time.Sleep(time.Second * DISCONNECT_TIMEOUT_S)
 			continue
 		}
+		playersActive := false // used to check if anyone is still around
+		var i byte
 		for i = 0; i < 4; i++ {
 			_, ok := g.Registrations[i]
 			if ok {
@@ -238,13 +213,11 @@ func (g *GameServer) createUDPServer() int {
 	for i := 0; i < 4; i++ {
 		g.GameData.Plugin[i] = make(map[uint32]byte)
 	}
-	g.GameData.PendingInputs = make([][]uint32, 4)
-	g.GameData.PendingPlugin = make([][]byte, 4)
+	g.GameData.PendingInput = make([]uint32, 4)
+	g.GameData.PendingPlugin = make([]byte, 4)
 	g.GameData.SyncHash = make(map[uint32]uint64)
 	g.GameData.PlayerAlive = make([]bool, 4)
 
-	go g.manageBuffer()
-	go g.managePlayers()
 	go g.watchUDP()
 	return g.Port
 }
