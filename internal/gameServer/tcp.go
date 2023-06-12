@@ -10,10 +10,10 @@ import (
 )
 
 type TCPData struct {
-	Request  byte
-	Buffer   bytes.Buffer
 	Filename string
+	Buffer   bytes.Buffer
 	Filesize uint32
+	Request  byte
 }
 
 const (

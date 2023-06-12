@@ -10,8 +10,8 @@ import (
 )
 
 type Client struct {
-	IP     string
 	Socket *websocket.Conn
+	IP     string
 	Number int
 }
 
@@ -22,22 +22,22 @@ type Registration struct {
 }
 
 type GameServer struct {
-	Logger        logr.Logger
-	Port          int
+	StartTime     time.Time
+	Players       map[string]Client
 	TCPListener   *net.TCPListener
 	UDPListener   *net.UDPConn
-	Password      string
-	Running       bool
-	MD5           string
-	GameName      string
-	Players       map[string]Client
-	ClientSha     string
-	GameData      GameData
-	TCPFiles      map[string][]byte
-	TCPSettings   []byte
-	HasSettings   bool
 	Registrations map[byte]*Registration
-	StartTime     time.Time
+	TCPFiles      map[string][]byte
+	Logger        logr.Logger
+	Password      string
+	GameName      string
+	ClientSha     string
+	MD5           string
+	GameData      GameData
+	TCPSettings   []byte
+	Port          int
+	HasSettings   bool
+	Running       bool
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameName string, logger logr.Logger) int {

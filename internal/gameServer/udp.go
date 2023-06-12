@@ -11,17 +11,17 @@ import (
 )
 
 type GameData struct {
+	SyncHash        map[uint32]uint64
 	PlayerAddresses []*net.UDPAddr
 	LeadCount       []uint32
-	Status          byte
 	BufferSize      []uint32
 	BufferHealth    []int32
 	Inputs          []map[uint32]uint32
 	Plugin          []map[uint32]byte
 	PendingInput    []uint32
 	PendingPlugin   []byte
-	SyncHash        map[uint32]uint64
 	PlayerAlive     []bool
+	Status          byte
 }
 
 const (
