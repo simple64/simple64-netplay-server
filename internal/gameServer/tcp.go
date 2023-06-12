@@ -73,6 +73,7 @@ func (g *GameServer) tcpSendReg(tcpData *TCPData, conn *net.TCPConn) {
 			registrations[current] = g.Registrations[i].Plugin
 			current += 1
 			registrations[current] = g.Registrations[i].Raw
+			current += 1
 		} else {
 			current += 6
 		}
