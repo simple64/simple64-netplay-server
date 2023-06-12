@@ -197,8 +197,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					}
 					response[0] = 1
 					g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
-					g.GameData.Inputs[playerNumber][0] = 0 // register initial input data
-					g.GameData.Plugin[playerNumber][0] = plugin
+					g.GameData.PendingPlugin[playerNumber] = plugin
 					g.GameData.PlayerAlive[playerNumber] = true
 				} else {
 					g.Logger.Info("player already registered", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
