@@ -31,9 +31,11 @@ const (
 	CP0_INFO             = 4
 )
 
-const STATUS_DESYNC = 1
-const DISCONNECT_TIMEOUT_S = 40
-const INPUT_DATA_MAX uint32 = 5000
+const (
+	STATUS_DESYNC               = 1
+	DISCONNECT_TIMEOUT_S        = 40
+	INPUT_DATA_MAX       uint32 = 5000
+)
 
 func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 	_, inputExists := g.GameData.Inputs[playerNumber][count]
@@ -67,7 +69,7 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 		count += 1
 		_, ok = g.GameData.Inputs[playerNumber][count] // check if input exists for this count
 	}
-	buffer[4] = uint8(count - start) //number of counts in packet
+	buffer[4] = uint8(count - start) // number of counts in packet
 	if currentByte > 5 {
 		_, err := g.UdpListener.WriteToUDP(buffer[0:currentByte], addr)
 		if err != nil {

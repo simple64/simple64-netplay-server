@@ -15,9 +15,11 @@ type TCPData struct {
 	Filesize uint32
 }
 
-const SETTINGS_SIZE = 28
-const MAX_GAMES = 20
-const BUFFER_TARGET = 2
+const (
+	SETTINGS_SIZE = 28
+	MAX_GAMES     = 20
+	BUFFER_TARGET = 2
+)
 
 const (
 	REQUEST_NONE              = 255
@@ -47,6 +49,7 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
 		}
 	}
 }
+
 func (g *GameServer) tcpSendSettings(tcpData *TCPData, conn *net.TCPConn) {
 	for !g.HasSettings {
 		time.Sleep(time.Second)
@@ -188,7 +191,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				response := make([]byte, 2)
 				_, ok := g.Registrations[playerNumber]
 				if !ok {
-					if playerNumber > 0 && plugin == 2 { //Only P1 can use mempak
+					if playerNumber > 0 && plugin == 2 { // Only P1 can use mempak
 						plugin = 1
 					}
 					g.Registrations[playerNumber] = &Registration{
