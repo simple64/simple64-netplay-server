@@ -78,8 +78,8 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 
 func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 	playerNumber := buf[1]
-	g.GameData.PlayerAddresses[playerNumber] = addr
 	if buf[0] == KEY_INFO_CLIENT {
+		g.GameData.PlayerAddresses[playerNumber] = addr
 		count := binary.BigEndian.Uint32(buf[2:])
 
 		g.GameData.PendingInput[playerNumber] = binary.BigEndian.Uint32(buf[6:])
