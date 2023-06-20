@@ -192,6 +192,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						}
 						if len(v.Players) == 0 {
 							s.Logger.Info("No more players in room, deleting", "room", i)
+							v.CloseServers()
 							delete(s.GameServers, i)
 						}
 					}
@@ -236,7 +237,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Socket: ws,
 					}
 					s.GameServers[receivedMessage.RoomName] = &g
-					s.Logger.Info("Created new room", "room", g)
+					s.Logger.Info("Created new room", "room", receivedMessage.RoomName, "port", g.Port, "game", g.GameName, "creator", receivedMessage.PlayerName, "creatorIP", receivedMessage.IP)
 					sendMessage.Type = TypeSendRoomCreate
 					sendMessage.RoomName = receivedMessage.RoomName
 					sendMessage.GameName = g.GameName
@@ -311,7 +312,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Socket: ws,
 						Number: number,
 					}
-					s.Logger.Info("new player joining room", "player", g.Players[receivedMessage.PlayerName], "room", roomName)
+					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", receivedMessage.IP, "room", roomName)
 				}
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)

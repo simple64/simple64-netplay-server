@@ -196,7 +196,7 @@ func (g *GameServer) ManagePlayers() {
 		}
 		if !playersActive {
 			g.Logger.Info("no more players, closing room", "playTime", time.Since(g.StartTime).String())
-			g.closeServers()
+			g.CloseServers()
 			g.Running = false
 			return
 		}

@@ -49,7 +49,7 @@ func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameNam
 	return g.createUDPServer()
 }
 
-func (g *GameServer) closeServers() {
+func (g *GameServer) CloseServers() {
 	if err := g.UDPListener.Close(); err != nil && !g.isConnClosed(err) {
 		g.Logger.Error(err, "error closing UdpListener")
 	} else if err == nil {
