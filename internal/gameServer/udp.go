@@ -37,9 +37,9 @@ const (
 	InputDataMax       uint32 = 5000
 )
 
-// returns true if v is bigger than w (accounting for uint32 wrap around)
+// returns true if v is bigger than w (accounting for uint32 wrap around).
 func uintLarger(v uint32, w uint32) bool {
-	return (v - w) < (math.MaxUint32 / 2)
+	return (v - w) < (math.MaxUint32 / 2) //nolint:gomnd
 }
 
 func (g *GameServer) fillInput(playerNumber byte, count uint32) {
@@ -115,7 +115,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		}
 		count := binary.BigEndian.Uint32(buf[6:])
 		spectator := buf[10]
-		if uintLarger(count, g.GameData.LeadCount[playerNumber]) && spectator == 0 { //nolint:gomnd
+		if uintLarger(count, g.GameData.LeadCount[playerNumber]) && spectator == 0 {
 			g.GameData.BufferHealth[playerNumber] = int32(buf[11])
 			g.GameData.LeadCount[playerNumber] = count
 		}
