@@ -18,13 +18,13 @@ jobs:
 
       - name: Run build script
         run: |
-          go build -a -o simple64-netplay-server main.go
+          go build -a -o simple64-netplay-server.exe main.go
 
       - name: Upload folder
         uses: actions/upload-artifact@v3
         with:
           name: simple64-netplay-server-win
-          path: simple64-netplay-server
+          path: simple64-netplay-server.exe
   lint-linux:
     runs-on: ubuntu-latest
     steps:
