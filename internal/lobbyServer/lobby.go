@@ -70,7 +70,7 @@ func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error 
 	if err != nil {
 		return fmt.Errorf("error marshalling data: %s", err.Error())
 	}
-	s.Logger.Info("sending message", "message", message, "IP", ws.Request().RemoteAddr)
+	// s.Logger.Info("sending message", "message", message, "IP", ws.Request().RemoteAddr)
 	err = websocket.Message.Send(ws, binaryData)
 	if err != nil {
 		return fmt.Errorf("error sending data: %s", err.Error())
@@ -204,12 +204,19 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			continue
 		}
 
-		s.Logger.Info("received message", "message", receivedMessage)
+		// s.Logger.Info("received message", "message", receivedMessage)
 
 		var sendMessage SocketMessage
 
 		if receivedMessage.Type == "create_room" {
-			if receivedMessage.NetplayVersion != NetplayAPIVersion {
+			_, exists := s.GameServers[receivedMessage.RoomName]
+			if exists {
+				sendMessage.Type = TypeMessage
+				sendMessage.Message = "Room with this name already exists"
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage)
+				}
+			} else if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Type = TypeMessage
 				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
 				if err := s.sendData(ws, sendMessage); err != nil {
