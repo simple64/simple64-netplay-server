@@ -33,7 +33,7 @@ const (
 
 const (
 	StatusDesync              = 1
-	DisconnectTimeoutS        = 40
+	DisconnectTimeoutS        = 30
 	InputDataMax       uint32 = 5000
 )
 
