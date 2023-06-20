@@ -53,12 +53,12 @@ func (g *GameServer) closeServers() {
 	if err := g.UDPListener.Close(); err != nil && !g.isConnClosed(err) {
 		g.Logger.Error(err, "error closing UdpListener")
 	} else if err == nil {
-		g.Logger.Info("TCP server closed")
+		g.Logger.Info("UDP server closed")
 	}
 	if err := g.TCPListener.Close(); err != nil && !g.isConnClosed(err) {
 		g.Logger.Error(err, "error closing TcpListener")
 	} else if err == nil {
-		g.Logger.Info("UDP server closed")
+		g.Logger.Info("TCP server closed")
 	}
 }
 

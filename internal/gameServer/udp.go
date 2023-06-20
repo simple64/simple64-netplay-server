@@ -37,6 +37,11 @@ const (
 	InputDataMax       uint32 = 5000
 )
 
+// returns true if v is bigger than w (accounting for uint32 wrap around)
+func uintLarger(v uint32, w uint32) bool {
+	return (v - w) < (math.MaxUint32 / 2)
+}
+
 func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 	_, inputExists := g.GameData.Inputs[playerNumber][count]
 	delete(g.GameData.Inputs[playerNumber], count-InputDataMax) // no need to keep old input data
@@ -49,7 +54,12 @@ func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 
 func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool) {
 	buffer := make([]byte, 512) //nolint:gomnd
-	countLag := g.GameData.LeadCount[playerNumber] - count
+	var countLag uint32
+	if uintLarger(count, g.GameData.LeadCount[playerNumber]) {
+		countLag = 0
+	} else {
+		countLag = g.GameData.LeadCount[playerNumber] - count
+	}
 	buffer[0] = KeyInfoServer
 	buffer[1] = playerNumber
 	buffer[2] = g.GameData.Status
@@ -57,8 +67,8 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 	currentByte := 5
 	start := count
 	end := start + g.GameData.BufferSize[playerNumber]
-	_, ok := g.GameData.Inputs[playerNumber][count]                                                        // check if input exists for this count
-	for (currentByte < 500) && ((!spectator && countLag == 0 && (count-end) > (math.MaxUint32/2)) || ok) { //nolint:gomnd
+	_, ok := g.GameData.Inputs[playerNumber][count]                                              // check if input exists for this count
+	for (currentByte < 500) && ((!spectator && countLag == 0 && uintLarger(end, count)) || ok) { //nolint:gomnd
 		binary.BigEndian.PutUint32(buffer[currentByte:], count)
 		currentByte += 4
 		g.fillInput(playerNumber, count)
@@ -105,7 +115,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		}
 		count := binary.BigEndian.Uint32(buf[6:])
 		spectator := buf[10]
-		if ((count - g.GameData.LeadCount[playerNumber]) < (math.MaxUint32 / 2)) && spectator == 0 { //nolint:gomnd
+		if uintLarger(count, g.GameData.LeadCount[playerNumber]) && spectator == 0 { //nolint:gomnd
 			g.GameData.BufferHealth[playerNumber] = int32(buf[11])
 			g.GameData.LeadCount[playerNumber] = count
 		}
@@ -174,7 +184,7 @@ func (g *GameServer) ManagePlayers() {
 			_, ok := g.Registrations[i]
 			if ok {
 				if g.GameData.PlayerAlive[i] {
-					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegID)
+					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegID, "buffer size", g.GameData.BufferSize[i], "buffer health", g.GameData.BufferHealth[i])
 					playersActive = true
 				} else {
 					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegID)
