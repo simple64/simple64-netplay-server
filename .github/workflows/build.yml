@@ -4,62 +4,37 @@ on:
   push:
     branches:
       - main
+      - go
   pull_request:
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:latest
-    steps:
-      - name: Update and install packages
-        run: |
-          dnf -y upgrade
-          dnf -y install qt6-qtwebsockets-devel git ninja-build cmake
-      - uses: actions/checkout@v3
-      - name: Run build script
-        run: |
-          mkdir build
-          cd build
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
-          VERBOSE=1 cmake --build .
   build-windows:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
-      - uses: msys2/setup-msys2@v2
+      - uses: actions/setup-go@v4
         with:
-          update: true
-          install: >-
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-qt6
-            mingw-w64-x86_64-gcc
+          go-version-file: "go.mod"
+
       - name: Run build script
         run: |
-          mkdir build
-          cd build
-          msys2 -c 'cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..'
-          msys2 -c 'VERBOSE=1 cmake --build .'
-      - name: Put in folder
-        run: |
-          cd build
-          mkdir simple64-netplay-server
-          cd simple64-netplay-server
-          cp ../simple64-netplay-server.exe .
-          msys2 -c 'windeployqt-qt6.exe simple64-netplay-server.exe'
-          msys2 -c 'cp /mingw64/bin/libstdc++-6.dll .'
-          msys2 -c 'cp /mingw64/bin/libgcc_s_seh-1.dll .'
-          msys2 -c 'cp /mingw64/bin/libwinpthread-1.dll .'
-          msys2 -c 'cp /mingw64/bin/zlib1.dll .'
-          msys2 -c 'cp /mingw64/bin/libicuuc72.dll .'
-          msys2 -c 'cp /mingw64/bin/libpcre2-16-0.dll .'
-          msys2 -c 'cp /mingw64/bin/libdouble-conversion.dll .'
-          msys2 -c 'cp /mingw64/bin/libicudt72.dll .'
-          msys2 -c 'cp /mingw64/bin/libicuin72.dll .'
-          msys2 -c 'cp /mingw64/bin/libbrotlidec.dll .'
-          msys2 -c 'cp /mingw64/bin/libbrotlicommon.dll .'
-          msys2 -c 'cp /mingw64/bin/libb2-1.dll .'
+          go build -a -o simple64-netplay-server main.go
+
       - name: Upload folder
         uses: actions/upload-artifact@v3
         with:
           name: simple64-netplay-server-win
-          path: build/simple64-netplay-server
+          path: simple64-netplay-server
+  lint-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
+          cache: false
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: --timeout=10m --enable-all --disable varnamelen,nlreturn,depguard,wsl,nestif,tagliatelle,goerr113,cyclop,lll,funlen,gocritic,gocognit,gocyclo,exhaustivestruct,exhaustruct,maintidx
