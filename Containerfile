@@ -9,7 +9,7 @@ COPY internal/ internal/
 
 RUN CGO_ENABLED=0 go build -a -o simple64-netplay-server main.go
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 WORKDIR /
 
 COPY --from=builder /workspace/simple64-netplay-server .
