@@ -43,27 +43,23 @@ type LobbyServer struct {
 }
 
 type SocketMessage struct {
-	Type           string `json:"type"`
-	RoomName       string `json:"room_name"`
-	PlayerName     string `json:"player_name"`
-	Password       string `json:"password"`
-	Message        string `json:"message,omitempty"`
-	MD5            string `json:"MD5,omitempty"`
-	Port           int    `json:"port"`
-	GameName       string `json:"game_name,omitempty"`
-	ClientSha      string `json:"client_sha,omitempty"`
-	NetplayVersion int    `json:"netplay_version,omitempty"`
-	LLE            string `json:"lle,omitempty"`
-	IP             string `json:"IP"`
-	Protected      string `json:"protected,omitempty"`
-	Accept         int    `json:"accept"`
-	Player0        string `json:"0,omitempty"`
-	Player1        string `json:"1,omitempty"`
-	Player2        string `json:"2,omitempty"`
-	Player3        string `json:"3,omitempty"`
+	Type           string   `json:"type"`
+	RoomName       string   `json:"room_name"`
+	PlayerName     string   `json:"player_name"`
+	Password       string   `json:"password"`
+	Message        string   `json:"message,omitempty"`
+	MD5            string   `json:"MD5,omitempty"`
+	Port           int      `json:"port"`
+	GameName       string   `json:"game_name,omitempty"`
+	ClientSha      string   `json:"client_sha,omitempty"`
+	NetplayVersion int      `json:"netplay_version,omitempty"`
+	LLE            string   `json:"lle,omitempty"`
+	Protected      string   `json:"protected,omitempty"`
+	Accept         int      `json:"accept"`
+	PlayerNames    []string `json:"player_names,omitempty"`
 }
 
-const NetplayAPIVersion = 11
+const NetplayAPIVersion = 12
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	binaryData, err := json.Marshal(message)
@@ -93,17 +89,10 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 		return
 	}
 	var sendMessage SocketMessage
+	sendMessage.PlayerNames = make([]string, 4)
 	sendMessage.Type = TypeRoomPlayers
 	for i, v := range g.Players {
-		if v.Number == 0 {
-			sendMessage.Player0 = i
-		} else if v.Number == 1 {
-			sendMessage.Player1 = i
-		} else if v.Number == 2 { //nolint:gomnd
-			sendMessage.Player2 = i
-		} else if v.Number == 3 { //nolint:gomnd
-			sendMessage.Player3 = i
-		}
+		sendMessage.PlayerNames[v.Number] = i
 	}
 
 	// send the updated player list to all connected players
@@ -243,12 +232,12 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Password = receivedMessage.Password
 					g.Players = make(map[string]gameserver.Client)
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     receivedMessage.IP,
+						IP:     ws.Request().RemoteAddr,
 						Number: 0,
 						Socket: ws,
 					}
 					s.GameServers[receivedMessage.RoomName] = &g
-					s.Logger.Info("Created new room", "room", receivedMessage.RoomName, "port", g.Port, "game", g.GameName, "creator", receivedMessage.PlayerName, "creatorIP", receivedMessage.IP)
+					s.Logger.Info("Created new room", "room", receivedMessage.RoomName, "port", g.Port, "game", g.GameName, "creator", receivedMessage.PlayerName, "creatorIP", ws.Request().RemoteAddr)
 					sendMessage.Type = TypeSendRoomCreate
 					sendMessage.RoomName = receivedMessage.RoomName
 					sendMessage.GameName = g.GameName
@@ -319,11 +308,11 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						}
 					}
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     receivedMessage.IP,
+						IP:     ws.Request().RemoteAddr,
 						Socket: ws,
 						Number: number,
 					}
-					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", receivedMessage.IP, "room", roomName, "number", number)
+					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
 				}
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
