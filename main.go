@@ -19,7 +19,7 @@ func newZap(logPath string) (*zap.Logger, error) {
 	if logPath != "" {
 		cfg.OutputPaths = append(cfg.OutputPaths, logPath)
 	}
-	return cfg.Build()
+	return cfg.Build() //nolint:wrapcheck
 }
 
 func main() {
