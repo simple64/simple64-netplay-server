@@ -164,7 +164,7 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 	go g.ManagePlayers()
 	for {
 		if !g.Running {
-			s.Logger.Info("game server deleted", "name", name, "port", g.Port)
+			s.Logger.Info("game server deleted", "room", name, "port", g.Port)
 			delete(s.GameServers, name)
 			return
 		}
