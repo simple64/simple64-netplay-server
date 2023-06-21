@@ -19,6 +19,7 @@ type GameData struct {
 	Inputs          []map[uint32]uint32
 	Plugin          []map[uint32]byte
 	PendingInput    []uint32
+	CountLag        []uint32
 	PendingPlugin   []byte
 	PlayerAlive     []bool
 	Status          byte
@@ -52,7 +53,7 @@ func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 	}
 }
 
-func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool) {
+func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool) uint32 {
 	buffer := make([]byte, 512) //nolint:gomnd
 	var countLag uint32
 	if uintLarger(count, g.GameData.LeadCount[playerNumber]) {
@@ -86,6 +87,7 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 			g.Logger.Error(err, "could not send input")
 		}
 	}
+	return countLag
 }
 
 func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
@@ -104,22 +106,23 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		}
 	} else if buf[0] == PlayerInputRequest {
 		regID := binary.BigEndian.Uint32(buf[2:])
-		var i byte
-		for i = 0; i < 4; i++ {
-			v, ok := g.Registrations[i]
-			if ok {
-				if v.RegID == regID {
-					g.GameData.PlayerAlive[i] = true
-				}
-			}
-		}
 		count := binary.BigEndian.Uint32(buf[6:])
 		spectator := buf[10]
 		if uintLarger(count, g.GameData.LeadCount[playerNumber]) && spectator == 0 {
 			g.GameData.BufferHealth[playerNumber] = int32(buf[11])
 			g.GameData.LeadCount[playerNumber] = count
 		}
-		g.sendUDPInput(count, addr, playerNumber, spectator != 0)
+		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0)
+		var i byte
+		for i = 0; i < 4; i++ {
+			v, ok := g.Registrations[i]
+			if ok {
+				if v.RegID == regID {
+					g.GameData.PlayerAlive[i] = true
+					g.GameData.CountLag[i] = countLag
+				}
+			}
+		}
 	} else if buf[0] == CP0Info {
 		if g.GameData.Status&1 == 0 {
 			viCount := binary.BigEndian.Uint32(buf[1:])
@@ -184,7 +187,7 @@ func (g *GameServer) ManagePlayers() {
 			_, ok := g.Registrations[i]
 			if ok {
 				if g.GameData.PlayerAlive[i] {
-					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegID, "bufferSize", g.GameData.BufferSize[i], "bufferHealth", g.GameData.BufferHealth[i])
+					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegID, "bufferSize", g.GameData.BufferSize[i], "bufferHealth", g.GameData.BufferHealth[i], "countLag", g.GameData.CountLag[i])
 					playersActive = true
 				} else {
 					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegID)
@@ -229,6 +232,7 @@ func (g *GameServer) createUDPServer() int {
 	g.GameData.PendingPlugin = make([]byte, 4)  //nolint:gomnd
 	g.GameData.SyncHash = make(map[uint32]uint64)
 	g.GameData.PlayerAlive = make([]bool, 4) //nolint:gomnd
+	g.GameData.CountLag = make([]uint32, 4)  //nolint:gomnd
 
 	go g.watchUDP()
 	return g.Port
