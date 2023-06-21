@@ -98,7 +98,7 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 	// send the updated player list to all connected players
 	for _, v := range g.Players {
 		if err := s.sendData(v.Socket, sendMessage); err != nil {
-			s.Logger.Error(err, "failed to send message", "message", sendMessage)
+			s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", v.Socket.Request().RemoteAddr)
 		}
 	}
 }
@@ -178,7 +178,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					if !v.Running {
 						for k, w := range v.Players {
 							if w.Socket == ws {
-								s.Logger.Info("Player has left lobby", "player", k, "room", i)
+								s.Logger.Info("Player has left lobby", "player", k, "room", i, "IP", ws.Request().RemoteAddr)
 								delete(v.Players, k)
 								s.updatePlayers(v)
 							}
@@ -207,13 +207,13 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				sendMessage.Type = TypeMessage
 				sendMessage.Message = "Room with this name already exists"
 				if err := s.sendData(ws, sendMessage); err != nil {
-					s.Logger.Error(err, "failed to send message", "message", sendMessage)
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 				}
 			} else if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Type = TypeMessage
 				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
 				if err := s.sendData(ws, sendMessage); err != nil {
-					s.Logger.Error(err, "failed to send message", "message", sendMessage)
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 				}
 			} else {
 				g := gameserver.GameServer{}
@@ -222,7 +222,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					sendMessage.Type = TypeMessage
 					sendMessage.Message = "Failed to create room"
 					if err := s.sendData(ws, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage)
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 					}
 				} else {
 					g.Password = receivedMessage.Password
@@ -243,7 +243,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					sendMessage.GameName = g.GameName
 					sendMessage.PlayerName = receivedMessage.PlayerName
 					if err := s.sendData(ws, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage)
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 					}
 					s.announceDiscord(&g)
 				}
@@ -253,7 +253,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				sendMessage.Type = TypeMessage
 				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
 				if err := s.sendData(ws, sendMessage); err != nil {
-					s.Logger.Error(err, "failed to send message", "message", sendMessage)
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 				}
 			} else {
 				sendMessage.Type = TypeSendRoom
@@ -271,7 +271,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					sendMessage.Port = v.Port
 					sendMessage.GameName = v.GameName
 					if err := s.sendData(ws, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage)
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 					}
 				}
 			}
@@ -315,7 +315,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
 				}
 			} else {
-				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "IP", ws.Request().RemoteAddr)
 			}
 			sendMessage.PlayerName = receivedMessage.PlayerName
 			sendMessage.Accept = accepted
@@ -323,14 +323,14 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			sendMessage.GameName = g.GameName
 			sendMessage.Port = g.Port
 			if err := s.sendData(ws, sendMessage); err != nil {
-				s.Logger.Error(err, "failed to send message", "message", sendMessage)
+				s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == "request_players" {
 			_, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
 				s.updatePlayers(g)
 			} else {
-				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "IP", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == "chat_message" {
 			sendMessage.Type = TypeChatUpdate
@@ -339,11 +339,11 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			if g != nil {
 				for _, v := range g.Players {
 					if err := s.sendData(v.Socket, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage)
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 					}
 				}
 			} else {
-				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "IP", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == "start_game" {
 			sendMessage.Type = TypeBeginGame
@@ -356,20 +356,20 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				sendMessage.Port = g.Port
 				for _, v := range g.Players {
 					if err := s.sendData(v.Socket, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage)
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 					}
 				}
 			} else {
-				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
+				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "IP", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == "get_motd" {
 			sendMessage.Type = TypeSendMotd
 			sendMessage.Message = "Join <a href=\"https://discord.gg/tsR3RtYynZ\">The Discord Server</a> to find more players!"
 			if err := s.sendData(ws, sendMessage); err != nil {
-				s.Logger.Error(err, "failed to send message", "message", sendMessage)
+				s.Logger.Error(err, "failed to send message", "message", sendMessage, "IP", ws.Request().RemoteAddr)
 			}
 		} else {
-			s.Logger.Error(fmt.Errorf("invalid type"), "not a valid type", "message", receivedMessage)
+			s.Logger.Error(fmt.Errorf("invalid type"), "not a valid type", "message", receivedMessage, "IP", ws.Request().RemoteAddr)
 		}
 	}
 }
