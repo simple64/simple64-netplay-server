@@ -178,7 +178,7 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 	defer ws.Close()
 
-	s.Logger.Info("new WS connection", "address", ws.Request().RemoteAddr)
+	// s.Logger.Info("new WS connection", "address", ws.Request().RemoteAddr)
 
 	for {
 		var receivedMessage SocketMessage
@@ -189,19 +189,19 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					if !v.Running {
 						for k, w := range v.Players {
 							if w.Socket == ws {
-								s.Logger.Info("Player has left", "player", k, "room", i)
+								s.Logger.Info("Player has left lobby", "player", k, "room", i)
 								delete(v.Players, k)
 								s.updatePlayers(v)
 							}
 						}
 						if len(v.Players) == 0 {
-							s.Logger.Info("No more players in room, deleting", "room", i)
+							s.Logger.Info("No more players in lobby, deleting", "room", i)
 							v.CloseServers()
 							delete(s.GameServers, i)
 						}
 					}
 				}
-				s.Logger.Info("closed WS connection", "address", ws.Request().RemoteAddr)
+				// s.Logger.Info("closed WS connection", "address", ws.Request().RemoteAddr)
 				return
 			}
 			s.Logger.Error(err, "could not read message", "address", ws.Request().RemoteAddr)
@@ -362,7 +362,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			if g != nil {
 				g.Running = true
 				g.StartTime = time.Now()
-				g.Logger.Info("starting game", "time", g.StartTime.String())
+				g.Logger.Info("starting game", "time", g.StartTime.Format(time.RFC3339))
 				go s.watchGameServer(roomName, g)
 				sendMessage.Port = g.Port
 				for _, v := range g.Players {

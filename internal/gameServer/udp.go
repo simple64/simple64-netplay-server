@@ -164,10 +164,10 @@ func (g *GameServer) ManageBuffer() {
 			if g.GameData.BufferHealth[i] != -1 {
 				if g.GameData.BufferHealth[i] > BufferTarget && g.GameData.BufferSize[i] > 0 {
 					g.GameData.BufferSize[i]--
-					g.Logger.Info("reducing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
+					// g.Logger.Info("reducing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
 				} else if g.GameData.BufferHealth[i] < BufferTarget {
 					g.GameData.BufferSize[i]++
-					g.Logger.Info("increasing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
+					// g.Logger.Info("increasing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
 				}
 			}
 		}
