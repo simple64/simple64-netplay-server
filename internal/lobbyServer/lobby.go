@@ -147,7 +147,7 @@ func (s *LobbyServer) announceDiscord(g *gameserver.GameServer) {
 
 	message := fmt.Sprintf("New %s netplay room running in %s has been created! Come play %s", roomType, s.Name, g.GameName)
 	for i := 0; i < 10; i++ {
-		channel := os.Getenv(fmt.Sprintf("SIMPLE64_CHANNEL_0%d", i))
+		channel := os.Getenv(fmt.Sprintf("SIMPLE64_CHANNEL_%d", i))
 		if channel != "" {
 			s.publishDiscord(message, channel)
 		}
