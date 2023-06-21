@@ -1,17 +1,16 @@
 package gameserver
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math"
 	"net"
 	"time"
-
-	"github.com/cespare/xxhash"
 )
 
 type GameData struct {
-	SyncHash        map[uint32]uint64
+	SyncValues      map[uint32][]byte
 	PlayerAddresses []*net.UDPAddr
 	LeadCount       []uint32
 	BufferSize      []uint32
@@ -126,13 +125,13 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 	} else if buf[0] == CP0Info {
 		if g.GameData.Status&StatusDesync == 0 {
 			viCount := binary.BigEndian.Uint32(buf[1:])
-			_, ok := g.GameData.SyncHash[viCount]
+			_, ok := g.GameData.SyncValues[viCount]
 			if !ok {
-				if len(g.GameData.SyncHash) > 500 { //nolint:gomnd // no need to keep old sync hashes
-					g.GameData.SyncHash = make(map[uint32]uint64)
+				if len(g.GameData.SyncValues) > 50 { //nolint:gomnd // no need to keep old sync hashes
+					g.GameData.SyncValues = make(map[uint32][]byte)
 				}
-				g.GameData.SyncHash[viCount] = xxhash.Sum64(buf[5:133])
-			} else if g.GameData.SyncHash[viCount] != xxhash.Sum64(buf[5:133]) {
+				g.GameData.SyncValues[viCount] = buf[5:133]
+			} else if !bytes.Equal(g.GameData.SyncValues[viCount], buf[5:133]) {
 				g.GameData.Status |= StatusDesync
 				g.Logger.Error(fmt.Errorf("desync"), "game has desynced")
 			}
@@ -230,7 +229,7 @@ func (g *GameServer) createUDPServer() int {
 	}
 	g.GameData.PendingInput = make([]uint32, 4) //nolint:gomnd
 	g.GameData.PendingPlugin = make([]byte, 4)  //nolint:gomnd
-	g.GameData.SyncHash = make(map[uint32]uint64)
+	g.GameData.SyncValues = make(map[uint32][]byte)
 	g.GameData.PlayerAlive = make([]bool, 4) //nolint:gomnd
 	g.GameData.CountLag = make([]uint32, 4)  //nolint:gomnd
 
