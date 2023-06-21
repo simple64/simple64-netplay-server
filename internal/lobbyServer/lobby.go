@@ -43,20 +43,20 @@ type LobbyServer struct {
 }
 
 type SocketMessage struct {
-	Type           string `json:"type,omitempty"`
-	RoomName       string `json:"room_name,omitempty"`
-	PlayerName     string `json:"player_name,omitempty"`
-	Password       string `json:"password,omitempty"`
+	Type           string `json:"type"`
+	RoomName       string `json:"room_name"`
+	PlayerName     string `json:"player_name"`
+	Password       string `json:"password"`
 	Message        string `json:"message,omitempty"`
 	MD5            string `json:"MD5,omitempty"`
-	Port           int    `json:"port,omitempty"`
+	Port           int    `json:"port"`
 	GameName       string `json:"game_name,omitempty"`
 	ClientSha      string `json:"client_sha,omitempty"`
 	NetplayVersion int    `json:"netplay_version,omitempty"`
 	LLE            string `json:"lle,omitempty"`
-	IP             string `json:"IP,omitempty"`
+	IP             string `json:"IP"`
 	Protected      string `json:"protected,omitempty"`
-	Accept         int    `json:"accept,omitempty"`
+	Accept         int    `json:"accept"`
 	Player0        string `json:"0,omitempty"`
 	Player1        string `json:"1,omitempty"`
 	Player2        string `json:"2,omitempty"`
