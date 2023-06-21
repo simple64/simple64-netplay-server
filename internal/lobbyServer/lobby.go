@@ -89,7 +89,7 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 		return
 	}
 	var sendMessage SocketMessage
-	sendMessage.PlayerNames = make([]string, 4)
+	sendMessage.PlayerNames = make([]string, 4) //nolint:gomnd
 	sendMessage.Type = TypeRoomPlayers
 	for i, v := range g.Players {
 		sendMessage.PlayerNames[v.Number] = i
