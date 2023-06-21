@@ -124,7 +124,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 			}
 		}
 	} else if buf[0] == CP0Info {
-		if g.GameData.Status&1 == 0 {
+		if g.GameData.Status&StatusDesync == 0 {
 			viCount := binary.BigEndian.Uint32(buf[1:])
 			_, ok := g.GameData.SyncHash[viCount]
 			if !ok {
@@ -187,7 +187,7 @@ func (g *GameServer) ManagePlayers() {
 			_, ok := g.Registrations[i]
 			if ok {
 				if g.GameData.PlayerAlive[i] {
-					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegID, "bufferSize", g.GameData.BufferSize[i], "bufferHealth", g.GameData.BufferHealth[i], "countLag", g.GameData.CountLag[i])
+					g.Logger.Info("player status", "player", i, "regID", g.Registrations[i].RegID, "bufferSize", g.GameData.BufferSize[i], "bufferHealth", g.GameData.BufferHealth[i], "countLag", g.GameData.CountLag[i])
 					playersActive = true
 				} else {
 					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegID)

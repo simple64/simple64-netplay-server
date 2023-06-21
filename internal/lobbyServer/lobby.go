@@ -25,7 +25,7 @@ const (
 
 const (
 	TypeMessage        = "message"
-	TypeRoomPlayes     = "room_players"
+	TypeRoomPlayers    = "room_players"
 	TypeSendRoom       = "send_room"
 	TypeSendRoomCreate = "send_room_create"
 	TypeAcceptJoin     = "accept_join"
@@ -93,7 +93,7 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 		return
 	}
 	var sendMessage SocketMessage
-	sendMessage.Type = TypeRoomPlayes
+	sendMessage.Type = TypeRoomPlayers
 	for i, v := range g.Players {
 		if v.Number == 0 {
 			sendMessage.Player0 = i

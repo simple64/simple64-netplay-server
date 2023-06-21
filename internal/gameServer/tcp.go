@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"time"
@@ -95,7 +96,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 	for {
 		length, err := conn.Read(incomingBuffer)
 		if errors.Is(err, io.EOF) {
-			g.Logger.Info("Remote side closed TCP connection", "address", conn.RemoteAddr().String())
+			// g.Logger.Info("Remote side closed TCP connection", "address", conn.RemoteAddr().String())
 			return
 		}
 		if err != nil {
@@ -201,14 +202,15 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 						Raw:    raw,
 					}
 					response[0] = 1
-					g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
+					g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len())
 					g.GameData.PendingPlugin[playerNumber] = plugin
 					g.GameData.PlayerAlive[playerNumber] = true
 				} else {
-					g.Logger.Info("player already registered", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
 					if g.Registrations[playerNumber].RegID == regID {
+						g.Logger.Error(fmt.Errorf("re-registration"), "player already registered", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len())
 						response[0] = 1
 					} else {
+						g.Logger.Error(fmt.Errorf("registration failure"), "could not register player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len())
 						response[0] = 0
 					}
 				}
