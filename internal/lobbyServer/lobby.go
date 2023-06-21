@@ -43,24 +43,24 @@ type LobbyServer struct {
 }
 
 type SocketMessage struct {
-	Type           string `json:"type"`
-	RoomName       string `json:"room_name"`
-	PlayerName     string `json:"player_name"`
-	Password       string `json:"password"`
-	Message        string `json:"message"`
-	MD5            string `json:"MD5"`
-	Port           int    `json:"port"`
-	GameName       string `json:"game_name"`
-	ClientSha      string `json:"client_sha"`
-	NetplayVersion int    `json:"netplay_version"`
-	LLE            string `json:"lle"`
-	IP             string `json:"IP"`
-	Protected      string `json:"protected"`
-	Accept         int    `json:"accept"`
-	Player0        string `json:"0"`
-	Player1        string `json:"1"`
-	Player2        string `json:"2"`
-	Player3        string `json:"3"`
+	Type           string `json:"type,omitempty"`
+	RoomName       string `json:"room_name,omitempty"`
+	PlayerName     string `json:"player_name,omitempty"`
+	Password       string `json:"password,omitempty"`
+	Message        string `json:"message,omitempty"`
+	MD5            string `json:"MD5,omitempty"`
+	Port           int    `json:"port,omitempty"`
+	GameName       string `json:"game_name,omitempty"`
+	ClientSha      string `json:"client_sha,omitempty"`
+	NetplayVersion int    `json:"netplay_version,omitempty"`
+	LLE            string `json:"lle,omitempty"`
+	IP             string `json:"IP,omitempty"`
+	Protected      string `json:"protected,omitempty"`
+	Accept         int    `json:"accept,omitempty"`
+	Player0        string `json:"0,omitempty"`
+	Player1        string `json:"1,omitempty"`
+	Player2        string `json:"2,omitempty"`
+	Player3        string `json:"3,omitempty"`
 }
 
 const NetplayAPIVersion = 11
