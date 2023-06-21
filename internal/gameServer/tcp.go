@@ -44,7 +44,7 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
 			if err != nil {
 				g.Logger.Error(err, "could not write file")
 			}
-			g.Logger.Info("sent file", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
+			// g.Logger.Info("sent file", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
 			tcpData.Filename = ""
 			tcpData.Filesize = 0
 		}
@@ -59,7 +59,7 @@ func (g *GameServer) tcpSendSettings(conn *net.TCPConn) {
 	if err != nil {
 		g.Logger.Error(err, "could not write settings")
 	}
-	g.Logger.Info("sent settings", "address", conn.RemoteAddr().String())
+	// g.Logger.Info("sent settings", "address", conn.RemoteAddr().String())
 }
 
 func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
@@ -82,7 +82,7 @@ func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
 			current += 6
 		}
 	}
-	g.Logger.Info("sent registration data", "address", conn.RemoteAddr().String())
+	// g.Logger.Info("sent registration data", "address", conn.RemoteAddr().String())
 	_, err := conn.Write(registrations)
 	if err != nil {
 		g.Logger.Error(err, "failed to send registration data")
@@ -142,7 +142,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					if err != nil {
 						g.Logger.Error(err, "TCP error")
 					}
-					g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
+					// g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
 					tcpData.Filename = ""
 					tcpData.Filesize = 0
 					tcpData.Request = RequestNone
@@ -159,7 +159,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					if err != nil {
 						g.Logger.Error(err, "TCP error")
 					}
-					g.Logger.Info("read settings via TCP", "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
+					// g.Logger.Info("read settings via TCP", "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
 					g.HasSettings = true
 					tcpData.Request = RequestNone
 					process = true

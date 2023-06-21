@@ -319,7 +319,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Socket: ws,
 						Number: number,
 					}
-					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", receivedMessage.IP, "room", roomName)
+					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", receivedMessage.IP, "room", roomName, "number", number)
 				}
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage)
@@ -358,7 +358,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			if g != nil {
 				g.Running = true
 				g.StartTime = time.Now()
-				g.Logger.Info("starting game", "time", g.StartTime)
+				g.Logger.Info("starting game", "time", g.StartTime.String())
 				go s.watchGameServer(roomName, g)
 				sendMessage.Port = g.Port
 				for _, v := range g.Players {

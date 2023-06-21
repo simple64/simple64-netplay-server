@@ -184,7 +184,7 @@ func (g *GameServer) ManagePlayers() {
 			_, ok := g.Registrations[i]
 			if ok {
 				if g.GameData.PlayerAlive[i] {
-					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegID, "buffer size", g.GameData.BufferSize[i], "buffer health", g.GameData.BufferHealth[i])
+					g.Logger.Info("player alive", "player", i, "regID", g.Registrations[i].RegID, "bufferSize", g.GameData.BufferSize[i], "bufferHealth", g.GameData.BufferHealth[i])
 					playersActive = true
 				} else {
 					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegID)
