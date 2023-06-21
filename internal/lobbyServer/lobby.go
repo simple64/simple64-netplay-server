@@ -134,8 +134,9 @@ func (s *LobbyServer) publishDiscord(message string, channel string) {
 	resp, err := httpClient.Do(httpRequest)
 	if err != nil {
 		s.Logger.Error(err, "could not send request")
+	} else {
+		resp.Body.Close()
 	}
-	resp.Body.Close()
 }
 
 func (s *LobbyServer) announceDiscord(g *gameserver.GameServer) {
