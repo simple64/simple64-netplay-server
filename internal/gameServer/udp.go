@@ -10,18 +10,18 @@ import (
 )
 
 type GameData struct {
-	SyncValues      map[uint32][]byte // stores the CP0 values from each player in order to check for desyncs
+	SyncValues      map[uint32][]byte
 	PlayerAddresses []*net.UDPAddr
-	LeadCount       uint32              // tracks the input count of the lead player
-	BufferSize      []uint32            // how many inputs exist in the queue on the server
-	BufferHealth    []int32             // how many inputs exist in the local queue of each client
-	Inputs          []map[uint32]uint32 // stores the recorded inputs for each player
-	Plugin          []map[uint32]byte   // stores the recorded controller plugin for each player
-	PendingInput    []uint32            // stores the latest input received from each player
-	CountLag        []uint32            // stores how far behind each player is from the lead player
-	PendingPlugin   []byte              // storest he latest plugin value received from each player
-	PlayerAlive     []bool              // stores whether we are still receiving data from each player
-	Status          byte                // stores whether the game has desynced, or a player has disconnected
+	BufferSize      []uint32
+	BufferHealth    []int32
+	Inputs          []map[uint32]uint32
+	Plugin          []map[uint32]byte
+	PendingInput    []uint32
+	CountLag        []uint32
+	PendingPlugin   []byte
+	PlayerAlive     []bool
+	LeadCount       uint32
+	Status          byte
 }
 
 const (

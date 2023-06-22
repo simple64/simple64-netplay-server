@@ -29,12 +29,12 @@ type GameServer struct {
 	Registrations map[byte]*Registration
 	TCPFiles      map[string][]byte
 	Logger        logr.Logger
-	Password      string
 	GameName      string
+	Password      string
 	ClientSha     string
 	MD5           string
-	GameData      GameData
 	TCPSettings   []byte
+	GameData      GameData
 	Port          int
 	HasSettings   bool
 	Running       bool
