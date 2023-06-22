@@ -34,6 +34,7 @@ const (
 const (
 	StatusDesync              = 1
 	DisconnectTimeoutS        = 30
+	NoRegID                   = 255
 	InputDataMax       uint32 = 5000
 )
 
@@ -52,7 +53,7 @@ func (g *GameServer) getPlayerNumberByID(regID uint32) (byte, error) {
 			}
 		}
 	}
-	return 255, fmt.Errorf("could not find ID")
+	return NoRegID, fmt.Errorf("could not find ID")
 }
 
 func (g *GameServer) fillInput(playerNumber byte, count uint32) {
@@ -66,7 +67,7 @@ func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 }
 
 func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool, sendingPlayerNumber byte) uint32 {
-	if sendingPlayerNumber == 255 { // if the incoming packet was KeyInfoClient, the regID isn't included in the packet
+	if sendingPlayerNumber == NoRegID { // if the incoming packet was KeyInfoClient, the regID isn't included in the packet
 		sendingPlayerNumber = playerNumber
 	}
 
@@ -117,7 +118,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 
 		for i := 0; i < 4; i++ {
 			if g.GameData.PlayerAddresses[i] != nil {
-				g.sendUDPInput(count, g.GameData.PlayerAddresses[i], playerNumber, true, 255)
+				g.sendUDPInput(count, g.GameData.PlayerAddresses[i], playerNumber, true, NoRegID)
 			}
 		}
 	} else if buf[0] == PlayerInputRequest {
