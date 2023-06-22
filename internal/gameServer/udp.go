@@ -42,6 +42,19 @@ func uintLarger(v uint32, w uint32) bool {
 	return (v - w) < (math.MaxUint32 / 2) //nolint:gomnd
 }
 
+func (g *GameServer) getPlayerNumberByID(regID uint32) (byte, error) {
+	var i byte
+	for i = 0; i < 4; i++ {
+		v, ok := g.Registrations[i]
+		if ok {
+			if v.RegID == regID {
+				return i, nil
+			}
+		}
+	}
+	return 255, fmt.Errorf("could not find ID")
+}
+
 func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 	_, inputExists := g.GameData.Inputs[playerNumber][count]
 	delete(g.GameData.Inputs[playerNumber], count-InputDataMax) // no need to keep old input data
@@ -52,7 +65,11 @@ func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 	}
 }
 
-func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool) uint32 {
+func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool, sendingPlayerNumber byte) uint32 {
+	if sendingPlayerNumber == 255 { // if the incoming packet was KeyInfoClient, the regID isn't included in the packet
+		sendingPlayerNumber = playerNumber
+	}
+
 	buffer := make([]byte, 512) //nolint:gomnd
 	var countLag uint32
 	if uintLarger(count, g.GameData.LeadCount[playerNumber]) {
@@ -66,7 +83,7 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 	buffer[3] = uint8(countLag)
 	currentByte := 5
 	start := count
-	end := start + g.GameData.BufferSize[playerNumber]
+	end := start + g.GameData.BufferSize[sendingPlayerNumber]
 	_, ok := g.GameData.Inputs[playerNumber][count]                                              // check if input exists for this count
 	for (currentByte < 500) && ((!spectator && countLag == 0 && uintLarger(end, count)) || ok) { //nolint:gomnd
 		binary.BigEndian.PutUint32(buffer[currentByte:], count)
@@ -100,7 +117,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 
 		for i := 0; i < 4; i++ {
 			if g.GameData.PlayerAddresses[i] != nil {
-				g.sendUDPInput(count, g.GameData.PlayerAddresses[i], playerNumber, true)
+				g.sendUDPInput(count, g.GameData.PlayerAddresses[i], playerNumber, true, 255)
 			}
 		}
 	} else if buf[0] == PlayerInputRequest {
@@ -110,18 +127,15 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		if uintLarger(count, g.GameData.LeadCount[playerNumber]) && spectator == 0 {
 			g.GameData.LeadCount[playerNumber] = count
 		}
-		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0)
-		var i byte
-		for i = 0; i < 4; i++ {
-			v, ok := g.Registrations[i]
-			if ok {
-				if v.RegID == regID {
-					g.GameData.BufferHealth[i] = int32(buf[11])
-					g.GameData.PlayerAlive[i] = true
-					g.GameData.CountLag[i] = countLag
-				}
-			}
+		sendingPlayerNumber, err := g.getPlayerNumberByID(regID)
+		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0, sendingPlayerNumber)
+		if err != nil {
+			g.Logger.Error(err, "could not process request", "regID", regID)
+			return
 		}
+		g.GameData.BufferHealth[sendingPlayerNumber] = int32(buf[11])
+		g.GameData.PlayerAlive[sendingPlayerNumber] = true
+		g.GameData.CountLag[sendingPlayerNumber] = countLag
 	} else if buf[0] == CP0Info {
 		if g.GameData.Status&StatusDesync == 0 {
 			viCount := binary.BigEndian.Uint32(buf[1:])
