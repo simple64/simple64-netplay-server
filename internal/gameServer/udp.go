@@ -10,18 +10,18 @@ import (
 )
 
 type GameData struct {
-	SyncValues      map[uint32][]byte
+	SyncValues      map[uint32][]byte // stores the CP0 values from each player in order to check for desyncs
 	PlayerAddresses []*net.UDPAddr
-	LeadCount       []uint32
-	BufferSize      []uint32
-	BufferHealth    []int32
-	Inputs          []map[uint32]uint32
-	Plugin          []map[uint32]byte
-	PendingInput    []uint32
-	CountLag        []uint32
-	PendingPlugin   []byte
-	PlayerAlive     []bool
-	Status          byte
+	LeadCount       uint32              // tracks the input count of the lead player
+	BufferSize      []uint32            // how many inputs exist in the queue on the server
+	BufferHealth    []int32             // how many inputs exist in the local queue of each client
+	Inputs          []map[uint32]uint32 // stores the recorded inputs for each player
+	Plugin          []map[uint32]byte   // stores the recorded controller plugin for each player
+	PendingInput    []uint32            // stores the latest input received from each player
+	CountLag        []uint32            // stores how far behind each player is from the lead player
+	PendingPlugin   []byte              // storest he latest plugin value received from each player
+	PlayerAlive     []bool              // stores whether we are still receiving data from each player
+	Status          byte                // stores whether the game has desynced, or a player has disconnected
 }
 
 const (
@@ -73,10 +73,10 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 
 	buffer := make([]byte, 512) //nolint:gomnd
 	var countLag uint32
-	if uintLarger(count, g.GameData.LeadCount[playerNumber]) {
-		countLag = 0
+	if uintLarger(count, g.GameData.LeadCount) {
+		g.Logger.Error(fmt.Errorf("bad count lag"), "count is larger than LeadCount", "count", count, "LeadCount", g.GameData.LeadCount, "playerNumber", playerNumber)
 	} else {
-		countLag = g.GameData.LeadCount[playerNumber] - count
+		countLag = g.GameData.LeadCount - count
 	}
 	buffer[0] = KeyInfoServer
 	buffer[1] = playerNumber
@@ -112,7 +112,9 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 	if buf[0] == KeyInfoClient {
 		g.GameData.PlayerAddresses[playerNumber] = addr
 		count := binary.BigEndian.Uint32(buf[2:])
-
+		if uintLarger(count, g.GameData.LeadCount) {
+			g.GameData.LeadCount = count
+		}
 		g.GameData.PendingInput[playerNumber] = binary.BigEndian.Uint32(buf[6:])
 		g.GameData.PendingPlugin[playerNumber] = buf[10]
 
@@ -125,8 +127,8 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		regID := binary.BigEndian.Uint32(buf[2:])
 		count := binary.BigEndian.Uint32(buf[6:])
 		spectator := buf[10]
-		if uintLarger(count, g.GameData.LeadCount[playerNumber]) && spectator == 0 {
-			g.GameData.LeadCount[playerNumber] = count
+		if uintLarger(count, g.GameData.LeadCount) && spectator == 0 {
+			g.GameData.LeadCount = count
 		}
 		sendingPlayerNumber, err := g.getPlayerNumberByID(regID)
 		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0, sendingPlayerNumber)
@@ -231,7 +233,6 @@ func (g *GameServer) createUDPServer() int {
 	g.Logger.Info("Created UDP server", "port", g.Port)
 
 	g.GameData.PlayerAddresses = make([]*net.UDPAddr, 4) //nolint:gomnd
-	g.GameData.LeadCount = make([]uint32, 4)             //nolint:gomnd
 	g.GameData.BufferSize = []uint32{3, 3, 3, 3}
 	g.GameData.BufferHealth = []int32{-1, -1, -1, -1}
 	g.GameData.Inputs = make([]map[uint32]uint32, 4) //nolint:gomnd
