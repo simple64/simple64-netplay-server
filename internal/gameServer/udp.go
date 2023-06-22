@@ -114,9 +114,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 	if buf[0] == KeyInfoClient {
 		g.GameData.PlayerAddresses[playerNumber] = addr
 		count := binary.BigEndian.Uint32(buf[2:])
-		if uintLarger(count, g.GameData.LeadCount) {
-			g.GameData.LeadCount = count
-		}
+
 		g.GameData.PendingInput[playerNumber] = binary.BigEndian.Uint32(buf[6:])
 		g.GameData.PendingPlugin[playerNumber] = buf[10]
 
@@ -133,11 +131,11 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 			g.GameData.LeadCount = count
 		}
 		sendingPlayerNumber, err := g.getPlayerNumberByID(regID)
-		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0, sendingPlayerNumber)
 		if err != nil {
 			g.Logger.Error(err, "could not process request", "regID", regID)
 			return
 		}
+		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0, sendingPlayerNumber)
 		g.GameData.BufferHealth[sendingPlayerNumber] = int32(buf[11])
 		g.GameData.PlayerAlive[sendingPlayerNumber] = true
 		g.GameData.CountLag[sendingPlayerNumber] = countLag
