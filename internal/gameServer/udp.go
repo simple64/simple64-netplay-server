@@ -108,7 +108,6 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		count := binary.BigEndian.Uint32(buf[6:])
 		spectator := buf[10]
 		if uintLarger(count, g.GameData.LeadCount[playerNumber]) && spectator == 0 {
-			g.GameData.BufferHealth[playerNumber] = int32(buf[11])
 			g.GameData.LeadCount[playerNumber] = count
 		}
 		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0)
@@ -117,6 +116,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 			v, ok := g.Registrations[i]
 			if ok {
 				if v.RegID == regID {
+					g.GameData.BufferHealth[i] = int32(buf[11])
 					g.GameData.PlayerAlive[i] = true
 					g.GameData.CountLag[i] = countLag
 				}
