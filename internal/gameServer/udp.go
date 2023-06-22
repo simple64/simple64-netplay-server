@@ -71,7 +71,9 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 	buffer := make([]byte, 512) //nolint:gomnd
 	var countLag uint32
 	if uintLarger(count, g.GameData.LeadCount) {
-		g.Logger.Error(fmt.Errorf("bad count lag"), "count is larger than LeadCount", "count", count, "LeadCount", g.GameData.LeadCount, "playerNumber", playerNumber)
+		if !spectator {
+			g.Logger.Error(fmt.Errorf("bad count lag"), "count is larger than LeadCount", "count", count, "LeadCount", g.GameData.LeadCount, "playerNumber", playerNumber)
+		}
 	} else {
 		countLag = g.GameData.LeadCount - count
 	}
