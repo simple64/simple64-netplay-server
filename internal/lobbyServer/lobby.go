@@ -193,7 +193,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				// s.Logger.Info("closed WS connection", "address", ws.Request().RemoteAddr)
 				return
 			}
-			s.Logger.Error(err, "could not read message", "address", ws.Request().RemoteAddr)
+			s.Logger.Info("could not read message", "reason", err.Error(), "address", ws.Request().RemoteAddr)
 			continue
 		}
 
