@@ -25,10 +25,11 @@ type GameData struct {
 }
 
 const (
-	KeyInfoClient      = 0
-	KeyInfoServer      = 1
-	PlayerInputRequest = 2
-	CP0Info            = 4
+	KeyInfoClient           = 0
+	KeyInfoServer           = 1
+	PlayerInputRequest      = 2
+	KeyInfoServerGratuitous = 3
+	CP0Info                 = 4
 )
 
 const (
@@ -40,7 +41,7 @@ const (
 
 // returns true if v is bigger than w (accounting for uint32 wrap around).
 func uintLarger(v uint32, w uint32) bool {
-	return (v - w) < (math.MaxUint32 / 2) //nolint:gomnd
+	return (w - v) > (math.MaxUint32 / 2) //nolint:gomnd
 }
 
 func (g *GameServer) getPlayerNumberByID(regID uint32) (byte, error) {
@@ -67,10 +68,6 @@ func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 }
 
 func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool, sendingPlayerNumber byte) uint32 {
-	if sendingPlayerNumber == NoRegID { // if the incoming packet was KeyInfoClient, the regID isn't included in the packet
-		sendingPlayerNumber = playerNumber
-	}
-
 	buffer := make([]byte, 512) //nolint:gomnd
 	var countLag uint32
 	if uintLarger(count, g.GameData.LeadCount) {
@@ -78,7 +75,12 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 	} else {
 		countLag = g.GameData.LeadCount - count
 	}
-	buffer[0] = KeyInfoServer
+	if sendingPlayerNumber == NoRegID { // if the incoming packet was KeyInfoClient, the regID isn't included in the packet
+		sendingPlayerNumber = playerNumber
+		buffer[0] = KeyInfoServerGratuitous // client will ignore countLag value in this case
+	} else {
+		buffer[0] = KeyInfoServer
+	}
 	buffer[1] = playerNumber
 	buffer[2] = g.GameData.Status
 	buffer[3] = uint8(countLag)

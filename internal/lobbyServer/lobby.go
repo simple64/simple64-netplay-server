@@ -59,7 +59,7 @@ type SocketMessage struct {
 	PlayerNames    []string `json:"player_names,omitempty"`
 }
 
-const NetplayAPIVersion = 12
+const NetplayAPIVersion = 13
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	binaryData, err := json.Marshal(message)
