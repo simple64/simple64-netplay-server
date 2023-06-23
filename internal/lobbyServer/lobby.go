@@ -460,7 +460,7 @@ func (s *LobbyServer) LogServerStats() {
 	for {
 		memStats := runtime.MemStats{}
 		runtime.ReadMemStats(&memStats)
-		s.Logger.Info("server stats", "NumGoroutine", runtime.NumGoroutine, "HeapAlloc", memStats.HeapAlloc, "HeapObjects", memStats.HeapObjects)
+		s.Logger.Info("server stats", "NumGoroutine", runtime.NumGoroutine(), "HeapAlloc", memStats.HeapAlloc, "HeapObjects", memStats.HeapObjects)
 		time.Sleep(time.Minute)
 	}
 }
