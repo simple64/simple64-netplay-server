@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -453,4 +454,13 @@ func (s *LobbyServer) RunSocketServer(broadcastPort int) error {
 		return fmt.Errorf("error listening on http port %s", err.Error())
 	}
 	return nil
+}
+
+func (s *LobbyServer) LogServerStats() {
+	for {
+		memStats := runtime.MemStats{}
+		runtime.ReadMemStats(&memStats)
+		s.Logger.Info("server stats", "NumGoroutine", runtime.NumGoroutine, "HeapAlloc", memStats.HeapAlloc, "HeapObjects", memStats.HeapObjects)
+		time.Sleep(time.Second * 60)
+	}
 }

@@ -46,6 +46,7 @@ func main() {
 		BasePort:         *basePort,
 		DisableBroadcast: *disableBroadcast,
 	}
+	go s.LogServerStats()
 	if err := s.RunSocketServer(DefaultBasePort); err != nil {
 		logger.Error(err, "could not run socket server")
 	}
