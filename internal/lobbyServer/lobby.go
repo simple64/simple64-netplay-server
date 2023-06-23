@@ -461,6 +461,6 @@ func (s *LobbyServer) LogServerStats() {
 		memStats := runtime.MemStats{}
 		runtime.ReadMemStats(&memStats)
 		s.Logger.Info("server stats", "NumGoroutine", runtime.NumGoroutine, "HeapAlloc", memStats.HeapAlloc, "HeapObjects", memStats.HeapObjects)
-		time.Sleep(time.Second * 60)
+		time.Sleep(time.Minute)
 	}
 }
