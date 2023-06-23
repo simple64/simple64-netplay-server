@@ -100,7 +100,8 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			return
 		}
 		if err != nil {
-			g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+			g.Logger.Info("could not read TCP message", "reason", err.Error(), "address", conn.RemoteAddr().String())
+			continue
 		}
 		tcpData.Buffer.Write(incomingBuffer[:length])
 		process := true
