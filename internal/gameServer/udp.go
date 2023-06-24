@@ -214,7 +214,7 @@ func (g *GameServer) ManagePlayers() {
 			g.GameData.PlayerAlive[i] = false
 		}
 		if !playersActive {
-			g.Logger.Info("no more players, closing room", "playTime", time.Since(g.StartTime).String())
+			g.Logger.Info("no more players, closing room", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String())
 			g.CloseServers()
 			g.Running = false
 			return
