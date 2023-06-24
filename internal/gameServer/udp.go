@@ -195,11 +195,8 @@ func (g *GameServer) ManageBuffer() {
 }
 
 func (g *GameServer) ManagePlayers() {
+	time.Sleep(time.Second * DisconnectTimeoutS)
 	for {
-		if len(g.GameData.Inputs[0]) == 0 { // wait for game to start
-			time.Sleep(time.Second * DisconnectTimeoutS)
-			continue
-		}
 		playersActive := false // used to check if anyone is still around
 		var i byte
 		for i = 0; i < 4; i++ {
