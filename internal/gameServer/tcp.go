@@ -21,6 +21,7 @@ const (
 	SettingsSize = 28
 	MaxGames     = 20
 	BufferTarget = 2
+	TCPTimeout   = time.Minute * 5
 )
 
 const (
@@ -35,11 +36,16 @@ const (
 )
 
 func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
+	startTime := time.Now()
 	var ok bool
 	for !ok {
 		_, ok = g.TCPFiles[tcpData.Filename]
 		if !ok {
 			time.Sleep(time.Second)
+			if time.Since(startTime) > TCPTimeout {
+				g.Logger.Error(fmt.Errorf("tcp timeout"), "TCP connection timed out in tcpSendFile")
+				return
+			}
 		} else {
 			_, err := conn.Write(g.TCPFiles[tcpData.Filename])
 			if err != nil {
@@ -53,8 +59,13 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
 }
 
 func (g *GameServer) tcpSendSettings(conn *net.TCPConn) {
+	startTime := time.Now()
 	for !g.HasSettings {
 		time.Sleep(time.Second)
+		if time.Since(startTime) > TCPTimeout {
+			g.Logger.Error(fmt.Errorf("tcp timeout"), "TCP connection timed out in tcpSendSettings")
+			return
+		}
 	}
 	_, err := conn.Write(g.TCPSettings)
 	if err != nil {
@@ -64,8 +75,13 @@ func (g *GameServer) tcpSendSettings(conn *net.TCPConn) {
 }
 
 func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
+	startTime := time.Now()
 	for len(g.Players) != len(g.Registrations) {
 		time.Sleep(time.Second)
+		if time.Since(startTime) > TCPTimeout {
+			g.Logger.Error(fmt.Errorf("tcp timeout"), "TCP connection timed out in tcpSendReg")
+			return
+		}
 	}
 	var i byte
 	registrations := make([]byte, 24) //nolint:gomnd
