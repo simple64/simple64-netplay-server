@@ -22,6 +22,7 @@ const (
 	MismatchVersion = 2
 	RoomFull        = 3
 	DuplicateName   = 4
+	RoomDeleted     = 5
 )
 
 const (
@@ -314,15 +315,16 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Number: number,
 					}
 					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
+					sendMessage.PlayerName = receivedMessage.PlayerName
+					sendMessage.RoomName = roomName
+					sendMessage.GameName = g.GameName
+					sendMessage.Port = g.Port
 				}
 			} else {
+				accepted = RoomDeleted
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
-			sendMessage.PlayerName = receivedMessage.PlayerName
 			sendMessage.Accept = accepted
-			sendMessage.RoomName = roomName
-			sendMessage.GameName = g.GameName
-			sendMessage.Port = g.Port
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
