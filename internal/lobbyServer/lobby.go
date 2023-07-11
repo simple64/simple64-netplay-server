@@ -314,7 +314,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Socket: ws,
 						Number: number,
 					}
-					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
+					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
 					sendMessage.PlayerName = receivedMessage.PlayerName
 					sendMessage.RoomName = roomName
 					sendMessage.GameName = g.GameName

@@ -152,7 +152,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 				g.GameData.SyncValues[viCount] = buf[5:133]
 			} else if !bytes.Equal(g.GameData.SyncValues[viCount], buf[5:133]) {
 				g.GameData.Status |= StatusDesync
-				g.Logger.Error(fmt.Errorf("desync"), "game has desynced", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String())
+				g.Logger.Error(fmt.Errorf("desync"), "game has desynced", "numPlayers", len(g.Players), "clientSHA", g.ClientSha, "playTime", time.Since(g.StartTime).String())
 			}
 		}
 	}
