@@ -61,9 +61,11 @@ type SocketMessage struct {
 	PlayerNames    []string `json:"player_names,omitempty"`
 }
 
-const NetplayAPIVersion = 13
-const MOTDMessage = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
-	"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
+const (
+	NetplayAPIVersion = 13
+	MOTDMessage       = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
+		"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
+)
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	binaryData, err := json.Marshal(message)
