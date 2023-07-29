@@ -23,6 +23,7 @@ const (
 	RoomFull        = 3
 	DuplicateName   = 4
 	RoomDeleted     = 5
+	WrongEmulator   = 6
 )
 
 const (
@@ -51,6 +52,7 @@ type SocketMessage struct {
 	Password       string   `json:"password"`
 	Message        string   `json:"message,omitempty"`
 	MD5            string   `json:"MD5,omitempty"`
+	Emulator       string   `json:"emulator,omitempty"`
 	Port           int      `json:"port"`
 	GameName       string   `json:"game_name,omitempty"`
 	ClientSha      string   `json:"client_sha,omitempty"`
@@ -236,6 +238,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.MD5 = receivedMessage.MD5
 					g.ClientSha = receivedMessage.ClientSha
 					g.Password = receivedMessage.Password
+					g.Emulator = receivedMessage.Emulator
 					g.Players = make(map[string]gameserver.Client)
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
 						IP:     ws.Request().RemoteAddr,
@@ -243,7 +246,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Socket: ws,
 					}
 					s.GameServers[receivedMessage.RoomName] = &g
-					s.Logger.Info("Created new room", "room", receivedMessage.RoomName, "port", g.Port, "game", g.GameName, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr)
+					s.Logger.Info("Created new room", "room", receivedMessage.RoomName, "port", g.Port, "game", g.GameName, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "emulator", receivedMessage.Emulator)
 					sendMessage.Type = TypeSendRoomCreate
 					sendMessage.RoomName = receivedMessage.RoomName
 					sendMessage.GameName = g.GameName
@@ -265,6 +268,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				sendMessage.Type = TypeSendRoom
 				for i, v := range s.GameServers {
 					if v.Running {
+						continue
+					}
+					if receivedMessage.Emulator != v.Emulator {
+						// room belongs to a different emulator
 						continue
 					}
 					if v.Password == "" {
@@ -300,6 +307,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					accepted = RoomFull
 				} else if duplicateName {
 					accepted = DuplicateName
+				} else if receivedMessage.Emulator != g.Emulator {
+					accepted = WrongEmulator
 				} else {
 					var number int
 					for number = 0; number < 4; number++ {

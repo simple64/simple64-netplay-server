@@ -33,6 +33,7 @@ type GameServer struct {
 	Password      string
 	ClientSha     string
 	MD5           string
+	Emulator      string
 	TCPSettings   []byte
 	GameData      GameData
 	Port          int
