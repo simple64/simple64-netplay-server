@@ -62,6 +62,8 @@ type SocketMessage struct {
 }
 
 const NetplayAPIVersion = 13
+const MOTDMessage = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
+	"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	binaryData, err := json.Marshal(message)
@@ -367,7 +369,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == "get_motd" {
 			sendMessage.Type = TypeSendMotd
-			sendMessage.Message = "Join <a href=\"https://discord.gg/tsR3RtYynZ\">The Discord Server</a> to find more players!"
+			sendMessage.Message = MOTDMessage
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
