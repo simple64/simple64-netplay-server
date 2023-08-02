@@ -64,7 +64,7 @@ type SocketMessage struct {
 }
 
 const (
-	NetplayAPIVersion = 13
+	NetplayAPIVersion = 14
 	MOTDMessage       = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
 		"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
 )

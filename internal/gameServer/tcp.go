@@ -18,7 +18,7 @@ type TCPData struct {
 }
 
 const (
-	SettingsSize = 28
+	SettingsSize = 24
 	MaxGames     = 20
 	BufferTarget = 2
 	TCPTimeout   = time.Minute * 5
