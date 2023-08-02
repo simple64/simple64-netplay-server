@@ -35,6 +35,13 @@ const (
 	TypeChatUpdate     = "chat_update"
 	TypeBeginGame      = "begin_game"
 	TypeSendMotd       = "send_motd"
+	TypeCreateRoom     = "create_room"
+	TypeGetRooms       = "get_rooms"
+	TypeJoinRoom       = "join_room"
+	TypeRequestPlayers = "request_players"
+	TypeChatMessage    = "chat_message"
+	TypeStartGame      = "start_game"
+	TypeGetMotd        = "get_motd"
 )
 
 type LobbyServer struct {
@@ -208,7 +215,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 
 		var sendMessage SocketMessage
 
-		if receivedMessage.Type == "create_room" {
+		if receivedMessage.Type == TypeCreateRoom {
 			_, exists := s.GameServers[receivedMessage.RoomName]
 			if exists {
 				sendMessage.Type = TypeMessage
@@ -256,7 +263,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					s.announceDiscord(&g)
 				}
 			}
-		} else if receivedMessage.Type == "get_rooms" {
+		} else if receivedMessage.Type == TypeGetRooms {
 			if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Type = TypeMessage
 				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
@@ -287,7 +294,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					}
 				}
 			}
-		} else if receivedMessage.Type == "join_room" {
+		} else if receivedMessage.Type == TypeJoinRoom {
 			var duplicateName bool
 			var accepted int
 			sendMessage.Type = TypeAcceptJoin
@@ -340,14 +347,14 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
-		} else if receivedMessage.Type == "request_players" {
+		} else if receivedMessage.Type == TypeRequestPlayers {
 			_, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
 				s.updatePlayers(g)
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
-		} else if receivedMessage.Type == "chat_message" {
+		} else if receivedMessage.Type == TypeChatMessage {
 			sendMessage.Type = TypeChatUpdate
 			sendMessage.Message = fmt.Sprintf("%s: %s", receivedMessage.PlayerName, receivedMessage.Message)
 			_, g := s.findGameServer(receivedMessage.Port)
@@ -360,7 +367,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
-		} else if receivedMessage.Type == "start_game" {
+		} else if receivedMessage.Type == TypeStartGame {
 			sendMessage.Type = TypeBeginGame
 			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
@@ -377,7 +384,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
-		} else if receivedMessage.Type == "get_motd" {
+		} else if receivedMessage.Type == TypeGetMotd {
 			sendMessage.Type = TypeSendMotd
 			sendMessage.Message = MOTDMessage
 			if err := s.sendData(ws, sendMessage); err != nil {
