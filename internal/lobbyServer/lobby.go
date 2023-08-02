@@ -57,7 +57,6 @@ type SocketMessage struct {
 	GameName       string   `json:"game_name,omitempty"`
 	ClientSha      string   `json:"client_sha,omitempty"`
 	NetplayVersion int      `json:"netplay_version,omitempty"`
-	LLE            string   `json:"lle,omitempty"`
 	Protected      string   `json:"protected,omitempty"`
 	Accept         int      `json:"accept"`
 	PlayerNames    []string `json:"player_names,omitempty"`
