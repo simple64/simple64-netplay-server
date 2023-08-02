@@ -18,30 +18,30 @@ import (
 )
 
 const (
+	Accepted        = 0
 	BadPassword     = 1
 	MismatchVersion = 2
 	RoomFull        = 3
 	DuplicateName   = 4
 	RoomDeleted     = 5
-	WrongEmulator   = 6
+	Other           = 6
 )
 
 const (
-	TypeMessage        = "message"
-	TypeRoomPlayers    = "room_players"
-	TypeSendRoom       = "send_room"
-	TypeSendRoomCreate = "send_room_create"
-	TypeAcceptJoin     = "accept_join"
-	TypeChatUpdate     = "chat_update"
-	TypeBeginGame      = "begin_game"
-	TypeSendMotd       = "send_motd"
-	TypeCreateRoom     = "create_room"
-	TypeGetRooms       = "get_rooms"
-	TypeJoinRoom       = "join_room"
-	TypeRequestPlayers = "request_players"
-	TypeChatMessage    = "chat_message"
-	TypeStartGame      = "start_game"
-	TypeGetMotd        = "get_motd"
+	TypeRequestPlayers     = "request_players"
+	TypeReplyPlayers       = "reply_players"
+	TypeRequestGetRooms    = "request_get_rooms"
+	TypeReplyGetRooms      = "reply_get_rooms"
+	TypeRequestCreateRoom  = "request_create_room"
+	TypeReplyCreateRoom    = "reply_create_room"
+	TypeRequestJoinRoom    = "request_join_room"
+	TypeReplyJoinRoom      = "reply_join_room"
+	TypeRequestChatMessage = "request_chat_message"
+	TypeReplyChatMessage   = "reply_chat_message"
+	TypeRequestBeginGame   = "request_begin_game"
+	TypeReplyBeginGame     = "reply_begin_game"
+	TypeRequestMotd        = "request_motd"
+	TypeReplyMotd          = "reply_motd"
 )
 
 type LobbyServer struct {
@@ -53,20 +53,21 @@ type LobbyServer struct {
 }
 
 type SocketMessage struct {
-	Type           string   `json:"type"`
-	RoomName       string   `json:"room_name"`
-	PlayerName     string   `json:"player_name"`
-	Password       string   `json:"password"`
-	Message        string   `json:"message,omitempty"`
-	MD5            string   `json:"MD5,omitempty"`
-	Emulator       string   `json:"emulator,omitempty"`
-	Port           int      `json:"port"`
-	GameName       string   `json:"game_name,omitempty"`
-	ClientSha      string   `json:"client_sha,omitempty"`
-	NetplayVersion int      `json:"netplay_version,omitempty"`
-	Protected      string   `json:"protected,omitempty"`
-	Accept         int      `json:"accept"`
-	PlayerNames    []string `json:"player_names,omitempty"`
+	Type           string            `json:"type"`
+	RoomName       string            `json:"room_name"`
+	PlayerName     string            `json:"player_name"`
+	Password       string            `json:"password"`
+	Message        string            `json:"message,omitempty"`
+	MD5            string            `json:"MD5,omitempty"`
+	Emulator       string            `json:"emulator,omitempty"`
+	Port           int               `json:"port"`
+	GameName       string            `json:"game_name,omitempty"`
+	ClientSha      string            `json:"client_sha,omitempty"`
+	NetplayVersion int               `json:"netplay_version,omitempty"`
+	Protected      string            `json:"protected,omitempty"`
+	Accept         int               `json:"accept"`
+	PlayerNames    []string          `json:"player_names,omitempty"`
+	Features       map[string]string `json:"features,omitempty"`
 }
 
 const (
@@ -104,7 +105,7 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 	}
 	var sendMessage SocketMessage
 	sendMessage.PlayerNames = make([]string, 4) //nolint:gomnd
-	sendMessage.Type = TypeRoomPlayers
+	sendMessage.Type = TypeReplyPlayers
 	for i, v := range g.Players {
 		sendMessage.PlayerNames[v.Number] = i
 	}
@@ -215,16 +216,17 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 
 		var sendMessage SocketMessage
 
-		if receivedMessage.Type == TypeCreateRoom {
+		if receivedMessage.Type == TypeRequestCreateRoom {
+			sendMessage.Type = TypeReplyCreateRoom
 			_, exists := s.GameServers[receivedMessage.RoomName]
 			if exists {
-				sendMessage.Type = TypeMessage
+				sendMessage.Accept = DuplicateName
 				sendMessage.Message = "Room with this name already exists"
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
 			} else if receivedMessage.NetplayVersion != NetplayAPIVersion {
-				sendMessage.Type = TypeMessage
+				sendMessage.Accept = MismatchVersion
 				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
@@ -233,7 +235,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				g := gameserver.GameServer{}
 				sendMessage.Port = g.CreateNetworkServers(s.BasePort, receivedMessage.RoomName, receivedMessage.GameName, s.Logger)
 				if sendMessage.Port == 0 {
-					sendMessage.Type = TypeMessage
+					sendMessage.Accept = Other
 					sendMessage.Message = "Failed to create room"
 					if err := s.sendData(ws, sendMessage); err != nil {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
@@ -246,6 +248,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Password = receivedMessage.Password
 					g.Emulator = receivedMessage.Emulator
 					g.Players = make(map[string]gameserver.Client)
+					g.Features = receivedMessage.Features
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
 						IP:     ws.Request().RemoteAddr,
 						Number: 0,
@@ -253,25 +256,24 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					}
 					s.GameServers[receivedMessage.RoomName] = &g
 					s.Logger.Info("Created new room", "room", receivedMessage.RoomName, "port", g.Port, "game", g.GameName, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "emulator", receivedMessage.Emulator)
-					sendMessage.Type = TypeSendRoomCreate
+					sendMessage.Accept = Accepted
 					sendMessage.RoomName = receivedMessage.RoomName
 					sendMessage.GameName = g.GameName
-					sendMessage.PlayerName = receivedMessage.PlayerName
 					if err := s.sendData(ws, sendMessage); err != nil {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 					}
 					s.announceDiscord(&g)
 				}
 			}
-		} else if receivedMessage.Type == TypeGetRooms {
+		} else if receivedMessage.Type == TypeRequestGetRooms {
+			sendMessage.Type = TypeReplyGetRooms
 			if receivedMessage.NetplayVersion != NetplayAPIVersion {
-				sendMessage.Type = TypeMessage
+				sendMessage.Accept = MismatchVersion
 				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
 			} else {
-				sendMessage.Type = TypeSendRoom
 				for i, v := range s.GameServers {
 					if v.Running {
 						continue
@@ -285,19 +287,22 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					} else {
 						sendMessage.Protected = "Yes"
 					}
+					sendMessage.Accept = Accepted
 					sendMessage.RoomName = i
 					sendMessage.MD5 = v.MD5
 					sendMessage.Port = v.Port
 					sendMessage.GameName = v.GameName
+					sendMessage.Features = v.Features
 					if err := s.sendData(ws, sendMessage); err != nil {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 					}
 				}
 			}
-		} else if receivedMessage.Type == TypeJoinRoom {
+		} else if receivedMessage.Type == TypeRequestJoinRoom {
 			var duplicateName bool
 			var accepted int
-			sendMessage.Type = TypeAcceptJoin
+			var message string
+			sendMessage.Type = TypeReplyJoinRoom
 			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
 				for i := range g.Players {
@@ -307,14 +312,19 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				}
 				if g.Password != "" && g.Password != receivedMessage.Password {
 					accepted = BadPassword
+					message = "Incorrect password"
 				} else if g.ClientSha != receivedMessage.ClientSha {
 					accepted = MismatchVersion
+					message = "Client versions do not match"
+				} else if g.MD5 != receivedMessage.MD5 {
+					accepted = MismatchVersion
+					message = "ROM does not match room ROM"
 				} else if len(g.Players) >= 4 { //nolint:gomnd
 					accepted = RoomFull
+					message = "Room is full"
 				} else if duplicateName {
 					accepted = DuplicateName
-				} else if receivedMessage.Emulator != g.Emulator {
-					accepted = WrongEmulator
+					message = "Player name already in use"
 				} else {
 					var number int
 					for number = 0; number < 4; number++ {
@@ -334,16 +344,17 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Number: number,
 					}
 					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
-					sendMessage.PlayerName = receivedMessage.PlayerName
 					sendMessage.RoomName = roomName
 					sendMessage.GameName = g.GameName
 					sendMessage.Port = g.Port
 				}
 			} else {
 				accepted = RoomDeleted
+				message = "room has been deleted"
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
 			sendMessage.Accept = accepted
+			sendMessage.Message = message
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
@@ -354,8 +365,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
-		} else if receivedMessage.Type == TypeChatMessage {
-			sendMessage.Type = TypeChatUpdate
+		} else if receivedMessage.Type == TypeRequestChatMessage {
+			sendMessage.Type = TypeReplyChatMessage
 			sendMessage.Message = fmt.Sprintf("%s: %s", receivedMessage.PlayerName, receivedMessage.Message)
 			_, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
@@ -367,8 +378,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
-		} else if receivedMessage.Type == TypeStartGame {
-			sendMessage.Type = TypeBeginGame
+		} else if receivedMessage.Type == TypeRequestBeginGame {
+			sendMessage.Type = TypeReplyBeginGame
 			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
 				g.Running = true
@@ -384,8 +395,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
-		} else if receivedMessage.Type == TypeGetMotd {
-			sendMessage.Type = TypeSendMotd
+		} else if receivedMessage.Type == TypeRequestMotd {
+			sendMessage.Type = TypeReplyMotd
 			sendMessage.Message = MOTDMessage
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)

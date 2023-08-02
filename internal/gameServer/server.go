@@ -39,6 +39,7 @@ type GameServer struct {
 	Port          int
 	HasSettings   bool
 	Running       bool
+	Features      map[string]string
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameName string, logger logr.Logger) int {
