@@ -134,6 +134,8 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				if err != nil {
 					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
 				}
+			} else {
+				continue // nothing to do
 			}
 		}
 
