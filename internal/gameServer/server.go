@@ -28,7 +28,7 @@ type GameServer struct {
 	UDPListener   *net.UDPConn
 	Registrations map[byte]*Registration
 	TCPFiles      map[string][]byte
-	CustomData    map[uint32][]byte
+	CustomData    map[byte][]byte
 	Logger        logr.Logger
 	GameName      string
 	Password      string

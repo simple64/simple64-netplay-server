@@ -16,7 +16,7 @@ type TCPData struct {
 	Buffer         bytes.Buffer
 	Filesize       uint32
 	Request        byte
-	CustomID       uint32
+	CustomID       byte
 	CustomDatasize uint32
 }
 
@@ -36,8 +36,8 @@ const (
 	RequestRegisterPlayer   = 5
 	RequestGetRegistration  = 6
 	RequestDisconnectNotice = 7
-	RequestSendCustom       = 64
-	RequestReceiveCustom    = 65
+	RequestSendCustomStart  = 64 // 64-127 are custom data send slots, 128-191 are custom date receive slots
+	CustomDataOffset        = 64
 )
 
 func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
@@ -79,7 +79,7 @@ func (g *GameServer) tcpSendSettings(conn *net.TCPConn) {
 	// g.Logger.Info("sent settings", "address", conn.RemoteAddr().String())
 }
 
-func (g *GameServer) tcpSendCustom(conn *net.TCPConn, customID uint32) {
+func (g *GameServer) tcpSendCustom(conn *net.TCPConn, customID byte) {
 	startTime := time.Now()
 	var ok bool
 	for !ok {
@@ -299,23 +299,17 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			tcpData.Request = RequestNone
 		}
 
-		if tcpData.Request == RequestSendCustom && tcpData.Buffer.Len() >= 8 && tcpData.CustomID == 0 { // get custom data (for example, plugin settings)
-			dataIDBytes := make([]byte, 4) //nolint:gomnd
-			_, err = tcpData.Buffer.Read(dataIDBytes)
-			if err != nil {
-				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-			}
-			tcpData.CustomID = binary.BigEndian.Uint32(dataIDBytes)
-
+		if tcpData.Request >= RequestSendCustomStart && tcpData.Request < RequestSendCustomStart+CustomDataOffset && tcpData.Buffer.Len() >= 4 && tcpData.CustomID == 0 { // get custom data (for example, plugin settings)
 			dataSizeBytes := make([]byte, 4) //nolint:gomnd
 			_, err = tcpData.Buffer.Read(dataSizeBytes)
 			if err != nil {
 				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
 			}
+			tcpData.CustomID = tcpData.Request
 			tcpData.CustomDatasize = binary.BigEndian.Uint32(dataSizeBytes)
 		}
 
-		if tcpData.Request == RequestSendCustom && tcpData.CustomID != 0 { // read in custom data from sender
+		if tcpData.Request >= RequestSendCustomStart && tcpData.Request < RequestSendCustomStart+CustomDataOffset && tcpData.CustomID != 0 { // read in custom data from sender
 			if tcpData.Buffer.Len() >= int(tcpData.CustomDatasize) {
 				g.CustomData[tcpData.CustomID] = make([]byte, tcpData.CustomDatasize)
 				_, err = tcpData.Buffer.Read(g.CustomData[tcpData.CustomID])
@@ -328,14 +322,8 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			}
 		}
 
-		if tcpData.Request == RequestReceiveCustom && tcpData.Buffer.Len() >= 4 { // send custom data (for example, plugin settings)
-			dataIDBytes := make([]byte, 4) //nolint:gomnd
-			_, err = tcpData.Buffer.Read(dataIDBytes)
-			if err != nil {
-				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-			}
-
-			go g.tcpSendCustom(conn, binary.BigEndian.Uint32(dataIDBytes))
+		if tcpData.Request >= RequestSendCustomStart+CustomDataOffset && tcpData.Request < RequestSendCustomStart+CustomDataOffset+CustomDataOffset { // send custom data (for example, plugin settings)
+			go g.tcpSendCustom(conn, tcpData.Request-CustomDataOffset)
 			tcpData.Request = RequestNone
 		}
 	}
@@ -363,7 +351,7 @@ func (g *GameServer) createTCPServer(basePort int) int {
 			g.Port = basePort + i
 			g.Logger.Info("Created TCP server", "port", g.Port)
 			g.TCPFiles = make(map[string][]byte)
-			g.CustomData = make(map[uint32][]byte)
+			g.CustomData = make(map[byte][]byte)
 			g.TCPSettings = make([]byte, SettingsSize)
 			g.Registrations = map[byte]*Registration{}
 			go g.watchTCP()
