@@ -24,7 +24,8 @@ const (
 	RoomFull        = 3
 	DuplicateName   = 4
 	RoomDeleted     = 5
-	Other           = 6
+	BadName         = 6
+	Other           = 7
 )
 
 const (
@@ -227,7 +228,13 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				}
 			} else if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Accept = MismatchVersion
-				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
+				sendMessage.Message = "Client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+				}
+			} else if receivedMessage.PlayerName == "" {
+				sendMessage.Accept = BadName
+				sendMessage.Message = "Player name cannot be empty"
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
@@ -269,7 +276,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			sendMessage.Type = TypeReplyGetRooms
 			if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Accept = MismatchVersion
-				sendMessage.Message = "client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
+				sendMessage.Message = "Client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
@@ -322,6 +329,9 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				} else if len(g.Players) >= 4 { //nolint:gomnd
 					accepted = RoomFull
 					message = "Room is full"
+				} else if receivedMessage.PlayerName == "" {
+					accepted = BadName
+					message = "Player name cannot be empty"
 				} else if duplicateName {
 					accepted = DuplicateName
 					message = "Player name already in use"
