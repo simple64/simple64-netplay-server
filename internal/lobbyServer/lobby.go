@@ -232,6 +232,12 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
+			} else if receivedMessage.RoomName == "" {
+				sendMessage.Accept = BadName
+				sendMessage.Message = "Room name cannot be empty"
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+				}
 			} else if receivedMessage.PlayerName == "" {
 				sendMessage.Accept = BadName
 				sendMessage.Message = "Player name cannot be empty"
