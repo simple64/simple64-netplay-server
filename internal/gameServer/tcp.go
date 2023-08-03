@@ -108,7 +108,7 @@ func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
 
 func (g *GameServer) processTCP(conn *net.TCPConn) {
 	tcpData := &TCPData{Request: RequestNone}
-	incomingBuffer := make([]byte, 1024) //nolint:gomnd
+	incomingBuffer := make([]byte, 1500) //nolint:gomnd
 	for {
 		length, err := conn.Read(incomingBuffer)
 		if errors.Is(err, io.EOF) {

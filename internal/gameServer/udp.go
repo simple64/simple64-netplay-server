@@ -68,7 +68,7 @@ func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 }
 
 func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool, sendingPlayerNumber byte) uint32 {
-	buffer := make([]byte, 512) //nolint:gomnd
+	buffer := make([]byte, 508) //nolint:gomnd
 	var countLag uint32
 	if uintLarger(count, g.GameData.LeadCount) {
 		if !spectator {
@@ -89,8 +89,8 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 	currentByte := 5
 	start := count
 	end := start + g.GameData.BufferSize[sendingPlayerNumber]
-	_, ok := g.GameData.Inputs[playerNumber][count]                                              // check if input exists for this count
-	for (currentByte < 500) && ((!spectator && countLag == 0 && uintLarger(end, count)) || ok) { //nolint:gomnd
+	_, ok := g.GameData.Inputs[playerNumber][count]                                                        // check if input exists for this count
+	for (currentByte < len(buffer)-9) && ((!spectator && countLag == 0 && uintLarger(end, count)) || ok) { //nolint:gomnd
 		binary.BigEndian.PutUint32(buffer[currentByte:], count)
 		currentByte += 4
 		g.fillInput(playerNumber, count)
@@ -160,7 +160,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 
 func (g *GameServer) watchUDP() {
 	for {
-		buf := make([]byte, 1024) //nolint:gomnd
+		buf := make([]byte, 1500) //nolint:gomnd
 		_, addr, err := g.UDPListener.ReadFromUDP(buf)
 		if err != nil && !g.isConnClosed(err) {
 			g.Logger.Error(err, "error from UdpListener")

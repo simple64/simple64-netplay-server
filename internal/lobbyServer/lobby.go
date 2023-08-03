@@ -480,7 +480,7 @@ func (s *LobbyServer) runBroadcastServer(broadcastPort int) {
 
 	s.Logger.Info("listening for broadcasts")
 	for {
-		buf := make([]byte, 1024) //nolint:gomnd
+		buf := make([]byte, 1500) //nolint:gomnd
 		_, addr, err := broadcastServer.ReadFromUDP(buf)
 		if err != nil {
 			s.Logger.Error(err, "error reading broadcast packet")
