@@ -398,14 +398,18 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			sendMessage.Type = TypeReplyBeginGame
 			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
-				g.Running = true
-				g.StartTime = time.Now()
-				g.Logger.Info("starting game", "time", g.StartTime.Format(time.RFC3339))
-				go s.watchGameServer(roomName, g)
-				sendMessage.Port = g.Port
-				for _, v := range g.Players {
-					if err := s.sendData(v.Socket, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+				if g.Running {
+					s.Logger.Error(fmt.Errorf("game already running"), "game running", "message", receivedMessage, "address", ws.Request().RemoteAddr)
+				} else {
+					g.Running = true
+					g.StartTime = time.Now()
+					g.Logger.Info("starting game", "time", g.StartTime.Format(time.RFC3339))
+					go s.watchGameServer(roomName, g)
+					sendMessage.Port = g.Port
+					for _, v := range g.Players {
+						if err := s.sendData(v.Socket, sendMessage); err != nil {
+							s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+						}
 					}
 				}
 			} else {
