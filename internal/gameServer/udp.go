@@ -89,8 +89,8 @@ func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber 
 	currentByte := 5
 	start := count
 	end := start + g.GameData.BufferSize[sendingPlayerNumber]
-	_, ok := g.GameData.Inputs[playerNumber][count]                                                        // check if input exists for this count
-	for (currentByte < len(buffer)-9) && ((!spectator && countLag == 0 && uintLarger(end, count)) || ok) { //nolint:gomnd
+	_, ok := g.GameData.Inputs[playerNumber][count] // check if input exists for this count
+	for (currentByte < len(buffer)-9) && ((!spectator && countLag == 0 && uintLarger(end, count)) || ok) {
 		binary.BigEndian.PutUint32(buffer[currentByte:], count)
 		currentByte += 4
 		g.fillInput(playerNumber, count)
