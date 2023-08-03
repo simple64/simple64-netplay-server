@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"time"
 )
 
@@ -110,161 +111,166 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 	tcpData := &TCPData{Request: RequestNone}
 	incomingBuffer := make([]byte, 1500) //nolint:gomnd
 	for {
+		err := conn.SetReadDeadline(time.Now().Add(time.Second))
+		if err != nil {
+			g.Logger.Error(err, "could not set read deadline", "address", conn.RemoteAddr().String())
+		}
 		length, err := conn.Read(incomingBuffer)
 		if errors.Is(err, io.EOF) {
 			// g.Logger.Info("Remote side closed TCP connection", "address", conn.RemoteAddr().String())
 			return
 		}
-		if err != nil {
+		if err != nil && !errors.Is(err, os.ErrDeadlineExceeded) {
 			g.Logger.Info("could not read TCP message", "reason", err.Error(), "address", conn.RemoteAddr().String())
 			continue
 		}
-		tcpData.Buffer.Write(incomingBuffer[:length])
-		process := true
-		for process {
-			process = false
-			if tcpData.Request == RequestNone {
-				if tcpData.Buffer.Len() > 0 {
-					tcpData.Request, err = tcpData.Buffer.ReadByte()
-					if err != nil {
-						g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-					}
-					process = true
-				}
-			}
-			data := tcpData.Buffer.Bytes()
-			nullIndex := bytes.IndexByte(data, 0)
-			if (tcpData.Request == RequestSendSave || tcpData.Request == RequestReceiveSave) && (nullIndex != -1 && tcpData.Filename == "") { // get file name
-				filenameBytes, err := tcpData.Buffer.ReadBytes(0)
-				tcpData.Filename = string(filenameBytes[:len(filenameBytes)-1])
-				if err != nil {
-					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-				}
-				process = true
-			}
-			if tcpData.Filename != "" && tcpData.Request == RequestSendSave && tcpData.Filesize == 0 { // get file size from sender
-				if tcpData.Buffer.Len() >= 4 { //nolint:gomnd
-					filesizeBytes := make([]byte, 4)
-					_, err = tcpData.Buffer.Read(filesizeBytes)
-					if err != nil {
-						g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-					}
-					tcpData.Filesize = binary.BigEndian.Uint32(filesizeBytes)
-					process = true
-				}
-			}
-			if tcpData.Filename != "" && tcpData.Request == RequestSendSave && tcpData.Filesize != 0 { // read in file from sender
-				if tcpData.Buffer.Len() >= int(tcpData.Filesize) {
-					g.TCPFiles[tcpData.Filename] = make([]byte, tcpData.Filesize)
-					_, err = tcpData.Buffer.Read(g.TCPFiles[tcpData.Filename])
-					if err != nil {
-						g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-					}
-					// g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
-					tcpData.Filename = ""
-					tcpData.Filesize = 0
-					tcpData.Request = RequestNone
-					process = true
-				}
-			}
-			if tcpData.Filename != "" && tcpData.Request == RequestReceiveSave { // send requested file
-				go g.tcpSendFile(tcpData, conn)
-				tcpData.Request = RequestNone
-			}
-			if tcpData.Request == RequestSendSettings { // get settings from P1
-				if tcpData.Buffer.Len() >= SettingsSize {
-					_, err = tcpData.Buffer.Read(g.TCPSettings)
-					if err != nil {
-						g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-					}
-					// g.Logger.Info("read settings via TCP", "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
-					g.HasSettings = true
-					tcpData.Request = RequestNone
-					process = true
-				}
-			}
-			if tcpData.Request == RequestReceiveSettings { // send settings to P2-4
-				go g.tcpSendSettings(conn)
-				tcpData.Request = RequestNone
-			}
-			if tcpData.Request == RequestRegisterPlayer && tcpData.Buffer.Len() >= 7 { // register player
-				playerNumber, err := tcpData.Buffer.ReadByte()
-				if err != nil {
-					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-				}
-				plugin, err := tcpData.Buffer.ReadByte()
-				if err != nil {
-					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-				}
-				raw, err := tcpData.Buffer.ReadByte()
-				if err != nil {
-					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-				}
-				regIDBytes := make([]byte, 4) //nolint:gomnd
-				_, err = tcpData.Buffer.Read(regIDBytes)
-				if err != nil {
-					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-				}
-				regID := binary.BigEndian.Uint32(regIDBytes)
+		if length > 0 {
+			tcpData.Buffer.Write(incomingBuffer[:length])
+		}
 
-				response := make([]byte, 2) //nolint:gomnd
-				_, ok := g.Registrations[playerNumber]
-				if !ok {
-					if playerNumber > 0 && plugin == 2 { // Only P1 can use mempak
-						plugin = 1
-					}
-					g.Registrations[playerNumber] = &Registration{
-						RegID:  regID,
-						Plugin: plugin,
-						Raw:    raw,
-					}
+		if tcpData.Request == RequestNone { // find the request type
+			if tcpData.Buffer.Len() > 0 {
+				tcpData.Request, err = tcpData.Buffer.ReadByte()
+				if err != nil {
+					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+				}
+			}
+		}
+
+		if (tcpData.Request == RequestSendSave || tcpData.Request == RequestReceiveSave) && tcpData.Filename == "" { // get file name
+			if bytes.IndexByte(tcpData.Buffer.Bytes(), 0) != -1 {
+				filenameBytes, err := tcpData.Buffer.ReadBytes(0)
+				if err != nil {
+					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+				}
+				tcpData.Filename = string(filenameBytes[:len(filenameBytes)-1])
+			}
+		}
+
+		if tcpData.Request == RequestSendSave && tcpData.Filename != "" && tcpData.Filesize == 0 { // get file size from sender
+			if tcpData.Buffer.Len() >= 4 { //nolint:gomnd
+				filesizeBytes := make([]byte, 4)
+				_, err = tcpData.Buffer.Read(filesizeBytes)
+				if err != nil {
+					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+				}
+				tcpData.Filesize = binary.BigEndian.Uint32(filesizeBytes)
+			}
+		}
+
+		if tcpData.Request == RequestSendSave && tcpData.Filename != "" && tcpData.Filesize != 0 { // read in file from sender
+			if tcpData.Buffer.Len() >= int(tcpData.Filesize) {
+				g.TCPFiles[tcpData.Filename] = make([]byte, tcpData.Filesize)
+				_, err = tcpData.Buffer.Read(g.TCPFiles[tcpData.Filename])
+				if err != nil {
+					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+				}
+				// g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
+				tcpData.Filename = ""
+				tcpData.Filesize = 0
+				tcpData.Request = RequestNone
+			}
+		}
+
+		if tcpData.Request == RequestReceiveSave && tcpData.Filename != "" { // send requested file
+			go g.tcpSendFile(tcpData, conn)
+			tcpData.Request = RequestNone
+		}
+
+		if tcpData.Request == RequestSendSettings { // get settings from P1
+			if tcpData.Buffer.Len() >= SettingsSize {
+				_, err = tcpData.Buffer.Read(g.TCPSettings)
+				if err != nil {
+					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+				}
+				// g.Logger.Info("read settings via TCP", "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
+				g.HasSettings = true
+				tcpData.Request = RequestNone
+			}
+		}
+
+		if tcpData.Request == RequestReceiveSettings { // send settings to P2-4
+			go g.tcpSendSettings(conn)
+			tcpData.Request = RequestNone
+		}
+
+		if tcpData.Request == RequestRegisterPlayer && tcpData.Buffer.Len() >= 7 { // register player
+			playerNumber, err := tcpData.Buffer.ReadByte()
+			if err != nil {
+				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+			}
+			plugin, err := tcpData.Buffer.ReadByte()
+			if err != nil {
+				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+			}
+			raw, err := tcpData.Buffer.ReadByte()
+			if err != nil {
+				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+			}
+			regIDBytes := make([]byte, 4) //nolint:gomnd
+			_, err = tcpData.Buffer.Read(regIDBytes)
+			if err != nil {
+				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+			}
+			regID := binary.BigEndian.Uint32(regIDBytes)
+
+			response := make([]byte, 2) //nolint:gomnd
+			_, ok := g.Registrations[playerNumber]
+			if !ok {
+				if playerNumber > 0 && plugin == 2 { // Only P1 can use mempak
+					plugin = 1
+				}
+				g.Registrations[playerNumber] = &Registration{
+					RegID:  regID,
+					Plugin: plugin,
+					Raw:    raw,
+				}
+				response[0] = 1
+				g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
+				g.GameData.PendingPlugin[playerNumber] = plugin
+				g.GameData.PlayerAlive[playerNumber] = true
+			} else {
+				if g.Registrations[playerNumber].RegID == regID {
+					g.Logger.Error(fmt.Errorf("re-registration"), "player already registered", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
 					response[0] = 1
-					g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
-					g.GameData.PendingPlugin[playerNumber] = plugin
-					g.GameData.PlayerAlive[playerNumber] = true
 				} else {
-					if g.Registrations[playerNumber].RegID == regID {
-						g.Logger.Error(fmt.Errorf("re-registration"), "player already registered", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
-						response[0] = 1
-					} else {
-						g.Logger.Error(fmt.Errorf("registration failure"), "could not register player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
-						response[0] = 0
+					g.Logger.Error(fmt.Errorf("registration failure"), "could not register player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
+					response[0] = 0
+				}
+			}
+			response[1] = BufferTarget
+			_, err = conn.Write(response)
+			if err != nil {
+				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+			}
+			tcpData.Request = RequestNone
+		}
+
+		if tcpData.Request == RequestGetRegistration { // send registration
+			go g.tcpSendReg(conn)
+			tcpData.Request = RequestNone
+		}
+
+		if tcpData.Request == RequestDisconnectNotice && tcpData.Buffer.Len() >= 4 { // disconnect notice
+			regIDBytes := make([]byte, 4) //nolint:gomnd
+			_, err = tcpData.Buffer.Read(regIDBytes)
+			if err != nil {
+				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
+			}
+			regID := binary.BigEndian.Uint32(regIDBytes)
+			var i byte
+			for i = 0; i < 4; i++ {
+				v, ok := g.Registrations[i]
+				if ok {
+					if v.RegID == regID {
+						g.Logger.Info("player disconnected TCP", "regID", regID, "player", i, "address", conn.RemoteAddr().String())
+						g.GameData.PlayerAlive[i] = false
+						g.GameData.Status |= (0x1 << (i + 1)) //nolint:gomnd
+						delete(g.Registrations, i)
 					}
 				}
-				response[1] = BufferTarget
-				_, err = conn.Write(response)
-				if err != nil {
-					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-				}
-				tcpData.Request = RequestNone
-				process = true
 			}
-			if tcpData.Request == RequestGetRegistration { // send registration
-				go g.tcpSendReg(conn)
-				tcpData.Request = RequestNone
-			}
-			if tcpData.Request == RequestDisconnectNotice && tcpData.Buffer.Len() >= 4 { // disconnect notice
-				regIDBytes := make([]byte, 4) //nolint:gomnd
-				_, err = tcpData.Buffer.Read(regIDBytes)
-				if err != nil {
-					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
-				}
-				regID := binary.BigEndian.Uint32(regIDBytes)
-				var i byte
-				for i = 0; i < 4; i++ {
-					v, ok := g.Registrations[i]
-					if ok {
-						if v.RegID == regID {
-							g.Logger.Info("player disconnected TCP", "regID", regID, "player", i, "address", conn.RemoteAddr().String())
-							g.GameData.PlayerAlive[i] = false
-							g.GameData.Status |= (0x1 << (i + 1)) //nolint:gomnd
-							delete(g.Registrations, i)
-						}
-					}
-				}
-				tcpData.Request = RequestNone
-				process = true
-			}
+			tcpData.Request = RequestNone
 		}
 	}
 }
