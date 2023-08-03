@@ -272,6 +272,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					sendMessage.Accept = Accepted
 					sendMessage.RoomName = receivedMessage.RoomName
 					sendMessage.GameName = g.GameName
+					sendMessage.PlayerName = receivedMessage.PlayerName
 					if err := s.sendData(ws, sendMessage); err != nil {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 					}
@@ -362,6 +363,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
 					sendMessage.RoomName = roomName
 					sendMessage.GameName = g.GameName
+					sendMessage.PlayerName = receivedMessage.PlayerName
 					sendMessage.Port = g.Port
 				}
 			} else {
