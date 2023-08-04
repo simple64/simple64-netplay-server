@@ -140,7 +140,11 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		}
 		countLag := g.sendUDPInput(count, addr, playerNumber, spectator != 0, sendingPlayerNumber)
 		g.GameData.BufferHealth[sendingPlayerNumber] = int32(buf[11])
+
+		g.GameDataMutex.Lock() // PlayerAlive can be modified by ManagePlayers in a different thread
 		g.GameData.PlayerAlive[sendingPlayerNumber] = true
+		g.GameDataMutex.Unlock()
+
 		g.GameData.CountLag[sendingPlayerNumber] = countLag
 	} else if buf[0] == CP0Info {
 		if g.GameData.Status&StatusDesync == 0 {
@@ -152,7 +156,10 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 				}
 				g.GameData.SyncValues[viCount] = buf[5:133]
 			} else if !bytes.Equal(g.GameData.SyncValues[viCount], buf[5:133]) {
+				g.GameDataMutex.Lock() // Status can be modified by ManagePlayers in a different thread
 				g.GameData.Status |= StatusDesync
+				g.GameDataMutex.Unlock()
+
 				g.Logger.Error(fmt.Errorf("desync"), "game has desynced", "numPlayers", len(g.Players), "clientSHA", g.ClientSha, "playTime", time.Since(g.StartTime).String(), "emulator", g.Emulator, "features", g.Features)
 			}
 		}
@@ -200,6 +207,8 @@ func (g *GameServer) ManagePlayers() {
 	for {
 		playersActive := false // used to check if anyone is still around
 		var i byte
+
+		g.GameDataMutex.Lock() // PlayerAlive and Status can be modified by processUDP in a different thread
 		for i = 0; i < 4; i++ {
 			_, ok := g.Registrations[i]
 			if ok {
@@ -209,11 +218,16 @@ func (g *GameServer) ManagePlayers() {
 				} else {
 					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegID, "address", g.GameData.PlayerAddresses[i])
 					g.GameData.Status |= (0x1 << (i + 1)) //nolint:gomnd
+
+					g.RegistrationsMutex.Lock() // Registrations can be modified by processTCP
 					delete(g.Registrations, i)
+					g.RegistrationsMutex.Unlock()
 				}
 			}
 			g.GameData.PlayerAlive[i] = false
 		}
+		g.GameDataMutex.Unlock()
+
 		if !playersActive {
 			g.Logger.Info("no more players, closing room", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String(), "emulator", g.Emulator)
 			g.CloseServers()

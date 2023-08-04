@@ -246,15 +246,22 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				if playerNumber > 0 && plugin == 2 { // Only P1 can use mempak
 					plugin = 1
 				}
+
+				g.RegistrationsMutex.Lock() // any player can modify this, which would be in a different thread
 				g.Registrations[playerNumber] = &Registration{
 					RegID:  regID,
 					Plugin: plugin,
 					Raw:    raw,
 				}
+				g.RegistrationsMutex.Unlock()
+
 				response[0] = 1
 				g.Logger.Info("registered player", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
+
+				g.GameDataMutex.Lock() // any player can modify this, which would be in a different thread
 				g.GameData.PendingPlugin[playerNumber] = plugin
 				g.GameData.PlayerAlive[playerNumber] = true
+				g.GameDataMutex.Unlock()
 			} else {
 				if g.Registrations[playerNumber].RegID == regID {
 					g.Logger.Error(fmt.Errorf("re-registration"), "player already registered", "registration", g.Registrations[playerNumber], "number", playerNumber, "bufferLeft", tcpData.Buffer.Len(), "address", conn.RemoteAddr().String())
@@ -290,9 +297,15 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				if ok {
 					if v.RegID == regID {
 						g.Logger.Info("player disconnected TCP", "regID", regID, "player", i, "address", conn.RemoteAddr().String())
+
+						g.GameDataMutex.Lock() // any player can modify this, which would be in a different thread
 						g.GameData.PlayerAlive[i] = false
 						g.GameData.Status |= (0x1 << (i + 1)) //nolint:gomnd
+						g.GameDataMutex.Unlock()
+
+						g.RegistrationsMutex.Lock() // any player can modify this, which would be in a different thread
 						delete(g.Registrations, i)
+						g.RegistrationsMutex.Unlock()
 					}
 				}
 			}

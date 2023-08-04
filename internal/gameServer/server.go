@@ -3,6 +3,7 @@ package gameserver
 import (
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -22,25 +23,28 @@ type Registration struct {
 }
 
 type GameServer struct {
-	StartTime     time.Time
-	Players       map[string]Client
-	TCPListener   *net.TCPListener
-	UDPListener   *net.UDPConn
-	Registrations map[byte]*Registration
-	TCPFiles      map[string][]byte
-	CustomData    map[byte][]byte
-	Logger        logr.Logger
-	GameName      string
-	Password      string
-	ClientSha     string
-	MD5           string
-	Emulator      string
-	TCPSettings   []byte
-	GameData      GameData
-	Port          int
-	HasSettings   bool
-	Running       bool
-	Features      map[string]string
+	StartTime          time.Time
+	Players            map[string]Client
+	PlayersMutex       sync.Mutex
+	TCPListener        *net.TCPListener
+	UDPListener        *net.UDPConn
+	Registrations      map[byte]*Registration
+	RegistrationsMutex sync.Mutex
+	TCPFiles           map[string][]byte
+	CustomData         map[byte][]byte
+	Logger             logr.Logger
+	GameName           string
+	Password           string
+	ClientSha          string
+	MD5                string
+	Emulator           string
+	TCPSettings        []byte
+	GameData           GameData
+	GameDataMutex      sync.Mutex
+	Port               int
+	HasSettings        bool
+	Running            bool
+	Features           map[string]string
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameName string, logger logr.Logger) int {

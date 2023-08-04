@@ -195,7 +195,11 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						for k, w := range v.Players {
 							if w.Socket == ws {
 								s.Logger.Info("Player has left lobby", "player", k, "room", i, "address", ws.Request().RemoteAddr)
+
+								v.PlayersMutex.Lock() // any player can modify this, which would be in a different thread
 								delete(v.Players, k)
+								v.PlayersMutex.Unlock()
+
 								s.updatePlayers(v)
 							}
 						}
@@ -355,11 +359,15 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 							break
 						}
 					}
+
+					g.PlayersMutex.Lock() // any player can modify this from their own thread
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
 						IP:     ws.Request().RemoteAddr,
 						Socket: ws,
 						Number: number,
 					}
+					g.PlayersMutex.Unlock()
+
 					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
 					sendMessage.RoomName = roomName
 					sendMessage.GameName = g.GameName
