@@ -36,7 +36,7 @@ const (
 	RequestRegisterPlayer   = 5
 	RequestGetRegistration  = 6
 	RequestDisconnectNotice = 7
-	RequestSendCustomStart  = 64 // 64-127 are custom data send slots, 128-191 are custom date receive slots
+	RequestSendCustomStart  = 64 // 64-127 are custom data send slots, 128-191 are custom data receive slots
 	CustomDataOffset        = 64
 )
 
