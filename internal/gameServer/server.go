@@ -75,3 +75,61 @@ func (g *GameServer) isConnClosed(err error) bool {
 	}
 	return strings.Contains(err.Error(), "use of closed network connection")
 }
+
+func (g *GameServer) ManageBuffer() {
+	for {
+		if !g.Running {
+			g.Logger.Info("done managing buffers")
+			return
+		}
+		// Adjust the buffer size for the lead player(s)
+		for i := 0; i < 4; i++ {
+			if g.GameData.BufferHealth[i] != -1 && g.GameData.CountLag[i] == 0 {
+				if g.GameData.BufferHealth[i] > BufferTarget && g.GameData.BufferSize[i] > 0 {
+					g.GameData.BufferSize[i]--
+					// g.Logger.Info("reducing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
+				} else if g.GameData.BufferHealth[i] < BufferTarget {
+					g.GameData.BufferSize[i]++
+					// g.Logger.Info("increasing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
+				}
+			}
+		}
+		time.Sleep(time.Second * 5) //nolint:gomnd
+	}
+}
+
+func (g *GameServer) ManagePlayers() {
+	time.Sleep(time.Second * DisconnectTimeoutS)
+	for {
+		playersActive := false // used to check if anyone is still around
+		var i byte
+
+		g.GameDataMutex.Lock() // PlayerAlive and Status can be modified by processUDP in a different thread
+		for i = 0; i < 4; i++ {
+			_, ok := g.Registrations[i]
+			if ok {
+				if g.GameData.PlayerAlive[i] {
+					g.Logger.Info("player status", "player", i, "regID", g.Registrations[i].RegID, "bufferSize", g.GameData.BufferSize[i], "bufferHealth", g.GameData.BufferHealth[i], "countLag", g.GameData.CountLag[i], "address", g.GameData.PlayerAddresses[i])
+					playersActive = true
+				} else {
+					g.Logger.Info("play disconnected UDP", "player", i, "regID", g.Registrations[i].RegID, "address", g.GameData.PlayerAddresses[i])
+					g.GameData.Status |= (0x1 << (i + 1)) //nolint:gomnd
+
+					g.RegistrationsMutex.Lock() // Registrations can be modified by processTCP
+					delete(g.Registrations, i)
+					g.RegistrationsMutex.Unlock()
+				}
+			}
+			g.GameData.PlayerAlive[i] = false
+		}
+		g.GameDataMutex.Unlock()
+
+		if !playersActive {
+			g.Logger.Info("no more players, closing room", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String(), "emulator", g.Emulator)
+			g.CloseServers()
+			g.Running = false
+			return
+		}
+		time.Sleep(time.Second * DisconnectTimeoutS)
+	}
+}
