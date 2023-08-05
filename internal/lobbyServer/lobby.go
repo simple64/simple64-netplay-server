@@ -432,7 +432,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
 		} else {
-			s.Logger.Error(fmt.Errorf("invalid type"), "not a valid type", "message", receivedMessage, "address", ws.Request().RemoteAddr)
+			s.Logger.Info("not a valid lobby message type", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 		}
 	}
 }
