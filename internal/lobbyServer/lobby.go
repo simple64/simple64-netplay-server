@@ -232,7 +232,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				}
 			} else if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Accept = MismatchVersion
-				sendMessage.Message = "Client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
+				sendMessage.Message = "Client and server not at same API version. Please update your emulator"
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
@@ -287,7 +287,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			sendMessage.Type = TypeReplyGetRooms
 			if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Accept = MismatchVersion
-				sendMessage.Message = "Client and server not at same version. Visit <a href=\"https://simple64.github.io\">here</a> to update"
+				sendMessage.Message = "Client and server not at same API version. Please update your emulator"
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
