@@ -48,7 +48,7 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn) {
 		if !ok {
 			time.Sleep(time.Second)
 			if time.Since(startTime) > TCPTimeout {
-				g.Logger.Error(fmt.Errorf("tcp timeout"), "TCP connection timed out in tcpSendFile")
+				g.Logger.Info("TCP connection timed out in tcpSendFile")
 				return
 			}
 		} else {
@@ -68,7 +68,7 @@ func (g *GameServer) tcpSendSettings(conn *net.TCPConn) {
 	for !g.HasSettings {
 		time.Sleep(time.Second)
 		if time.Since(startTime) > TCPTimeout {
-			g.Logger.Error(fmt.Errorf("tcp timeout"), "TCP connection timed out in tcpSendSettings")
+			g.Logger.Info("TCP connection timed out in tcpSendSettings")
 			return
 		}
 	}
@@ -87,7 +87,7 @@ func (g *GameServer) tcpSendCustom(conn *net.TCPConn, customID byte) {
 		if !ok {
 			time.Sleep(time.Second)
 			if time.Since(startTime) > TCPTimeout {
-				g.Logger.Error(fmt.Errorf("tcp timeout"), "TCP connection timed out in tcpSendCustom")
+				g.Logger.Info("TCP connection timed out in tcpSendCustom")
 				return
 			}
 		} else {
@@ -104,7 +104,7 @@ func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
 	for len(g.Players) != len(g.Registrations) {
 		time.Sleep(time.Second)
 		if time.Since(startTime) > TCPTimeout {
-			g.Logger.Error(fmt.Errorf("tcp timeout"), "TCP connection timed out in tcpSendReg")
+			g.Logger.Info("TCP connection timed out in tcpSendReg")
 			return
 		}
 	}
