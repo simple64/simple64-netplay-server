@@ -377,7 +377,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else {
 				accepted = RoomDeleted
 				message = "room has been deleted"
-				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
+				s.Logger.Info("server not found (room deleted)", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
 			sendMessage.Accept = accepted
 			sendMessage.Message = message
