@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - go
   pull_request:
 
 jobs:

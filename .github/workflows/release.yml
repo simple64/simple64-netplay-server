@@ -1,0 +1,44 @@
+name: Release project
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+  IMAGE_REGISTRY: quay.io
+  REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+
+jobs:
+  release-linux:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Log in to Quay.io
+        uses: redhat-actions/podman-login@v1
+        with:
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+
+      - name: Build manifest
+        run: |
+          podman buildx build --platform linux/amd64,linux/arm64 --manifest netplay .
+
+      - name: Push main tag
+        run: |
+          podman manifest push netplay docker://quay.io/simple64/simple64-netplay-server:${{ github.ref_name }}
+
+      - name: Push latest tag
+        if: ${{ github.event_name == 'release' }}
+        run: |
+          podman manifest push netplay docker://quay.io/simple64/simple64-netplay-server:latest
