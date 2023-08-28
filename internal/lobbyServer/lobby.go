@@ -53,6 +53,7 @@ type LobbyServer struct {
 	Name             string
 	BasePort         int
 	DisableBroadcast bool
+	Motd             string
 	GameServers      map[string]*gameserver.GameServer
 }
 
@@ -74,11 +75,7 @@ type SocketMessage struct {
 	Features       map[string]string `json:"features,omitempty"`
 }
 
-const (
-	NetplayAPIVersion = 15
-	MOTDMessage       = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
-		"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
-)
+const NetplayAPIVersion = 15
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	// s.Logger.Info("sending message", "message", message, "address", ws.Request().RemoteAddr)
@@ -426,7 +423,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestMotd {
 			sendMessage.Type = TypeReplyMotd
-			sendMessage.Message = MOTDMessage
+			sendMessage.Message = s.Motd
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
