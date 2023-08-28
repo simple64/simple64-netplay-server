@@ -516,7 +516,7 @@ func (s *LobbyServer) RunSocketServer(broadcastPort int) error {
 	http.Handle("/", server)
 	listenAddress := fmt.Sprintf(":%d", s.BasePort)
 
-	s.Logger.Info("server running", "address", listenAddress, "version", getVersion())
+	s.Logger.Info("server running", "address", listenAddress, "version", getVersion(), "platform", runtime.GOOS, "arch", runtime.GOARCH)
 
 	err := http.ListenAndServe(listenAddress, nil) //nolint:gosec
 	if err != nil {
