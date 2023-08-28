@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -43,6 +44,8 @@ const (
 	TypeReplyBeginGame     = "reply_begin_game"
 	TypeRequestMotd        = "request_motd"
 	TypeReplyMotd          = "reply_motd"
+	TypeRequestVersion     = "request_version"
+	TypeReplyVersion       = "reply_version"
 )
 
 type LobbyServer struct {
@@ -72,18 +75,14 @@ type SocketMessage struct {
 }
 
 const (
-	NetplayAPIVersion = 14
+	NetplayAPIVersion = 15
 	MOTDMessage       = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
 		"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
 )
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
-	binaryData, err := json.Marshal(message)
-	if err != nil {
-		return fmt.Errorf("error marshalling data: %s", err.Error())
-	}
 	// s.Logger.Info("sending message", "message", message, "address", ws.Request().RemoteAddr)
-	err = websocket.Message.Send(ws, binaryData)
+	err := websocket.JSON.Send(ws, message)
 	if err != nil {
 		return fmt.Errorf("error sending data: %s", err.Error())
 	}
@@ -428,6 +427,18 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 		} else if receivedMessage.Type == TypeRequestMotd {
 			sendMessage.Type = TypeReplyMotd
 			sendMessage.Message = MOTDMessage
+			if err := s.sendData(ws, sendMessage); err != nil {
+				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+			}
+		} else if receivedMessage.Type == TypeRequestVersion {
+			sendMessage.Type = TypeReplyVersion
+			if info, ok := debug.ReadBuildInfo(); ok {
+				for _, setting := range info.Settings {
+					if setting.Key == "vcs.revision" {
+						sendMessage.Message = setting.Value
+					}
+				}
+			}
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
