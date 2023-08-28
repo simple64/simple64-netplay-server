@@ -7,24 +7,7 @@ on:
   pull_request:
 
 jobs:
-  build-windows:
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
-
-      - name: Run build script
-        run: |
-          go build -a -o simple64-netplay-server.exe main.go
-
-      - name: Upload folder
-        uses: actions/upload-artifact@v3
-        with:
-          name: simple64-netplay-server-win
-          path: simple64-netplay-server.exe
-  lint-linux:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -37,3 +20,15 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           args: --timeout=10m --enable-all --disable varnamelen,nlreturn,depguard,wsl,nestif,tagliatelle,goerr113,cyclop,lll,funlen,gocritic,gocognit,gocyclo,exhaustivestruct,exhaustruct,maintidx
+
+      - name: Run build script
+        run: |
+          CGO_ENABLED=0 GOOS=windows go build -a -o simple64-netplay-server.exe main.go
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -a -o simple64-netplay-server-arm64 main.go
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o simple64-netplay-server-amd64 main.go
+
+      - name: Upload folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: simple64-netplay-server
+          path: simple64-netplay-server*
