@@ -75,9 +75,7 @@ type SocketMessage struct {
 	Features       map[string]string `json:"features,omitempty"`
 }
 
-const (
-	NetplayAPIVersion = 15
-)
+const NetplayAPIVersion = 15
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	// s.Logger.Info("sending message", "message", message, "address", ws.Request().RemoteAddr)

@@ -11,9 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
-const DefaultBasePort = 45000
-const DefaultMOTDMessage = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
-	"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
+const (
+	DefaultBasePort    = 45000
+	DefaultMOTDMessage = "Please consider <a href=\"https://www.patreon.com/loganmc10\">subscribing to the Patreon</a> or " +
+		"<a href=\"https://github.com/sponsors/loganmc10\">supporting this project on GitHub.</a> Your support is needed in order to keep the netplay service online."
+)
 
 func newZap(logPath string) (*zap.Logger, error) {
 	cfg := zap.NewProductionConfig()
