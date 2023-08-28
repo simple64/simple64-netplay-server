@@ -432,13 +432,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestVersion {
 			sendMessage.Type = TypeReplyVersion
-			if info, ok := debug.ReadBuildInfo(); ok {
-				for _, setting := range info.Settings {
-					if setting.Key == "vcs.revision" {
-						sendMessage.Message = setting.Value
-					}
-				}
-			}
+			sendMessage.Message = getVersion()
 			if err := s.sendData(ws, sendMessage); err != nil {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
@@ -521,7 +515,9 @@ func (s *LobbyServer) RunSocketServer(broadcastPort int) error {
 	}
 	http.Handle("/", server)
 	listenAddress := fmt.Sprintf(":%d", s.BasePort)
-	s.Logger.Info("server running", "address", listenAddress)
+
+	s.Logger.Info("server running", "address", listenAddress, "version", getVersion())
+
 	err := http.ListenAndServe(listenAddress, nil) //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("error listening on http port %s", err.Error())
@@ -536,4 +532,16 @@ func (s *LobbyServer) LogServerStats() {
 		s.Logger.Info("server stats", "games", len(s.GameServers), "NumGoroutine", runtime.NumGoroutine(), "HeapAlloc", memStats.HeapAlloc, "HeapObjects", memStats.HeapObjects)
 		time.Sleep(time.Minute)
 	}
+}
+
+func getVersion() string {
+	version := "unknown"
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				version = setting.Value
+			}
+		}
+	}
+	return version
 }
