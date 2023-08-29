@@ -58,6 +58,7 @@ func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName s
 		if err := g.TCPListener.Close(); err != nil && !g.isConnClosed(err) {
 			g.Logger.Error(err, "error closing TcpListener")
 		}
+		return 0
 	}
 	return port
 }
