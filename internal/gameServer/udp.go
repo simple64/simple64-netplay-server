@@ -184,7 +184,7 @@ func (g *GameServer) createUDPServer() error {
 	var err error
 	g.UDPListener, err = net.ListenUDP("udp", &net.UDPAddr{Port: g.Port})
 	if err != nil {
-		return err
+		return err //nolint:wrapcheck
 	}
 	g.Logger.Info("Created UDP server", "port", g.Port)
 
