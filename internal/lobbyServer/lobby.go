@@ -54,6 +54,7 @@ type LobbyServer struct {
 	BasePort         int
 	DisableBroadcast bool
 	Motd             string
+	MaxGames         int
 	GameServers      map[string]*gameserver.GameServer
 }
 
@@ -246,7 +247,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				}
 			} else {
 				g := gameserver.GameServer{}
-				sendMessage.Port = g.CreateNetworkServers(s.BasePort, receivedMessage.RoomName, receivedMessage.GameName, s.Logger)
+				sendMessage.Port = g.CreateNetworkServers(s.BasePort, s.MaxGames, receivedMessage.RoomName, receivedMessage.GameName, s.Logger)
 				if sendMessage.Port == 0 {
 					sendMessage.Accept = Other
 					sendMessage.Message = "Failed to create room"

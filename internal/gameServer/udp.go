@@ -180,12 +180,11 @@ func (g *GameServer) watchUDP() {
 	}
 }
 
-func (g *GameServer) createUDPServer() int {
+func (g *GameServer) createUDPServer() error {
 	var err error
 	g.UDPListener, err = net.ListenUDP("udp", &net.UDPAddr{Port: g.Port})
 	if err != nil {
-		g.Logger.Error(err, "failed to create UDP server")
-		return 0
+		return err //nolint:wrapcheck
 	}
 	g.Logger.Info("Created UDP server", "port", g.Port)
 
@@ -207,5 +206,5 @@ func (g *GameServer) createUDPServer() int {
 	g.GameData.CountLag = make([]uint32, 4)  //nolint:gomnd
 
 	go g.watchUDP()
-	return g.Port
+	return nil
 }

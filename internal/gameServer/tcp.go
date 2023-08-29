@@ -22,7 +22,6 @@ type TCPData struct {
 
 const (
 	SettingsSize = 24
-	MaxGames     = 20
 	BufferTarget = 2
 	TCPTimeout   = time.Minute * 5
 )
@@ -356,9 +355,9 @@ func (g *GameServer) watchTCP() {
 	}
 }
 
-func (g *GameServer) createTCPServer(basePort int) int {
+func (g *GameServer) createTCPServer(basePort int, maxGames int) int {
 	var err error
-	for i := 0; i < MaxGames; i++ {
+	for i := 1; i <= maxGames; i++ {
 		g.TCPListener, err = net.ListenTCP("tcp", &net.TCPAddr{Port: basePort + i})
 		if err == nil {
 			g.Port = basePort + i

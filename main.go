@@ -32,6 +32,7 @@ func main() {
 	disableBroadcast := flag.Bool("disable-broadcast", false, "Disable LAN broadcast")
 	logPath := flag.String("log-path", "", "Write logs to this file")
 	motd := flag.String("motd", "", "MOTD message to display to clients")
+	maxGames := flag.Int("max-games", 10, "Maximum number of concurrent games") //nolint:gomnd
 	flag.Parse()
 
 	zapLog, err := newZap(*logPath)
@@ -55,6 +56,7 @@ func main() {
 		BasePort:         *basePort,
 		DisableBroadcast: *disableBroadcast,
 		Motd:             *motd,
+		MaxGames:         *maxGames,
 	}
 	go s.LogServerStats()
 	if err := s.RunSocketServer(DefaultBasePort); err != nil {

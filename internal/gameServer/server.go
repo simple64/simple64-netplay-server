@@ -47,13 +47,20 @@ type GameServer struct {
 	Features           map[string]string
 }
 
-func (g *GameServer) CreateNetworkServers(basePort int, roomName string, gameName string, logger logr.Logger) int {
+func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName string, gameName string, logger logr.Logger) int {
 	g.Logger = logger.WithValues("game", gameName, "room", roomName)
-	port := g.createTCPServer(basePort)
+	port := g.createTCPServer(basePort, maxGames)
 	if port == 0 {
 		return port
 	}
-	return g.createUDPServer()
+	if err := g.createUDPServer(); err != nil {
+		g.Logger.Error(err, "error creating UDP server")
+		if err := g.TCPListener.Close(); err != nil && !g.isConnClosed(err) {
+			g.Logger.Error(err, "error closing TcpListener")
+		}
+		return 0
+	}
+	return port
 }
 
 func (g *GameServer) CloseServers() {
