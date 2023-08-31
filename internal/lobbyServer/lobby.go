@@ -61,6 +61,7 @@ type LobbyServer struct {
 	DisableBroadcast bool
 	Motd             string
 	MaxGames         int
+	EnableAuth       bool
 	GameServers      map[string]*gameserver.GameServer
 }
 
@@ -186,6 +187,10 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 }
 
 func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
+	if !s.EnableAuth {
+		return true
+	}
+
 	now := time.Now().UTC()
 	timeAsInt, err := strconv.ParseInt(receivedMessage.AuthTime, 10, 64)
 	if err != nil {
@@ -205,10 +210,14 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 
 	h := sha256.New()
 	h.Write([]byte(receivedMessage.AuthTime))
-	h.Write([]byte(os.Getenv(fmt.Sprintf("%s_AUTH", strings.ToUpper(receivedMessage.Emulator)))))
-	result := h.Sum(nil)
 
-	return receivedMessage.Auth == fmt.Sprintf("%x", result)
+	authCode := os.Getenv(fmt.Sprintf("%s_AUTH", strings.ToUpper(receivedMessage.Emulator)))
+	if authCode == "" {
+		return false
+	}
+	h.Write([]byte(authCode))
+
+	return receivedMessage.Auth == fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
