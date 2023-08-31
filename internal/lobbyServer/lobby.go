@@ -201,10 +201,10 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 
 	timeDifference := now.Sub(receivedTime)
 	absTimeDifference := time.Duration(math.Abs(float64(timeDifference)))
-	maxAllowableDifference := 15 * time.Minute
+	maxAllowableDifference := 15 * time.Minute //nolint:gomnd
 
 	if absTimeDifference > maxAllowableDifference {
-		s.Logger.Error(fmt.Errorf("clock skew"), "server", now, "client", receivedTime)
+		s.Logger.Error(fmt.Errorf("clock skew"), "bad time in auth request", "server", now, "client", receivedTime)
 		return false
 	}
 
