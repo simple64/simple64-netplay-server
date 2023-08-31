@@ -583,7 +583,7 @@ func (s *LobbyServer) RunSocketServer(broadcastPort int) error {
 	http.Handle("/", server)
 	listenAddress := fmt.Sprintf(":%d", s.BasePort)
 
-	s.Logger.Info("server running", "address", listenAddress, "version", getVersion(), "platform", runtime.GOOS, "arch", runtime.GOARCH, "goversion", runtime.Version())
+	s.Logger.Info("server running", "address", listenAddress, "version", getVersion(), "platform", runtime.GOOS, "arch", runtime.GOARCH, "goversion", runtime.Version(), "enable-auth", s.EnableAuth)
 
 	err := http.ListenAndServe(listenAddress, nil) //nolint:gosec
 	if err != nil {
