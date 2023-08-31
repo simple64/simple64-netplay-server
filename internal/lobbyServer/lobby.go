@@ -1,15 +1,18 @@
 package lobbyserver
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,7 +30,9 @@ const (
 	DuplicateName   = 4
 	RoomDeleted     = 5
 	BadName         = 6
-	Other           = 7
+	BadEmulator     = 7
+	BadAuth         = 8
+	Other           = 9
 )
 
 const (
@@ -73,6 +78,8 @@ type SocketMessage struct {
 	NetplayVersion int               `json:"netplay_version,omitempty"`
 	Protected      string            `json:"protected,omitempty"`
 	Accept         int               `json:"accept"`
+	Auth           string            `json:"auth"`
+	AuthTime       string            `json:"authTime"`
 	PlayerNames    []string          `json:"player_names,omitempty"`
 	Features       map[string]string `json:"features,omitempty"`
 }
@@ -178,6 +185,32 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 	}
 }
 
+func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
+	now := time.Now().UTC()
+	timeAsInt, err := strconv.ParseInt(receivedMessage.AuthTime, 10, 64)
+	if err != nil {
+		s.Logger.Error(err, "could not parse time")
+		return false
+	}
+	receivedTime := time.UnixMilli(timeAsInt).UTC()
+
+	timeDifference := now.Sub(receivedTime)
+	absTimeDifference := time.Duration(math.Abs(float64(timeDifference)))
+	maxAllowableDifference := 15 * time.Minute
+
+	if absTimeDifference > maxAllowableDifference {
+		s.Logger.Error(fmt.Errorf("clock skew"), "server", now, "client", receivedTime)
+		return false
+	}
+
+	h := sha256.New()
+	h.Write([]byte(receivedMessage.AuthTime))
+	h.Write([]byte(os.Getenv(fmt.Sprintf("%s_AUTH", strings.ToUpper(receivedMessage.Emulator)))))
+	result := h.Sum(nil)
+
+	return receivedMessage.Auth == fmt.Sprintf("%x", result)
+}
+
 func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 	defer ws.Close()
 
@@ -246,6 +279,19 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
+			} else if receivedMessage.Emulator == "" {
+				sendMessage.Accept = BadEmulator
+				sendMessage.Message = "Emulator name cannot be empty"
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+				}
+			} else if !s.validateAuth(receivedMessage) {
+				sendMessage.Accept = BadAuth
+				sendMessage.Message = "Bad authentication code"
+				s.Logger.Info("bad auth code", "message", receivedMessage)
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+				}
 			} else {
 				g := gameserver.GameServer{}
 				sendMessage.Port = g.CreateNetworkServers(s.BasePort, s.MaxGames, receivedMessage.RoomName, receivedMessage.GameName, s.Logger)
@@ -286,6 +332,19 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			if receivedMessage.NetplayVersion != NetplayAPIVersion {
 				sendMessage.Accept = MismatchVersion
 				sendMessage.Message = "Client and server not at same API version. Please update your emulator"
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+				}
+			} else if receivedMessage.Emulator == "" {
+				sendMessage.Accept = BadEmulator
+				sendMessage.Message = "Emulator name cannot be empty"
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+				}
+			} else if !s.validateAuth(receivedMessage) {
+				sendMessage.Accept = BadAuth
+				sendMessage.Message = "Bad authentication code"
+				s.Logger.Info("bad auth code", "message", receivedMessage)
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
