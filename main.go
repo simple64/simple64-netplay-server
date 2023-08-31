@@ -33,6 +33,7 @@ func main() {
 	logPath := flag.String("log-path", "", "Write logs to this file")
 	motd := flag.String("motd", "", "MOTD message to display to clients")
 	maxGames := flag.Int("max-games", 10, "Maximum number of concurrent games") //nolint:gomnd
+	enableAuth := flag.Bool("enable-auth", false, "Enable client authentication")
 	flag.Parse()
 
 	zapLog, err := newZap(*logPath)
@@ -57,6 +58,7 @@ func main() {
 		DisableBroadcast: *disableBroadcast,
 		Motd:             *motd,
 		MaxGames:         *maxGames,
+		EnableAuth:       *enableAuth,
 	}
 	go s.LogServerStats()
 	if err := s.RunSocketServer(DefaultBasePort); err != nil {
