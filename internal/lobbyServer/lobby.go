@@ -55,34 +55,34 @@ const (
 )
 
 type LobbyServer struct {
+	GameServers      map[string]*gameserver.GameServer
 	Logger           logr.Logger
 	Name             string
-	BasePort         int
-	DisableBroadcast bool
 	Motd             string
+	BasePort         int
 	MaxGames         int
+	DisableBroadcast bool
 	EnableAuth       bool
-	GameServers      map[string]*gameserver.GameServer
 }
 
 type SocketMessage struct {
-	Type           string            `json:"type"`
-	RoomName       string            `json:"room_name"`
-	PlayerName     string            `json:"player_name"`
+	Features       map[string]string `json:"features,omitempty"`
+	GameName       string            `json:"game_name,omitempty"`
+	Protected      string            `json:"protected,omitempty"`
 	Password       string            `json:"password"`
 	Message        string            `json:"message,omitempty"`
-	MD5            string            `json:"MD5,omitempty"`
-	Emulator       string            `json:"emulator,omitempty"`
-	Port           int               `json:"port"`
-	GameName       string            `json:"game_name,omitempty"`
 	ClientSha      string            `json:"client_sha,omitempty"`
-	NetplayVersion int               `json:"netplay_version,omitempty"`
-	Protected      string            `json:"protected,omitempty"`
-	Accept         int               `json:"accept"`
-	Auth           string            `json:"auth"`
+	Emulator       string            `json:"emulator,omitempty"`
+	PlayerName     string            `json:"player_name"`
+	RoomName       string            `json:"room_name"`
+	MD5            string            `json:"MD5,omitempty"`
 	AuthTime       string            `json:"authTime"`
+	Type           string            `json:"type"`
+	Auth           string            `json:"auth"`
 	PlayerNames    []string          `json:"player_names,omitempty"`
-	Features       map[string]string `json:"features,omitempty"`
+	Accept         int               `json:"accept"`
+	NetplayVersion int               `json:"netplay_version,omitempty"`
+	Port           int               `json:"port"`
 }
 
 const NetplayAPIVersion = 15
