@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -151,14 +152,14 @@ func (s *LobbyServer) announceDiscord(g *gameserver.GameServer) {
 
 	if roomType == "public" {
 		for i := 0; i < 10; i++ {
-			channel := os.Getenv(fmt.Sprintf("SIMPLE64_CHANNEL_%d", i))
+			channel := os.Getenv(fmt.Sprintf("%s_CHANNEL_%d", strings.ToUpper(g.Emulator), i))
 			if channel != "" {
 				s.publishDiscord(message, channel)
 			}
 		}
 	}
 
-	devChannel := os.Getenv("SIMPLE64_DEV_CHANNEL")
+	devChannel := os.Getenv(fmt.Sprintf("%s_DEV_CHANNEL", strings.ToUpper(g.Emulator)))
 	if devChannel != "" {
 		s.publishDiscord(message, devChannel)
 	}
