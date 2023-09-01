@@ -76,9 +76,9 @@ type SocketMessage struct {
 	PlayerName     string            `json:"player_name"`
 	RoomName       string            `json:"room_name"`
 	MD5            string            `json:"MD5,omitempty"`
-	AuthTime       string            `json:"authTime"`
+	AuthTime       string            `json:"authTime,omitempty"`
 	Type           string            `json:"type"`
-	Auth           string            `json:"auth"`
+	Auth           string            `json:"auth,omitempty"`
 	PlayerNames    []string          `json:"player_names,omitempty"`
 	Accept         int               `json:"accept"`
 	NetplayVersion int               `json:"netplay_version,omitempty"`
