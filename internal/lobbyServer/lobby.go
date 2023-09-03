@@ -439,6 +439,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					sendMessage.RoomName = roomName
 					sendMessage.GameName = g.GameName
 					sendMessage.PlayerName = receivedMessage.PlayerName
+					sendMessage.Features = g.Features
 					sendMessage.Port = g.Port
 				}
 			} else {
