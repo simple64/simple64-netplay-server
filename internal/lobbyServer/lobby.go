@@ -68,7 +68,7 @@ type LobbyServer struct {
 type SocketMessage struct {
 	Features       map[string]string `json:"features,omitempty"`
 	GameName       string            `json:"game_name,omitempty"`
-	Protected      string            `json:"protected,omitempty"`
+	Protected      bool              `json:"protected"`
 	Password       string            `json:"password"`
 	Message        string            `json:"message,omitempty"`
 	ClientSha      string            `json:"client_sha,omitempty"`
@@ -85,7 +85,7 @@ type SocketMessage struct {
 	Port           int               `json:"port"`
 }
 
-const NetplayAPIVersion = 15
+const NetplayAPIVersion = 16
 
 func (s *LobbyServer) sendData(ws *websocket.Conn, message SocketMessage) error {
 	// s.Logger.Info("sending message", "message", message, "address", ws.Request().RemoteAddr)
@@ -368,9 +368,9 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						continue
 					}
 					if v.Password == "" {
-						sendMessage.Protected = "No"
+						sendMessage.Protected = false
 					} else {
-						sendMessage.Protected = "Yes"
+						sendMessage.Protected = true
 					}
 					sendMessage.Accept = Accepted
 					sendMessage.RoomName = i
