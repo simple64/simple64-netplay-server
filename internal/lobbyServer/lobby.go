@@ -221,6 +221,8 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 }
 
 func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
+
+	authenticated := false
 	defer ws.Close()
 
 	// s.Logger.Info("new WS connection", "address", ws.Request().RemoteAddr)
@@ -302,6 +304,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
 			} else {
+				authenticated = true
 				g := gameserver.GameServer{}
 				sendMessage.Port = g.CreateNetworkServers(s.BasePort, s.MaxGames, receivedMessage.RoomName, receivedMessage.GameName, s.Logger)
 				if sendMessage.Port == 0 {
@@ -359,6 +362,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
 			} else {
+				authenticated = true
 				for i, v := range s.GameServers {
 					if v.Running {
 						continue
@@ -384,6 +388,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				}
 			}
 		} else if receivedMessage.Type == TypeRequestJoinRoom {
+			if !authenticated {
+				s.Logger.Info("User tried to join room without being authenticated")
+				continue
+			}
 			var duplicateName bool
 			var accepted int
 			var message string
@@ -453,6 +461,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == TypeRequestPlayers {
+			if !authenticated {
+				s.Logger.Info("User tried to request players without being authenticated")
+				continue
+			}
 			_, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
 				s.updatePlayers(g)
@@ -460,6 +472,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == TypeRequestChatMessage {
+			if !authenticated {
+				s.Logger.Info("User tried to send a chat message without being authenticated")
+				continue
+			}
 			sendMessage.Type = TypeReplyChatMessage
 			sendMessage.Message = fmt.Sprintf("%s: %s", receivedMessage.PlayerName, receivedMessage.Message)
 			_, g := s.findGameServer(receivedMessage.Port)
@@ -473,6 +489,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == TypeRequestBeginGame {
+			if !authenticated {
+				s.Logger.Info("User tried to begin game without being authenticated")
+				continue
+			}
 			sendMessage.Type = TypeReplyBeginGame
 			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
@@ -494,6 +514,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				s.Logger.Error(fmt.Errorf("could not find game server"), "server not found", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 			}
 		} else if receivedMessage.Type == TypeRequestMotd {
+			if !authenticated {
+				s.Logger.Info("User tried to request the motd without being authenticated")
+				continue
+			}
 			sendMessage.Type = TypeReplyMotd
 			sendMessage.Message = s.Motd
 			if err := s.sendData(ws, sendMessage); err != nil {
