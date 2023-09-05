@@ -131,6 +131,8 @@ func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
 }
 
 func (g *GameServer) processTCP(conn *net.TCPConn) {
+	defer conn.Close()
+
 	tcpData := &TCPData{Request: RequestNone}
 	incomingBuffer := make([]byte, 1500) //nolint:gomnd
 	for {
@@ -141,7 +143,6 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 		length, err := conn.Read(incomingBuffer)
 		if errors.Is(err, io.EOF) {
 			// g.Logger.Info("Remote side closed TCP connection", "address", conn.RemoteAddr().String())
-			conn.Close()
 			return
 		}
 		if err != nil && !errors.Is(err, os.ErrDeadlineExceeded) {
