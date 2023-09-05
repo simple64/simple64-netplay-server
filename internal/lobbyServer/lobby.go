@@ -321,8 +321,12 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Emulator = receivedMessage.Emulator
 					g.Players = make(map[string]gameserver.Client)
 					g.Features = receivedMessage.Features
+					ip, _, err := net.SplitHostPort(ws.Request().RemoteAddr)
+					if err != nil {
+						s.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
+					}
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     ws.Request().RemoteAddr,
+						IP:     ip,
 						Number: 0,
 						Socket: ws,
 					}
@@ -434,9 +438,13 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						}
 					}
 
+					ip, _, err := net.SplitHostPort(ws.Request().RemoteAddr)
+					if err != nil {
+						s.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
+					}
 					g.PlayersMutex.Lock() // any player can modify this from their own thread
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     ws.Request().RemoteAddr,
+						IP:     ip,
 						Socket: ws,
 						Number: number,
 					}

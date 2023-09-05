@@ -176,6 +176,18 @@ func (g *GameServer) watchUDP() {
 		} else if g.isConnClosed(err) {
 			return
 		}
+
+		validated := false
+		for _, v := range g.Players {
+			if addr.IP.Equal(net.ParseIP(v.IP)) {
+				validated = true
+			}
+		}
+		if !validated {
+			g.Logger.Error(fmt.Errorf("invalid udp connection"), "bad IP", "IP", addr.IP)
+			continue
+		}
+
 		g.processUDP(addr, buf)
 	}
 }

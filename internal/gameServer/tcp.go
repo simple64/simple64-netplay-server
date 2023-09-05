@@ -131,6 +131,8 @@ func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
 }
 
 func (g *GameServer) processTCP(conn *net.TCPConn) {
+	defer conn.Close()
+
 	tcpData := &TCPData{Request: RequestNone}
 	incomingBuffer := make([]byte, 1500) //nolint:gomnd
 	for {
@@ -350,6 +352,25 @@ func (g *GameServer) watchTCP() {
 		} else if g.isConnClosed(err) {
 			return
 		}
+
+		validated := false
+		remoteAddr, err := net.ResolveTCPAddr(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
+		if err != nil {
+			g.Logger.Error(err, "could not resolve remote IP")
+			conn.Close()
+			continue
+		}
+		for _, v := range g.Players {
+			if remoteAddr.IP.Equal(net.ParseIP(v.IP)) {
+				validated = true
+			}
+		}
+		if !validated {
+			g.Logger.Error(fmt.Errorf("invalid tcp connection"), "bad IP", "IP", conn.RemoteAddr().String())
+			conn.Close()
+			continue
+		}
+
 		g.Logger.Info("received TCP connection", "address", conn.RemoteAddr().String())
 		go g.processTCP(conn)
 	}
