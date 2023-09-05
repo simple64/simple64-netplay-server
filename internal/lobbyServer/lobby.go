@@ -389,7 +389,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestJoinRoom {
 			if !authenticated {
-				s.Logger.Info("User tried to join room without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to join room without being authenticated")
 				continue
 			}
 			var duplicateName bool
@@ -462,7 +462,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestPlayers {
 			if !authenticated {
-				s.Logger.Info("User tried to request players without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to request players without being authenticated")
 				continue
 			}
 			_, g := s.findGameServer(receivedMessage.Port)
@@ -473,7 +473,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestChatMessage {
 			if !authenticated {
-				s.Logger.Info("User tried to send a chat message without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to send a chat message without being authenticated")
 				continue
 			}
 			sendMessage.Type = TypeReplyChatMessage
@@ -490,7 +490,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestBeginGame {
 			if !authenticated {
-				s.Logger.Info("User tried to begin game without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to begin game without being authenticated")
 				continue
 			}
 			sendMessage.Type = TypeReplyBeginGame
@@ -515,7 +515,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestMotd {
 			if !authenticated {
-				s.Logger.Info("User tried to request the motd without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to request the motd without being authenticated")
 				continue
 			}
 			sendMessage.Type = TypeReplyMotd
