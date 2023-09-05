@@ -221,7 +221,6 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 }
 
 func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
-
 	authenticated := false
 	defer ws.Close()
 
