@@ -202,10 +202,10 @@ func (g *GameServer) createUDPServer() error {
 	if err != nil {
 		return err //nolint:wrapcheck
 	}
-	if err := ipv4.NewConn(g.UDPListener).SetTOS(CS4 << 2); err != nil {
+	if err := ipv4.NewConn(g.UDPListener).SetTOS(CS4 << 2); err != nil { //nolint:gomnd
 		g.Logger.Error(err, "could not set IPv4 DSCP")
 	}
-	if err := ipv6.NewConn(g.UDPListener).SetTrafficClass(CS4 << 2); err != nil {
+	if err := ipv6.NewConn(g.UDPListener).SetTrafficClass(CS4 << 2); err != nil { //nolint:gomnd
 		g.Logger.Error(err, "could not set IPv6 DSCP")
 	}
 	g.Logger.Info("Created UDP server", "port", g.Port)
