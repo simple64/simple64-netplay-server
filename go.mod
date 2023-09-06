@@ -9,7 +9,10 @@ require (
 	golang.org/x/net v0.14.0
 )
 
-require github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+require (
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+)
 
 require (
 	github.com/go-logr/logr v1.2.4

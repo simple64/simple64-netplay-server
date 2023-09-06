@@ -7,6 +7,9 @@ import (
 	"math"
 	"net"
 	"time"
+
+	"golang.org/x/net/ipv4"
+	"golang.org/x/net/ipv6"
 )
 
 type GameData struct {
@@ -37,6 +40,7 @@ const (
 	DisconnectTimeoutS        = 30
 	NoRegID                   = 255
 	InputDataMax       uint32 = 5000
+	CS4                       = 32
 )
 
 // returns true if v is bigger than w (accounting for uint32 wrap around).
@@ -197,6 +201,12 @@ func (g *GameServer) createUDPServer() error {
 	g.UDPListener, err = net.ListenUDP("udp", &net.UDPAddr{Port: g.Port})
 	if err != nil {
 		return err //nolint:wrapcheck
+	}
+	if err := ipv4.NewConn(g.UDPListener).SetTOS(CS4 << 2); err != nil { //nolint:gomnd
+		g.Logger.Error(err, "could not set IPv4 DSCP")
+	}
+	if err := ipv6.NewConn(g.UDPListener).SetTrafficClass(CS4 << 2); err != nil { //nolint:gomnd
+		g.Logger.Error(err, "could not set IPv6 DSCP")
 	}
 	g.Logger.Info("Created UDP server", "port", g.Port)
 
