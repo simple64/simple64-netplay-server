@@ -298,7 +298,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else if !s.validateAuth(receivedMessage) {
 				sendMessage.Accept = BadAuth
 				sendMessage.Message = "Bad authentication code"
-				s.Logger.Info("bad auth code", "message", receivedMessage)
+				s.Logger.Info("bad auth code", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
@@ -360,7 +360,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else if !s.validateAuth(receivedMessage) {
 				sendMessage.Accept = BadAuth
 				sendMessage.Message = "Bad authentication code"
-				s.Logger.Info("bad auth code", "message", receivedMessage)
+				s.Logger.Info("bad auth code", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 				if err := s.sendData(ws, sendMessage); err != nil {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
@@ -392,7 +392,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestJoinRoom {
 			if !authenticated {
-				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to join room without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to join room without being authenticated", "address", ws.Request().RemoteAddr)
 				continue
 			}
 			var duplicateName bool
@@ -469,7 +469,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestPlayers {
 			if !authenticated {
-				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to request players without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to request players without being authenticated", "address", ws.Request().RemoteAddr)
 				continue
 			}
 			_, g := s.findGameServer(receivedMessage.Port)
@@ -480,7 +480,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestChatMessage {
 			if !authenticated {
-				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to send a chat message without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to send a chat message without being authenticated", "address", ws.Request().RemoteAddr)
 				continue
 			}
 			sendMessage.Type = TypeReplyChatMessage
@@ -497,7 +497,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestBeginGame {
 			if !authenticated {
-				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to begin game without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to begin game without being authenticated", "address", ws.Request().RemoteAddr)
 				continue
 			}
 			sendMessage.Type = TypeReplyBeginGame
@@ -522,7 +522,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			}
 		} else if receivedMessage.Type == TypeRequestMotd {
 			if !authenticated {
-				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to request the motd without being authenticated")
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to request the motd without being authenticated", "address", ws.Request().RemoteAddr)
 				continue
 			}
 			sendMessage.Type = TypeReplyMotd
