@@ -2,6 +2,7 @@ package lobbyserver
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -217,7 +218,7 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 	}
 	h.Write([]byte(authCode))
 
-	return receivedMessage.Auth == fmt.Sprintf("%x", h.Sum(nil))
+	return receivedMessage.Auth == hex.EncodeToString(h.Sum(nil))
 }
 
 func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
@@ -567,7 +568,7 @@ func (s *LobbyServer) processBroadcast(udpServer *net.UDPConn, addr *net.UDPAddr
 			return
 		}
 		response := map[string]string{
-			s.Name: fmt.Sprintf("ws://%s", net.JoinHostPort(outboundIP.String(), fmt.Sprint(s.BasePort))),
+			s.Name: fmt.Sprintf("ws://%s", net.JoinHostPort(outboundIP.String(), strconv.Itoa(s.BasePort))),
 		}
 		jsonData, err := json.Marshal(response)
 		if err != nil {
