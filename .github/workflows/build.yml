@@ -28,7 +28,7 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o simple64-netplay-server-amd64 .
 
       - name: Upload folder
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: simple64-netplay-server
           path: simple64-netplay-server*
