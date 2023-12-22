@@ -15,6 +15,6 @@ require (
 )
 
 require (
-	github.com/go-logr/logr v1.3.0
+	github.com/go-logr/logr v1.4.1
 	go.uber.org/multierr v1.11.0 // indirect
 )
