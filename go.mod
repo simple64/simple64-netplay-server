@@ -1,6 +1,6 @@
 module github.com/simple64/simple64-netplay-server
 
-go 1.20
+go 1.21
 
 require (
 	github.com/go-logr/zapr v1.3.0
