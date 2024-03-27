@@ -427,7 +427,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					message = "Player name already in use"
 				} else {
 					var number int
-					for number = 0; number < 4; number++ {
+					for number = range 4 {
 						goodNumber := true
 						for _, v := range g.Players {
 							if v.Number == number {
