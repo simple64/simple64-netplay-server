@@ -160,7 +160,7 @@ func (s *LobbyServer) announceDiscord(g *gameserver.GameServer) {
 	message := fmt.Sprintf("New %s netplay room running in %s has been created! Come play %s", roomType, s.Name, g.GameName)
 
 	if roomType == "public" {
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			channel := os.Getenv(fmt.Sprintf("%s_CHANNEL_%d", strings.ToUpper(g.Emulator), i))
 			if channel != "" {
 				s.publishDiscord(message, channel)

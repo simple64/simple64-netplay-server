@@ -214,11 +214,11 @@ func (g *GameServer) createUDPServer() error {
 	g.GameData.BufferSize = []uint32{3, 3, 3, 3}
 	g.GameData.BufferHealth = []int32{-1, -1, -1, -1}
 	g.GameData.Inputs = make([]map[uint32]uint32, 4) //nolint:gomnd
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		g.GameData.Inputs[i] = make(map[uint32]uint32)
 	}
 	g.GameData.Plugin = make([]map[uint32]byte, 4) //nolint:gomnd
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		g.GameData.Plugin[i] = make(map[uint32]byte)
 	}
 	g.GameData.PendingInput = make([]uint32, 4) //nolint:gomnd
