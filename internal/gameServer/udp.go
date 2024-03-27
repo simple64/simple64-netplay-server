@@ -50,7 +50,7 @@ func uintLarger(v uint32, w uint32) bool {
 
 func (g *GameServer) getPlayerNumberByID(regID uint32) (byte, error) {
 	var i byte
-	for i = 0; i < 4; i++ {
+	for i = range 4 {
 		v, ok := g.Registrations[i]
 		if ok {
 			if v.RegID == regID {
@@ -125,7 +125,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 		g.GameData.PendingInput[playerNumber] = binary.BigEndian.Uint32(buf[6:])
 		g.GameData.PendingPlugin[playerNumber] = buf[10]
 
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			if g.GameData.PlayerAddresses[i] != nil {
 				g.sendUDPInput(count, g.GameData.PlayerAddresses[i], playerNumber, true, NoRegID)
 			}
