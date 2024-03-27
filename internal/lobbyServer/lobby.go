@@ -160,7 +160,7 @@ func (s *LobbyServer) announceDiscord(g *gameserver.GameServer) {
 	message := fmt.Sprintf("New %s netplay room running in %s has been created! Come play %s", roomType, s.Name, g.GameName)
 
 	if roomType == "public" {
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			channel := os.Getenv(fmt.Sprintf("%s_CHANNEL_%d", strings.ToUpper(g.Emulator), i))
 			if channel != "" {
 				s.publishDiscord(message, channel)
@@ -427,8 +427,9 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					message = "Player name already in use"
 				} else {
 					var number int
-					for number = 0; number < 4; number++ {
-						goodNumber := true
+					var goodNumber bool
+					for number = range 4 {
+						goodNumber = true
 						for _, v := range g.Players {
 							if v.Number == number {
 								goodNumber = false

@@ -110,7 +110,7 @@ func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
 	var i byte
 	registrations := make([]byte, 24) //nolint:gomnd
 	current := 0
-	for i = 0; i < 4; i++ {
+	for i = range 4 {
 		_, ok := g.Registrations[i]
 		if ok {
 			binary.BigEndian.PutUint32(registrations[current:], g.Registrations[i].RegID)
@@ -293,7 +293,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			}
 			regID := binary.BigEndian.Uint32(regIDBytes)
 			var i byte
-			for i = 0; i < 4; i++ {
+			for i = range 4 {
 				v, ok := g.Registrations[i]
 				if ok {
 					if v.RegID == regID {
