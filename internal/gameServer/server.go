@@ -90,7 +90,7 @@ func (g *GameServer) ManageBuffer() {
 			return
 		}
 		// Adjust the buffer size for the lead player(s)
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			if g.GameData.BufferHealth[i] != -1 && g.GameData.CountLag[i] == 0 {
 				if g.GameData.BufferHealth[i] > BufferTarget && g.GameData.BufferSize[i] > 0 {
 					g.GameData.BufferSize[i]--
@@ -112,7 +112,7 @@ func (g *GameServer) ManagePlayers() {
 		var i byte
 
 		g.GameDataMutex.Lock() // PlayerAlive and Status can be modified by processUDP in a different thread
-		for i = 0; i < 4; i++ {
+		for i = range 4 {
 			_, ok := g.Registrations[i]
 			if ok {
 				if g.GameData.PlayerAlive[i] {
