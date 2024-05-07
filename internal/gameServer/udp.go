@@ -45,7 +45,7 @@ const (
 
 // returns true if v is bigger than w (accounting for uint32 wrap around).
 func uintLarger(v uint32, w uint32) bool {
-	return (w - v) > (math.MaxUint32 / 2) //nolint:gomnd
+	return (w - v) > (math.MaxUint32 / 2) //nolint:gomnd,mnd
 }
 
 func (g *GameServer) getPlayerNumberByID(regID uint32) (byte, error) {
@@ -72,7 +72,7 @@ func (g *GameServer) fillInput(playerNumber byte, count uint32) {
 }
 
 func (g *GameServer) sendUDPInput(count uint32, addr *net.UDPAddr, playerNumber byte, spectator bool, sendingPlayerNumber byte) uint32 {
-	buffer := make([]byte, 508) //nolint:gomnd
+	buffer := make([]byte, 508) //nolint:gomnd,mnd
 	var countLag uint32
 	if uintLarger(count, g.GameData.LeadCount) {
 		if !spectator {
@@ -155,7 +155,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 			viCount := binary.BigEndian.Uint32(buf[1:])
 			_, ok := g.GameData.SyncValues[viCount]
 			if !ok {
-				if len(g.GameData.SyncValues) > 50 { //nolint:gomnd // no need to keep old sync hashes
+				if len(g.GameData.SyncValues) > 50 { //nolint:gomnd,mnd // no need to keep old sync hashes
 					g.GameData.SyncValues = make(map[uint32][]byte)
 				}
 				g.GameData.SyncValues[viCount] = buf[5:133]
@@ -172,7 +172,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 
 func (g *GameServer) watchUDP() {
 	for {
-		buf := make([]byte, 1500) //nolint:gomnd
+		buf := make([]byte, 1500) //nolint:gomnd,mnd
 		_, addr, err := g.UDPListener.ReadFromUDP(buf)
 		if err != nil && !g.isConnClosed(err) {
 			g.Logger.Error(err, "error from UdpListener")
@@ -202,30 +202,30 @@ func (g *GameServer) createUDPServer() error {
 	if err != nil {
 		return err //nolint:wrapcheck
 	}
-	if err := ipv4.NewConn(g.UDPListener).SetTOS(CS4 << 2); err != nil { //nolint:gomnd
+	if err := ipv4.NewConn(g.UDPListener).SetTOS(CS4 << 2); err != nil { //nolint:gomnd,mnd
 		g.Logger.Error(err, "could not set IPv4 DSCP")
 	}
-	if err := ipv6.NewConn(g.UDPListener).SetTrafficClass(CS4 << 2); err != nil { //nolint:gomnd
+	if err := ipv6.NewConn(g.UDPListener).SetTrafficClass(CS4 << 2); err != nil { //nolint:gomnd,mnd
 		g.Logger.Error(err, "could not set IPv6 DSCP")
 	}
 	g.Logger.Info("Created UDP server", "port", g.Port)
 
-	g.GameData.PlayerAddresses = make([]*net.UDPAddr, 4) //nolint:gomnd
+	g.GameData.PlayerAddresses = make([]*net.UDPAddr, 4) //nolint:gomnd,mnd
 	g.GameData.BufferSize = []uint32{3, 3, 3, 3}
 	g.GameData.BufferHealth = []int32{-1, -1, -1, -1}
-	g.GameData.Inputs = make([]map[uint32]uint32, 4) //nolint:gomnd
+	g.GameData.Inputs = make([]map[uint32]uint32, 4) //nolint:gomnd,mnd
 	for i := range 4 {
 		g.GameData.Inputs[i] = make(map[uint32]uint32)
 	}
-	g.GameData.Plugin = make([]map[uint32]byte, 4) //nolint:gomnd
+	g.GameData.Plugin = make([]map[uint32]byte, 4) //nolint:gomnd,mnd
 	for i := range 4 {
 		g.GameData.Plugin[i] = make(map[uint32]byte)
 	}
-	g.GameData.PendingInput = make([]uint32, 4) //nolint:gomnd
-	g.GameData.PendingPlugin = make([]byte, 4)  //nolint:gomnd
+	g.GameData.PendingInput = make([]uint32, 4) //nolint:gomnd,mnd
+	g.GameData.PendingPlugin = make([]byte, 4)  //nolint:gomnd,mnd
 	g.GameData.SyncValues = make(map[uint32][]byte)
-	g.GameData.PlayerAlive = make([]bool, 4) //nolint:gomnd
-	g.GameData.CountLag = make([]uint32, 4)  //nolint:gomnd
+	g.GameData.PlayerAlive = make([]bool, 4) //nolint:gomnd,mnd
+	g.GameData.CountLag = make([]uint32, 4)  //nolint:gomnd,mnd
 
 	go g.watchUDP()
 	return nil
