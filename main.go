@@ -32,7 +32,7 @@ func main() {
 	disableBroadcast := flag.Bool("disable-broadcast", false, "Disable LAN broadcast")
 	logPath := flag.String("log-path", "", "Write logs to this file")
 	motd := flag.String("motd", "", "MOTD message to display to clients")
-	maxGames := flag.Int("max-games", 10, "Maximum number of concurrent games") //nolint:gomnd
+	maxGames := flag.Int("max-games", 10, "Maximum number of concurrent games") //nolint:gomnd,mnd
 	enableAuth := flag.Bool("enable-auth", false, "Enable client authentication")
 	flag.Parse()
 

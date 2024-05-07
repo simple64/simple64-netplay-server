@@ -112,7 +112,7 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 		return
 	}
 	var sendMessage SocketMessage
-	sendMessage.PlayerNames = make([]string, 4) //nolint:gomnd
+	sendMessage.PlayerNames = make([]string, 4) //nolint:gomnd,mnd
 	sendMessage.Type = TypeReplyPlayers
 	for i, v := range g.Players {
 		sendMessage.PlayerNames[v.Number] = i
@@ -183,7 +183,7 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 			delete(s.GameServers, name)
 			return
 		}
-		time.Sleep(time.Second * 5) //nolint:gomnd
+		time.Sleep(time.Second * 5) //nolint:gomnd,mnd
 	}
 }
 
@@ -202,7 +202,7 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 
 	timeDifference := now.Sub(receivedTime)
 	absTimeDifference := time.Duration(math.Abs(float64(timeDifference)))
-	maxAllowableDifference := 15 * time.Minute //nolint:gomnd
+	maxAllowableDifference := 15 * time.Minute //nolint:gomnd,mnd
 
 	if absTimeDifference > maxAllowableDifference {
 		s.Logger.Error(fmt.Errorf("clock skew"), "bad time in auth request", "server", now, "client", receivedTime)
@@ -416,7 +416,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				} else if g.MD5 != receivedMessage.MD5 {
 					accepted = MismatchVersion
 					message = "ROM does not match room ROM"
-				} else if len(g.Players) >= 4 { //nolint:gomnd
+				} else if len(g.Players) >= 4 { //nolint:gomnd,mnd
 					accepted = RoomFull
 					message = "Room is full"
 				} else if receivedMessage.PlayerName == "" {
@@ -595,7 +595,7 @@ func (s *LobbyServer) runBroadcastServer(broadcastPort int) {
 
 	s.Logger.Info("listening for broadcasts")
 	for {
-		buf := make([]byte, 1500) //nolint:gomnd
+		buf := make([]byte, 1500) //nolint:gomnd,mnd
 		_, addr, err := broadcastServer.ReadFromUDP(buf)
 		if err != nil {
 			s.Logger.Error(err, "error reading broadcast packet")
