@@ -546,7 +546,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 
 // this function figures out what is our outgoing IP address.
 func (s *LobbyServer) getOutboundIP(dest *net.UDPAddr) (net.IP, error) {
-	conn, err := net.DialUDP("udp", nil, dest)
+	conn, err := net.DialUDP("udp4", nil, dest)
 	if err != nil {
 		return nil, fmt.Errorf("error creating udp %s", err.Error())
 	}
@@ -586,7 +586,7 @@ func (s *LobbyServer) processBroadcast(udpServer *net.UDPConn, addr *net.UDPAddr
 }
 
 func (s *LobbyServer) runBroadcastServer(broadcastPort int) {
-	broadcastServer, err := net.ListenUDP("udp", &net.UDPAddr{Port: broadcastPort})
+	broadcastServer, err := net.ListenUDP("udp4", &net.UDPAddr{Port: broadcastPort})
 	if err != nil {
 		s.Logger.Error(err, "could not listen for broadcasts")
 		return
