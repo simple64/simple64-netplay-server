@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	go.uber.org/zap v1.27.0
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 )
 
 require (
