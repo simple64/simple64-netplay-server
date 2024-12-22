@@ -1,5 +1,9 @@
 # simple64-netplay-server
 
+## Supported emulators
+* [simple64](https://github.com/simple64/simple64)
+* [RMG](https://github.com/Rosalie241/RMG)
+
 ## Container
 
 ```
