@@ -179,7 +179,7 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 	go g.ManagePlayers()
 	for {
 		if !g.Running {
-			s.Logger.Info("game server deleted", "room", name, "port", g.Port)
+			g.Logger.Info("game server deleted", "port", g.Port)
 			delete(s.GameServers, name)
 			return
 		}
@@ -236,7 +236,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					if !v.Running {
 						for k, w := range v.Players {
 							if w.Socket == ws {
-								s.Logger.Info("Player has left lobby", "player", k, "room", i, "address", ws.Request().RemoteAddr)
+								v.Logger.Info("Player has left lobby", "player", k, "address", ws.Request().RemoteAddr)
 
 								v.PlayersMutex.Lock() // any player can modify this, which would be in a different thread
 								delete(v.Players, k)
@@ -246,7 +246,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 							}
 						}
 						if len(v.Players) == 0 {
-							s.Logger.Info("No more players in lobby, deleting", "room", i)
+							v.Logger.Info("No more players in lobby, deleting")
 							v.CloseServers()
 							delete(s.GameServers, i)
 						}
@@ -452,7 +452,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					}
 					g.PlayersMutex.Unlock()
 
-					s.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "room", roomName, "number", number)
+					g.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "number", number)
 					sendMessage.RoomName = roomName
 					sendMessage.GameName = g.GameName
 					sendMessage.PlayerName = receivedMessage.PlayerName
@@ -506,7 +506,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			roomName, g := s.findGameServer(receivedMessage.Port)
 			if g != nil {
 				if g.Running {
-					s.Logger.Error(fmt.Errorf("game already running"), "game running", "message", receivedMessage, "address", ws.Request().RemoteAddr)
+					g.Logger.Error(fmt.Errorf("game already running"), "game running", "message", receivedMessage, "address", ws.Request().RemoteAddr)
 				} else {
 					g.Running = true
 					g.StartTime = time.Now()
