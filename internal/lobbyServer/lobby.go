@@ -306,7 +306,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			} else {
 				authenticated = true
 				g := gameserver.GameServer{}
-				sendMessage.Port = g.CreateNetworkServers(s.BasePort, s.MaxGames, receivedMessage.RoomName, receivedMessage.GameName, s.Logger)
+				sendMessage.Port = g.CreateNetworkServers(s.BasePort, s.MaxGames, receivedMessage.RoomName, receivedMessage.GameName, receivedMessage.Emulator, s.Logger)
 				if sendMessage.Port == 0 {
 					sendMessage.Accept = Other
 					sendMessage.Message = "Failed to create room"
@@ -332,7 +332,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						Socket: ws,
 					}
 					s.GameServers[receivedMessage.RoomName] = &g
-					s.Logger.Info("Created new room", "room", receivedMessage.RoomName, "port", g.Port, "game", g.GameName, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "emulator", receivedMessage.Emulator, "features", receivedMessage.Features)
+					g.Logger.Info("Created new room", "port", g.Port, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "features", receivedMessage.Features)
 					sendMessage.Accept = Accepted
 					sendMessage.RoomName = receivedMessage.RoomName
 					sendMessage.GameName = g.GameName

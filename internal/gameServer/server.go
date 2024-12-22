@@ -47,8 +47,8 @@ type GameServer struct {
 	Features           map[string]string
 }
 
-func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName string, gameName string, logger logr.Logger) int {
-	g.Logger = logger.WithValues("game", gameName, "room", roomName)
+func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName string, gameName string, emulatorName string, logger logr.Logger) int {
+	g.Logger = logger.WithValues("game", gameName, "room", roomName, "emulator", emulatorName)
 	port := g.createTCPServer(basePort, maxGames)
 	if port == 0 {
 		return port
@@ -132,7 +132,7 @@ func (g *GameServer) ManagePlayers() {
 		g.GameDataMutex.Unlock()
 
 		if !playersActive {
-			g.Logger.Info("no more players, closing room", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String(), "emulator", g.Emulator)
+			g.Logger.Info("no more players, closing room", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String())
 			g.CloseServers()
 			g.Running = false
 			return
