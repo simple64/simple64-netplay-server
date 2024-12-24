@@ -41,6 +41,7 @@ const (
 	TypeReplyPlayers       = "reply_players"
 	TypeRequestGetRooms    = "request_get_rooms"
 	TypeReplyGetRooms      = "reply_get_rooms"
+	TypeReplyGetRoomsDone  = "reply_get_rooms_done"
 	TypeRequestCreateRoom  = "request_create_room"
 	TypeReplyCreateRoom    = "reply_create_room"
 	TypeRequestJoinRoom    = "request_join_room"
@@ -389,6 +390,11 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					if err := s.sendData(ws, sendMessage); err != nil {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 					}
+				}
+				sendMessage.Accept = Accepted
+				sendMessage.Type = TypeReplyGetRoomsDone
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
 			}
 		} else if receivedMessage.Type == TypeRequestJoinRoom {
