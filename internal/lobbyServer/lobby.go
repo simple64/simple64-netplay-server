@@ -660,5 +660,5 @@ func getVersion() string {
 			}
 		}
 	}
-	return version
+	return fmt.Sprintf("git: %s. api: %d", version, NetplayAPIVersion)
 }
