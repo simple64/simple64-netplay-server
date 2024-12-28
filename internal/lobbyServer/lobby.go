@@ -67,12 +67,12 @@ type LobbyServer struct {
 }
 
 type RoomData struct {
-	Features  map[string]string `json:"features,omitempty"`
-	GameName  string            `json:"game_name,omitempty"`
+	Features  map[string]string `json:"features"`
+	GameName  string            `json:"game_name"`
 	Protected bool              `json:"protected"`
-	Password  string            `json:"password"`
+	Password  string            `json:"password,omitempty"`
 	RoomName  string            `json:"room_name"`
-	MD5       string            `json:"MD5,omitempty"`
+	MD5       string            `json:"MD5"`
 	Port      int               `json:"port"`
 }
 
@@ -80,12 +80,12 @@ type SocketMessage struct {
 	Message        string     `json:"message,omitempty"`
 	ClientSha      string     `json:"client_sha,omitempty"`
 	Emulator       string     `json:"emulator,omitempty"`
-	PlayerName     string     `json:"player_name"`
+	PlayerName     string     `json:"player_name,omitempty"`
 	AuthTime       string     `json:"authTime,omitempty"`
 	Type           string     `json:"type"`
 	Auth           string     `json:"auth,omitempty"`
 	PlayerNames    []string   `json:"player_names,omitempty"`
-	Room           RoomData   `json:"room,omitempty"`
+	Room           *RoomData  `json:"room,omitempty"`
 	Rooms          []RoomData `json:"rooms,omitempty"`
 	Accept         int        `json:"accept"`
 	NetplayVersion int        `json:"netplay_version,omitempty"`
@@ -309,6 +309,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
 			} else {
+				var sendRoom RoomData
+				sendMessage.Room = &sendRoom
 				authenticated = true
 				g := gameserver.GameServer{}
 				sendMessage.Room.Port = g.CreateNetworkServers(s.BasePort, s.MaxGames, receivedMessage.Room.RoomName, receivedMessage.Room.GameName, receivedMessage.Emulator, s.Logger)
@@ -339,7 +341,9 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Logger.Info("Created new room", "port", g.Port, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "features", receivedMessage.Room.Features)
 					sendMessage.Accept = Accepted
 					sendMessage.Room.RoomName = receivedMessage.Room.RoomName
-					sendMessage.Room.GameName = g.GameName
+					sendMessage.Room.GameName = receivedMessage.Room.GameName
+					sendMessage.Room.MD5 = receivedMessage.Room.MD5
+					sendMessage.Room.Protected = receivedMessage.Room.Password != ""
 					sendMessage.PlayerName = receivedMessage.PlayerName
 					sendMessage.Room.Features = receivedMessage.Room.Features
 					if err := s.sendData(ws, sendMessage); err != nil {
@@ -461,8 +465,12 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.PlayersMutex.Unlock()
 
 					g.Logger.Info("new player joining room", "player", receivedMessage.PlayerName, "playerIP", ws.Request().RemoteAddr, "number", number)
+					var sendRoom RoomData
+					sendMessage.Room = &sendRoom
 					sendMessage.Room.RoomName = roomName
 					sendMessage.Room.GameName = g.GameName
+					sendMessage.Room.MD5 = g.MD5
+					sendMessage.Room.Protected = g.Password != ""
 					sendMessage.PlayerName = receivedMessage.PlayerName
 					sendMessage.Room.Features = g.Features
 					sendMessage.Room.Port = g.Port
@@ -520,7 +528,6 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.StartTime = time.Now()
 					g.Logger.Info("starting game", "time", g.StartTime.Format(time.RFC3339))
 					go s.watchGameServer(roomName, g)
-					sendMessage.Room.Port = g.Port
 					for _, v := range g.Players {
 						if err := s.sendData(v.Socket, sendMessage); err != nil {
 							s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
