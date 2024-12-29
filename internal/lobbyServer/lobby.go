@@ -200,7 +200,7 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 	now := time.Now().UTC()
 	timeAsInt, err := strconv.ParseInt(receivedMessage.AuthTime, 10, 64)
 	if err != nil {
-		s.Logger.Error(err, "could not parse time")
+		s.Logger.Error(err, "could not parse time", "emulator", receivedMessage.Emulator)
 		return false
 	}
 	receivedTime := time.UnixMilli(timeAsInt).UTC()
@@ -210,7 +210,7 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 	maxAllowableDifference := 15 * time.Minute //nolint:gomnd,mnd
 
 	if absTimeDifference > maxAllowableDifference {
-		s.Logger.Error(fmt.Errorf("clock skew"), "bad time in auth request", "server", now, "client", receivedTime)
+		s.Logger.Error(fmt.Errorf("clock skew"), "bad time in auth request", "serverTime", now, "clientTime", receivedTime, "emulator", receivedMessage.Emulator)
 		return false
 	}
 
