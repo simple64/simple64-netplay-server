@@ -200,7 +200,7 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 	now := time.Now().UTC()
 	timeAsInt, err := strconv.ParseInt(receivedMessage.AuthTime, 10, 64)
 	if err != nil {
-		s.Logger.Error(err, "could not parse time")
+		s.Logger.Error(err, "could not parse time", "emulator", receivedMessage.Emulator)
 		return false
 	}
 	receivedTime := time.UnixMilli(timeAsInt).UTC()
@@ -210,7 +210,7 @@ func (s *LobbyServer) validateAuth(receivedMessage SocketMessage) bool {
 	maxAllowableDifference := 15 * time.Minute //nolint:gomnd,mnd
 
 	if absTimeDifference > maxAllowableDifference {
-		s.Logger.Error(fmt.Errorf("clock skew"), "bad time in auth request", "server", now, "client", receivedTime)
+		s.Logger.Error(fmt.Errorf("clock skew"), "bad time in auth request", "serverTime", now, "clientTime", receivedTime, "emulator", receivedMessage.Emulator)
 		return false
 	}
 
@@ -330,7 +330,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Features = receivedMessage.Room.Features
 					ip, _, err := net.SplitHostPort(ws.Request().RemoteAddr)
 					if err != nil {
-						s.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
+						g.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
 					}
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
 						IP:     ip,
@@ -454,7 +454,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 
 					ip, _, err := net.SplitHostPort(ws.Request().RemoteAddr)
 					if err != nil {
-						s.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
+						g.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
 					}
 					g.PlayersMutex.Lock() // any player can modify this from their own thread
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
