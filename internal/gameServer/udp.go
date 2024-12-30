@@ -155,9 +155,6 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 			viCount := binary.BigEndian.Uint32(buf[1:])
 			_, ok := g.GameData.SyncValues[viCount]
 			if !ok {
-				if len(g.GameData.SyncValues) > 50 { //nolint:gomnd,mnd // no need to keep old sync hashes
-					g.GameData.SyncValues = make(map[uint32][]byte)
-				}
 				g.GameData.SyncValues[viCount] = buf[5:133]
 			} else if !bytes.Equal(g.GameData.SyncValues[viCount], buf[5:133]) {
 				g.GameDataMutex.Lock() // Status can be modified by ManagePlayers in a different thread
