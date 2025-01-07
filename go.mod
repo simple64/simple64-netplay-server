@@ -6,12 +6,12 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	go.uber.org/zap v1.27.0
-	golang.org/x/net v0.33.0
+	golang.org/x/net v0.34.0
 )
 
 require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 )
 
 require (
