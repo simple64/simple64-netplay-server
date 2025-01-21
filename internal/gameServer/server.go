@@ -45,6 +45,7 @@ type GameServer struct {
 	HasSettings        bool
 	Running            bool
 	Features           map[string]string
+	NeedsUpdatePlayers bool
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName string, gameName string, emulatorName string, logger logr.Logger) int {
@@ -125,6 +126,15 @@ func (g *GameServer) ManagePlayers() {
 					g.RegistrationsMutex.Lock() // Registrations can be modified by processTCP
 					delete(g.Registrations, i)
 					g.RegistrationsMutex.Unlock()
+
+					for n, v := range g.Players {
+						if v.Number == int(i) {
+							g.PlayersMutex.Lock()
+							delete(g.Players, n)
+							g.NeedsUpdatePlayers = true
+							g.PlayersMutex.Unlock()
+						}
+					}
 				}
 			}
 			g.GameData.PlayerAlive[i] = false

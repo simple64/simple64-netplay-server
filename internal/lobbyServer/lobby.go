@@ -188,6 +188,12 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 			delete(s.GameServers, name)
 			return
 		}
+		if g.NeedsUpdatePlayers {
+			g.PlayersMutex.Lock()
+			g.NeedsUpdatePlayers = false
+			g.PlayersMutex.Unlock()
+			s.updatePlayers(g)
+		}
 		time.Sleep(time.Second * 5) //nolint:gomnd,mnd
 	}
 }

@@ -307,6 +307,15 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 						g.RegistrationsMutex.Lock() // any player can modify this, which would be in a different thread
 						delete(g.Registrations, i)
 						g.RegistrationsMutex.Unlock()
+
+						for n, v := range g.Players {
+							if v.Number == int(i) {
+								g.PlayersMutex.Lock()
+								delete(g.Players, n)
+								g.NeedsUpdatePlayers = true
+								g.PlayersMutex.Unlock()
+							}
+						}
 					}
 				}
 			}
