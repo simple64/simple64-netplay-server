@@ -546,6 +546,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Running = true
 					g.StartTime = time.Now()
 					g.Logger.Info("starting game", "time", g.StartTime.Format(time.RFC3339))
+					g.NumberOfPlayers = len(g.Players)
 					go s.watchGameServer(roomName, g)
 					for _, v := range g.Players {
 						if err := s.sendData(v.Socket, sendMessage); err != nil {

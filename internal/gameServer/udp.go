@@ -161,7 +161,7 @@ func (g *GameServer) processUDP(addr *net.UDPAddr, buf []byte) {
 				g.GameData.Status |= StatusDesync
 				g.GameDataMutex.Unlock()
 
-				g.Logger.Error(fmt.Errorf("desync"), "game has desynced", "numPlayers", len(g.Players), "clientSHA", g.ClientSha, "playTime", time.Since(g.StartTime).String(), "features", g.Features)
+				g.Logger.Error(fmt.Errorf("desync"), "game has desynced", "numPlayers", g.NumberOfPlayers, "clientSHA", g.ClientSha, "playTime", time.Since(g.StartTime).String(), "features", g.Features)
 			}
 		}
 	}

@@ -47,6 +47,7 @@ type GameServer struct {
 	Running            bool
 	Features           map[string]string
 	NeedsUpdatePlayers bool
+	NumberOfPlayers    int
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName string, gameName string, emulatorName string, logger logr.Logger) int {
@@ -143,7 +144,7 @@ func (g *GameServer) ManagePlayers() {
 		g.GameDataMutex.Unlock()
 
 		if !playersActive {
-			g.Logger.Info("no more players, closing room", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String())
+			g.Logger.Info("no more players, closing room", "numPlayers", g.NumberOfPlayers, "playTime", time.Since(g.StartTime).String())
 			g.CloseServers()
 			g.Running = false
 			return
