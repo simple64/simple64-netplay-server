@@ -120,13 +120,17 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 	sendMessage.PlayerNames = make([]string, 4) //nolint:gomnd,mnd
 	sendMessage.Type = TypeReplyPlayers
 	for i, v := range g.Players {
-		sendMessage.PlayerNames[v.Number] = i
+		if v.InLobby {
+			sendMessage.PlayerNames[v.Number] = i
+		}
 	}
 
 	// send the updated player list to all connected players
 	for _, v := range g.Players {
-		if err := s.sendData(v.Socket, sendMessage); err != nil {
-			s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", v.Socket.Request().RemoteAddr)
+		if v.InLobby {
+			if err := s.sendData(v.Socket, sendMessage); err != nil {
+				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", v.Socket.Request().RemoteAddr)
+			}
 		}
 	}
 }
@@ -188,6 +192,12 @@ func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
 			delete(s.GameServers, name)
 			return
 		}
+		if g.NeedsUpdatePlayers {
+			g.PlayersMutex.Lock()
+			g.NeedsUpdatePlayers = false
+			g.PlayersMutex.Unlock()
+			s.updatePlayers(g)
+		}
 		time.Sleep(time.Second * 5) //nolint:gomnd,mnd
 	}
 }
@@ -238,18 +248,23 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				for i, v := range s.GameServers {
-					if !v.Running {
-						for k, w := range v.Players {
-							if w.Socket == ws {
-								v.Logger.Info("Player has left lobby", "player", k, "address", ws.Request().RemoteAddr)
+					for k, w := range v.Players {
+						if w.Socket == ws {
+							v.Logger.Info("Player has left lobby", "player", k, "address", ws.Request().RemoteAddr)
 
-								v.PlayersMutex.Lock() // any player can modify this, which would be in a different thread
+							v.PlayersMutex.Lock() // any player can modify this, which would be in a different thread
+							if !v.Running {
 								delete(v.Players, k)
-								v.PlayersMutex.Unlock()
-
-								s.updatePlayers(v)
+							} else {
+								w.InLobby = false
+								v.Players[k] = w
 							}
+							v.PlayersMutex.Unlock()
+
+							s.updatePlayers(v)
 						}
+					}
+					if !v.Running {
 						if len(v.Players) == 0 {
 							v.Logger.Info("No more players in lobby, deleting")
 							v.CloseServers()
@@ -333,9 +348,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						g.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
 					}
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     ip,
-						Number: 0,
-						Socket: ws,
+						IP:      ip,
+						Number:  0,
+						Socket:  ws,
+						InLobby: true,
 					}
 					s.GameServers[receivedMessage.Room.RoomName] = &g
 					g.Logger.Info("Created new room", "port", g.Port, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "features", receivedMessage.Room.Features)
@@ -458,9 +474,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					}
 					g.PlayersMutex.Lock() // any player can modify this from their own thread
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     ip,
-						Socket: ws,
-						Number: number,
+						IP:      ip,
+						Socket:  ws,
+						Number:  number,
+						InLobby: true,
 					}
 					g.PlayersMutex.Unlock()
 
@@ -506,8 +523,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			_, g := s.findGameServer(receivedMessage.Room.Port)
 			if g != nil {
 				for _, v := range g.Players {
-					if err := s.sendData(v.Socket, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+					if v.InLobby {
+						if err := s.sendData(v.Socket, sendMessage); err != nil {
+							s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+						}
 					}
 				}
 			} else {
@@ -527,6 +546,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Running = true
 					g.StartTime = time.Now()
 					g.Logger.Info("starting game", "time", g.StartTime.Format(time.RFC3339))
+					g.NumberOfPlayers = len(g.Players)
 					go s.watchGameServer(roomName, g)
 					for _, v := range g.Players {
 						if err := s.sendData(v.Socket, sendMessage); err != nil {

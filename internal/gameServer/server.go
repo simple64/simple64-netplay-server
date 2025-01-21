@@ -11,9 +11,10 @@ import (
 )
 
 type Client struct {
-	Socket *websocket.Conn
-	IP     string
-	Number int
+	Socket  *websocket.Conn
+	IP      string
+	Number  int
+	InLobby bool
 }
 
 type Registration struct {
@@ -45,6 +46,8 @@ type GameServer struct {
 	HasSettings        bool
 	Running            bool
 	Features           map[string]string
+	NeedsUpdatePlayers bool
+	NumberOfPlayers    int
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName string, gameName string, emulatorName string, logger logr.Logger) int {
@@ -125,6 +128,15 @@ func (g *GameServer) ManagePlayers() {
 					g.RegistrationsMutex.Lock() // Registrations can be modified by processTCP
 					delete(g.Registrations, i)
 					g.RegistrationsMutex.Unlock()
+
+					for k, v := range g.Players {
+						if v.Number == int(i) {
+							g.PlayersMutex.Lock()
+							delete(g.Players, k)
+							g.NeedsUpdatePlayers = true
+							g.PlayersMutex.Unlock()
+						}
+					}
 				}
 			}
 			g.GameData.PlayerAlive[i] = false
@@ -132,7 +144,7 @@ func (g *GameServer) ManagePlayers() {
 		g.GameDataMutex.Unlock()
 
 		if !playersActive {
-			g.Logger.Info("no more players, closing room", "numPlayers", len(g.Players), "playTime", time.Since(g.StartTime).String())
+			g.Logger.Info("no more players, closing room", "numPlayers", g.NumberOfPlayers, "playTime", time.Since(g.StartTime).String())
 			g.CloseServers()
 			g.Running = false
 			return
