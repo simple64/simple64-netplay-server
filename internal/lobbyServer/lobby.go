@@ -127,8 +127,10 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 
 	// send the updated player list to all connected players
 	for _, v := range g.Players {
-		if err := s.sendData(v.Socket, sendMessage); err != nil {
-			s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", v.Socket.Request().RemoteAddr)
+		if v.InLobby {
+			if err := s.sendData(v.Socket, sendMessage); err != nil {
+				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", v.Socket.Request().RemoteAddr)
+			}
 		}
 	}
 }
@@ -521,8 +523,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			_, g := s.findGameServer(receivedMessage.Room.Port)
 			if g != nil {
 				for _, v := range g.Players {
-					if err := s.sendData(v.Socket, sendMessage); err != nil {
-						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+					if v.InLobby {
+						if err := s.sendData(v.Socket, sendMessage); err != nil {
+							s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+						}
 					}
 				}
 			} else {
