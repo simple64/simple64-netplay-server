@@ -120,7 +120,9 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 	sendMessage.PlayerNames = make([]string, 4) //nolint:gomnd,mnd
 	sendMessage.Type = TypeReplyPlayers
 	for i, v := range g.Players {
-		sendMessage.PlayerNames[v.Number] = i
+		if v.InLobby {
+			sendMessage.PlayerNames[v.Number] = i
+		}
 	}
 
 	// send the updated player list to all connected players
@@ -249,7 +251,12 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 							v.Logger.Info("Player has left lobby", "player", k, "address", ws.Request().RemoteAddr)
 
 							v.PlayersMutex.Lock() // any player can modify this, which would be in a different thread
-							delete(v.Players, k)
+							if !v.Running {
+								delete(v.Players, k)
+							} else {
+								w.InLobby = false
+								v.Players[k] = w
+							}
 							v.PlayersMutex.Unlock()
 
 							s.updatePlayers(v)
@@ -339,9 +346,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						g.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
 					}
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     ip,
-						Number: 0,
-						Socket: ws,
+						IP:      ip,
+						Number:  0,
+						Socket:  ws,
+						InLobby: true,
 					}
 					s.GameServers[receivedMessage.Room.RoomName] = &g
 					g.Logger.Info("Created new room", "port", g.Port, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "features", receivedMessage.Room.Features)
@@ -464,9 +472,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					}
 					g.PlayersMutex.Lock() // any player can modify this from their own thread
 					g.Players[receivedMessage.PlayerName] = gameserver.Client{
-						IP:     ip,
-						Socket: ws,
-						Number: number,
+						IP:      ip,
+						Socket:  ws,
+						Number:  number,
+						InLobby: true,
 					}
 					g.PlayersMutex.Unlock()
 

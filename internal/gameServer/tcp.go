@@ -308,10 +308,11 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 						delete(g.Registrations, i)
 						g.RegistrationsMutex.Unlock()
 
-						for n, v := range g.Players {
+						for k, v := range g.Players {
 							if v.Number == int(i) {
 								g.PlayersMutex.Lock()
-								delete(g.Players, n)
+								v.InLobby = false
+								g.Players[k] = v
 								g.NeedsUpdatePlayers = true
 								g.PlayersMutex.Unlock()
 							}

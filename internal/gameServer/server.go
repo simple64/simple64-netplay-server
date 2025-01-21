@@ -11,9 +11,10 @@ import (
 )
 
 type Client struct {
-	Socket *websocket.Conn
-	IP     string
-	Number int
+	Socket  *websocket.Conn
+	IP      string
+	Number  int
+	InLobby bool
 }
 
 type Registration struct {
@@ -127,10 +128,11 @@ func (g *GameServer) ManagePlayers() {
 					delete(g.Registrations, i)
 					g.RegistrationsMutex.Unlock()
 
-					for n, v := range g.Players {
+					for k, v := range g.Players {
 						if v.Number == int(i) {
 							g.PlayersMutex.Lock()
-							delete(g.Players, n)
+							v.InLobby = false
+							g.Players[k] = v
 							g.NeedsUpdatePlayers = true
 							g.PlayersMutex.Unlock()
 						}
