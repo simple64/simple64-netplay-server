@@ -3,6 +3,7 @@
 ## Supported emulators
 * [simple64](https://github.com/simple64/simple64)
 * [RMG](https://github.com/Rosalie241/RMG)
+* [gopher64](https://github.com/gopher64/gopher64)
 
 ## Container
 
