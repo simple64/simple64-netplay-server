@@ -176,11 +176,6 @@ func (s *LobbyServer) announceDiscord(g *gameserver.GameServer) {
 			}
 		}
 	}
-
-	devChannel := os.Getenv(fmt.Sprintf("%s_DEV_CHANNEL", strings.ToUpper(g.Emulator)))
-	if devChannel != "" {
-		s.publishDiscord(message, devChannel)
-	}
 }
 
 func (s *LobbyServer) watchGameServer(name string, g *gameserver.GameServer) {
