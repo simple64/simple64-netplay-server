@@ -621,14 +621,12 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					sendMessage.Accept = BadPlayer
 					sendMessage.Message = "Player must be room creator"
 					if err := s.sendData(ws, sendMessage); err != nil {
-						// only sent back to the player who tried to start the game
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 					}
 				} else if g.Running {
 					sendMessage.Accept = BadGameState
 					sendMessage.Message = "Game is already running"
 					if err := s.sendData(ws, sendMessage); err != nil {
-						// only sent back to the player who tried to start the game
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 					}
 				} else {
