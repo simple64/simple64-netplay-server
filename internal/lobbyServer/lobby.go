@@ -33,7 +33,9 @@ const (
 	BadName         = 6
 	BadEmulator     = 7
 	BadAuth         = 8
-	Other           = 9
+	BadIP           = 9
+	BadRoomName     = 10
+	Other           = 11
 )
 
 const (
@@ -43,6 +45,8 @@ const (
 	TypeReplyGetRooms      = "reply_get_rooms"
 	TypeRequestCreateRoom  = "request_create_room"
 	TypeReplyCreateRoom    = "reply_create_room"
+	TypeRequestEditRoom    = "request_edit_room"
+	TypeReplyEditRoom      = "reply_edit_room"
 	TypeRequestJoinRoom    = "request_join_room"
 	TypeReplyJoinRoom      = "reply_join_room"
 	TypeRequestChatMessage = "request_chat_message"
@@ -126,6 +130,27 @@ func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 	}
 
 	// send the updated player list to all connected players
+	for _, v := range g.Players {
+		if v.InLobby {
+			if err := s.sendData(v.Socket, sendMessage); err != nil {
+				s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", v.Socket.Request().RemoteAddr)
+			}
+		}
+	}
+}
+
+func (s *LobbyServer) updateRoom(g *gameserver.GameServer, name string) {
+	var sendRoom RoomData
+	var sendMessage SocketMessage
+	sendMessage.Accept = Accepted
+	sendMessage.Room = &sendRoom
+	sendMessage.Room.MD5 = g.MD5
+	sendMessage.Room.RoomName = name
+	sendMessage.Room.GameName = g.GameName
+	sendMessage.Room.Features = g.Features
+	sendMessage.Type = TypeReplyEditRoom
+
+	// send the updated room to all connected players
 	for _, v := range g.Players {
 		if v.InLobby {
 			if err := s.sendData(v.Socket, sendMessage); err != nil {
@@ -361,6 +386,65 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 					}
 					s.announceDiscord(&g)
+				}
+			}
+		} else if receivedMessage.Type == TypeRequestEditRoom {
+			if !authenticated {
+				s.Logger.Error(fmt.Errorf("bad auth"), "User tried to edit room without being authenticated", "address", ws.Request().RemoteAddr)
+				continue
+			}
+
+			sendMessage.Type = TypeReplyEditRoom
+			roomName, g := s.findGameServer(receivedMessage.Room.Port)
+
+			if g != nil {
+				ip, _, err := net.SplitHostPort(ws.Request().RemoteAddr)
+				if err != nil {
+					g.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
+				}
+
+				var player = g.Players[receivedMessage.PlayerName]
+				if player.Number != 0 {
+					sendMessage.Accept = BadName
+					sendMessage.Message = "Player name must match room creator name"
+					if err := s.sendData(ws, sendMessage); err != nil {
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+					}
+				} else if ip != player.IP {
+					sendMessage.Accept = BadIP
+					sendMessage.Message = "Player IP must match IP of room creator"
+					if err := s.sendData(ws, sendMessage); err != nil {
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+					}
+				} else if g.Running {
+					sendMessage.Accept = Other
+					sendMessage.Message = "Game is already running"
+					if err := s.sendData(ws, sendMessage); err != nil {
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+					}
+				} else if receivedMessage.Emulator != g.Emulator {
+					sendMessage.Accept = BadEmulator
+					sendMessage.Message = "Emulator name must match room emulator"
+					if err := s.sendData(ws, sendMessage); err != nil {
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+					}
+				} else if receivedMessage.Room.RoomName != roomName {
+					sendMessage.Accept = BadRoomName
+					sendMessage.Message = "Room name must match"
+					if err := s.sendData(ws, sendMessage); err != nil {
+						s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
+					}
+				} else {
+					g.MD5 = receivedMessage.Room.MD5
+					g.GameName = receivedMessage.Room.GameName
+					g.Features = receivedMessage.Room.Features
+					s.updateRoom(g, roomName)
+				}
+			} else {
+				sendMessage.Accept = BadRoomName
+				sendMessage.Message = "Room not found"
+				if err := s.sendData(ws, sendMessage); err != nil {
+					s.Logger.Error(err, "failed to send message", "message", sendMessage, "address", ws.Request().RemoteAddr)
 				}
 			}
 		} else if receivedMessage.Type == TypeRequestGetRooms {
