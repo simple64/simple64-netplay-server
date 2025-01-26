@@ -148,6 +148,8 @@ func (s *LobbyServer) updateRoom(g *gameserver.GameServer, name string) {
 	sendMessage.Room.RoomName = name
 	sendMessage.Room.GameName = g.GameName
 	sendMessage.Room.Features = g.Features
+	sendMessage.Room.Port = g.Port
+	sendMessage.Room.Protected = g.Password != ""
 	sendMessage.Type = TypeReplyEditRoom
 
 	// send the updated room to all connected players
