@@ -117,6 +117,15 @@ func (s *LobbyServer) findGameServer(port int) (string, *gameserver.GameServer) 
 	return "", nil
 }
 
+func (s *LobbyServer) findRoomCreator(g *gameserver.GameServer) *gameserver.Client {
+	for _, v := range g.Players {
+		if v.Number == 0 {
+			return &v
+		}
+	}
+	return nil
+}
+
 func (s *LobbyServer) updatePlayers(g *gameserver.GameServer) {
 	if g == nil {
 		return
@@ -401,12 +410,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			roomName, g := s.findGameServer(receivedMessage.Room.Port)
 
 			if g != nil {
-				var roomCreator *gameserver.Client
-				for _, v := range g.Players {
-					if v.Number == 0 {
-						roomCreator = &v
-					}
-				}
+				roomCreator := s.findRoomCreator(g)
+
 				if roomCreator.Socket != ws {
 					sendMessage.Accept = BadPlayer
 					sendMessage.Message = "Player must be room creator"
@@ -610,12 +615,8 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 			sendMessage.Type = TypeReplyBeginGame
 			roomName, g := s.findGameServer(receivedMessage.Room.Port)
 			if g != nil {
-				var roomCreator *gameserver.Client
-				for _, v := range g.Players {
-					if v.Number == 0 {
-						roomCreator = &v
-					}
-				}
+				roomCreator := s.findRoomCreator(g)
+
 				if roomCreator.Socket != ws {
 					sendMessage.Accept = BadPlayer
 					sendMessage.Message = "Player must be room creator"
