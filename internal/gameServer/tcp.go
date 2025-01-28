@@ -15,7 +15,6 @@ type TCPData struct {
 	Filename       string
 	Buffer         bytes.Buffer
 	Filesize       uint32
-	HaveFilesize   bool
 	Request        byte
 	CustomID       byte
 	CustomDatasize uint32
@@ -187,7 +186,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 			}
 		}
 
-		if tcpData.Request == RequestSendSave && tcpData.Filename != "" && !tcpData.HaveFilesize { // get file size from sender
+		if tcpData.Request == RequestSendSave && tcpData.Filename != "" && tcpData.Filesize == 0 { // get file size from sender
 			if tcpData.Buffer.Len() >= 4 { //nolint:gomnd,mnd
 				filesizeBytes := make([]byte, 4)
 				_, err = tcpData.Buffer.Read(filesizeBytes)
@@ -195,11 +194,17 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
 				}
 				tcpData.Filesize = binary.BigEndian.Uint32(filesizeBytes)
-				tcpData.HaveFilesize = true
+
+				if tcpData.Filesize == 0 {
+					g.TCPFiles[tcpData.Filename] = make([]byte, tcpData.Filesize)
+					tcpData.Filename = ""
+					tcpData.Filesize = 0
+					tcpData.Request = RequestNone
+				}
 			}
 		}
 
-		if tcpData.Request == RequestSendSave && tcpData.Filename != "" && tcpData.HaveFilesize { // read in file from sender
+		if tcpData.Request == RequestSendSave && tcpData.Filename != "" && tcpData.Filesize != 0 { // read in file from sender
 			if tcpData.Buffer.Len() >= int(tcpData.Filesize) {
 				g.TCPFiles[tcpData.Filename] = make([]byte, tcpData.Filesize)
 				_, err = tcpData.Buffer.Read(g.TCPFiles[tcpData.Filename])
@@ -209,7 +214,6 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				g.Logger.Info("received save file", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
 				tcpData.Filename = ""
 				tcpData.Filesize = 0
-				tcpData.HaveFilesize = false
 				tcpData.Request = RequestNone
 			}
 		}
