@@ -53,8 +53,8 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn, withSize b
 			}
 		} else {
 			if withSize {
-				size := make([]byte, 4) //nolint:gomnd,mnd
-				binary.BigEndian.PutUint32(size, uint32(len(g.TCPFiles[tcpData.Filename])))
+				size := make([]byte, 4)                                                     //nolint:gomnd,mnd
+				binary.BigEndian.PutUint32(size, uint32(len(g.TCPFiles[tcpData.Filename]))) //nolint:gosec
 				_, err := conn.Write(size)
 				if err != nil {
 					g.Logger.Error(err, "could not write size", "address", conn.RemoteAddr().String())
