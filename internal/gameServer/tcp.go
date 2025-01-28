@@ -68,7 +68,7 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn, withSize b
 				}
 			}
 
-			// g.Logger.Info("sent file", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
+			// g.Logger.Info("sent save file", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
 			tcpData.Filename = ""
 			tcpData.Filesize = 0
 		}
@@ -206,7 +206,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				if err != nil {
 					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
 				}
-				// g.Logger.Info("read file from sender", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
+				g.Logger.Info("received save file", "filename", tcpData.Filename, "filesize", tcpData.Filesize, "address", conn.RemoteAddr().String())
 				tcpData.Filename = ""
 				tcpData.Filesize = 0
 				tcpData.HaveFilesize = false
