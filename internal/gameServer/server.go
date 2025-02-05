@@ -31,6 +31,7 @@ type GameServer struct {
 	UDPListener        *net.UDPConn
 	Registrations      map[byte]*Registration
 	RegistrationsMutex sync.Mutex
+	TCPMutex           sync.Mutex
 	TCPFiles           map[string][]byte
 	CustomData         map[byte][]byte
 	Logger             logr.Logger

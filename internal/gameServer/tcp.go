@@ -44,9 +44,11 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn, withSize b
 	startTime := time.Now()
 	var ok bool
 	for !ok {
+		g.TCPMutex.Lock()
 		_, ok = g.TCPFiles[tcpData.Filename]
+		g.TCPMutex.Unlock()
 		if !ok {
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond)
 			if time.Since(startTime) > TCPTimeout {
 				g.Logger.Info("TCP connection timed out in tcpSendFile")
 				return
@@ -77,7 +79,7 @@ func (g *GameServer) tcpSendFile(tcpData *TCPData, conn *net.TCPConn, withSize b
 func (g *GameServer) tcpSendSettings(conn *net.TCPConn) {
 	startTime := time.Now()
 	for !g.HasSettings {
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond)
 		if time.Since(startTime) > TCPTimeout {
 			g.Logger.Info("TCP connection timed out in tcpSendSettings")
 			return
@@ -94,9 +96,11 @@ func (g *GameServer) tcpSendCustom(conn *net.TCPConn, customID byte) {
 	startTime := time.Now()
 	var ok bool
 	for !ok {
+		g.TCPMutex.Lock()
 		_, ok = g.CustomData[customID]
+		g.TCPMutex.Unlock()
 		if !ok {
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond)
 			if time.Since(startTime) > TCPTimeout {
 				g.Logger.Info("TCP connection timed out in tcpSendCustom")
 				return
@@ -113,7 +117,7 @@ func (g *GameServer) tcpSendCustom(conn *net.TCPConn, customID byte) {
 func (g *GameServer) tcpSendReg(conn *net.TCPConn) {
 	startTime := time.Now()
 	for len(g.Players) != len(g.Registrations) {
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond)
 		if time.Since(startTime) > TCPTimeout {
 			g.Logger.Info("TCP connection timed out in tcpSendReg")
 			return
@@ -196,7 +200,9 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 				tcpData.Filesize = binary.BigEndian.Uint32(filesizeBytes)
 
 				if tcpData.Filesize == 0 {
+					g.TCPMutex.Lock()
 					g.TCPFiles[tcpData.Filename] = make([]byte, tcpData.Filesize)
+					g.TCPMutex.Unlock()
 					tcpData.Filename = ""
 					tcpData.Filesize = 0
 					tcpData.Request = RequestNone
@@ -206,8 +212,10 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 
 		if tcpData.Request == RequestSendSave && tcpData.Filename != "" && tcpData.Filesize != 0 { // read in file from sender
 			if tcpData.Buffer.Len() >= int(tcpData.Filesize) {
+				g.TCPMutex.Lock()
 				g.TCPFiles[tcpData.Filename] = make([]byte, tcpData.Filesize)
 				_, err = tcpData.Buffer.Read(g.TCPFiles[tcpData.Filename])
+				g.TCPMutex.Unlock()
 				if err != nil {
 					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
 				}
@@ -358,8 +366,10 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 
 		if tcpData.Request >= RequestSendCustomStart && tcpData.Request < RequestSendCustomStart+CustomDataOffset && tcpData.CustomID != 0 { // read in custom data from sender
 			if tcpData.Buffer.Len() >= int(tcpData.CustomDatasize) {
+				g.TCPMutex.Lock()
 				g.CustomData[tcpData.CustomID] = make([]byte, tcpData.CustomDatasize)
 				_, err = tcpData.Buffer.Read(g.CustomData[tcpData.CustomID])
+				g.TCPMutex.Unlock()
 				if err != nil {
 					g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())
 				}
