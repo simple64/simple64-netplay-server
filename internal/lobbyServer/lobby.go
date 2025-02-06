@@ -522,6 +522,9 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 				} else if len(g.Players) >= 4 { //nolint:gomnd,mnd
 					accepted = RoomFull
 					message = "Room is full"
+				} else if g.Running {
+					accepted = BadGameState
+					message = "Game already running"
 				} else if receivedMessage.PlayerName == "" {
 					accepted = BadName
 					message = "Player name cannot be empty"
