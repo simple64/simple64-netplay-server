@@ -152,7 +152,14 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 	tcpData := &TCPData{Request: RequestNone}
 	incomingBuffer := make([]byte, 1500) //nolint:gomnd,mnd
 	for {
-		err := conn.SetReadDeadline(time.Now().Add(time.Millisecond))
+		var readDeadline time.Time
+		if tcpData.Buffer.Len() > 0 {
+			// if there is pending data in the buffer, get to it quickly
+			readDeadline = time.Now().Add(time.Millisecond)
+		} else {
+			readDeadline = time.Now().Add(time.Second)
+		}
+		err := conn.SetReadDeadline(readDeadline)
 		if err != nil {
 			g.Logger.Error(err, "could not set read deadline", "address", conn.RemoteAddr().String())
 		}
