@@ -22,7 +22,6 @@ type TCPData struct {
 
 const (
 	SettingsSize = 24
-	BufferTarget = 2
 	TCPTimeout   = time.Minute * 5
 )
 
@@ -311,7 +310,7 @@ func (g *GameServer) processTCP(conn *net.TCPConn) {
 					response[0] = 0
 				}
 			}
-			response[1] = BufferTarget
+			response[1] = uint8(g.BufferTarget) //nolint:gosec
 			_, err = conn.Write(response)
 			if err != nil {
 				g.Logger.Error(err, "TCP error", "address", conn.RemoteAddr().String())

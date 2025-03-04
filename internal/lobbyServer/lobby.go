@@ -72,13 +72,14 @@ type LobbyServer struct {
 }
 
 type RoomData struct {
-	Features  map[string]string `json:"features"`
-	GameName  string            `json:"game_name"`
-	Protected bool              `json:"protected"`
-	Password  string            `json:"password,omitempty"`
-	RoomName  string            `json:"room_name"`
-	MD5       string            `json:"MD5"`
-	Port      int               `json:"port"`
+	Features     map[string]string `json:"features"`
+	GameName     string            `json:"game_name"`
+	Protected    bool              `json:"protected"`
+	Password     string            `json:"password,omitempty"`
+	RoomName     string            `json:"room_name"`
+	MD5          string            `json:"MD5"`
+	Port         int               `json:"port"`
+	BufferTarget int32             `json:"buffer_target,omitempty"`
 }
 
 type SocketMessage struct {
@@ -375,6 +376,10 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Emulator = receivedMessage.Emulator
 					g.Players = make(map[string]gameserver.Client)
 					g.Features = receivedMessage.Room.Features
+					g.BufferTarget = receivedMessage.Room.BufferTarget
+					if g.BufferTarget < 1 {
+						g.BufferTarget = 2 //nolint:gomnd
+					}
 					ip, _, err := net.SplitHostPort(ws.Request().RemoteAddr)
 					if err != nil {
 						g.Logger.Error(err, "could not parse IP", "IP", ws.Request().RemoteAddr)
@@ -386,7 +391,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 						InLobby: true,
 					}
 					s.GameServers[receivedMessage.Room.RoomName] = &g
-					g.Logger.Info("Created new room", "port", g.Port, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "features", receivedMessage.Room.Features)
+					g.Logger.Info("Created new room", "port", g.Port, "creator", receivedMessage.PlayerName, "clientSHA", receivedMessage.ClientSha, "creatorIP", ws.Request().RemoteAddr, "buffer_target", g.BufferTarget, "features", receivedMessage.Room.Features)
 					sendMessage.Accept = Accepted
 					sendMessage.Room.RoomName = receivedMessage.Room.RoomName
 					sendMessage.Room.GameName = receivedMessage.Room.GameName
