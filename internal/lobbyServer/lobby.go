@@ -378,7 +378,7 @@ func (s *LobbyServer) wsHandler(ws *websocket.Conn) {
 					g.Features = receivedMessage.Room.Features
 					g.BufferTarget = receivedMessage.Room.BufferTarget
 					if g.BufferTarget < 1 {
-						g.BufferTarget = 2 //nolint:gomnd,mnd
+						g.BufferTarget = 2 //nolint:gomnd
 					}
 					ip, _, err := net.SplitHostPort(ws.Request().RemoteAddr)
 					if err != nil {
