@@ -49,6 +49,7 @@ type GameServer struct {
 	Features           map[string]string
 	NeedsUpdatePlayers bool
 	NumberOfPlayers    int
+	BufferTarget       int32
 }
 
 func (g *GameServer) CreateNetworkServers(basePort int, maxGames int, roomName string, gameName string, emulatorName string, logger logr.Logger) int {
@@ -96,10 +97,10 @@ func (g *GameServer) ManageBuffer() {
 		// Adjust the buffer size for the lead player(s)
 		for i := range 4 {
 			if g.GameData.BufferHealth[i] != -1 && g.GameData.CountLag[i] == 0 {
-				if g.GameData.BufferHealth[i] > BufferTarget && g.GameData.BufferSize[i] > 0 {
+				if g.GameData.BufferHealth[i] > g.BufferTarget && g.GameData.BufferSize[i] > 0 {
 					g.GameData.BufferSize[i]--
 					// g.Logger.Info("reducing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
-				} else if g.GameData.BufferHealth[i] < BufferTarget {
+				} else if g.GameData.BufferHealth[i] < g.BufferTarget {
 					g.GameData.BufferSize[i]++
 					// g.Logger.Info("increasing buffer size", "player", i, "bufferSize", g.GameData.BufferSize[i])
 				}
